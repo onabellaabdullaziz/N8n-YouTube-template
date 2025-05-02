@@ -1,0 +1,6695 @@
+{
+  "name": "YouTube Automation Pro",
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "// Load viral topics from trends API\nreturn [{ json: { topic: \"AI Tools Revolution\" } }, { json: { topic: \"Top 5 Money-Making Apps\" } }];"
+      },
+      "name": "Generate Viral Topics",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "prompt": "Write a highly engaging YouTube script based on the topic: {{$json[\"topic\"]}}. Include a powerful hook, main content, and a clear call to action.",
+        "temperature": 0.8,
+        "maxTokens": 1000
+      },
+      "name": "AI Script Generator",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{$json[\"choices\"][0][\"text\"]}}",
+        "languageCode": "en-US"
+      },
+      "name": "ElevenLabs TTS",
+      "type": "custom.elevenlabs.textToSpeech",
+      "typeVersion": 1,
+      "position": [750, 300]
+    }
+  ],
+    "connections": {
+    "Generate Viral Topics": {
+      "main": [
+        [
+          {
+            "node": "AI Script Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Script Generator": {
+      "main": [
+        [
+          {
+            "node": "ElevenLabs TTS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": "1",
+  "tags": [
+    {
+      "name": "YouTube"
+    },
+    {
+      "name": "Automation"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://source.unsplash.com/1600x900/?technology,ai",
+        "responseFormat": "file"
+      },
+      "name": "Download Background Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [250, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Animate the image with basic zoom/pan effect using FFmpeg or online renderer API\nreturn [{ json: { motionVideoPath: \"/tmp/animated_video.mp4\" } }];"
+      },
+      "name": "Animate Image",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Merge TTS audio + animated video with hardcoded subtitles\nreturn [{ json: { finalVideo: \"/tmp/final_video_with_subs.mp4\" } }];"
+      },
+      "name": "Compose Video",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [750, 500]
+    },
+    {
+      "parameters": {
+        "text": "={{$json[\"choices\"][0][\"text\"]}}",
+        "language": "en",
+        "format": "srt"
+      },
+      "name": "Generate Subtitles",
+      "type": "custom.subtitle.generator",
+      "typeVersion": 1,
+      "position": [750, 400]
+    }
+  ],
+  "connections": {
+    "Download Background Image": {
+      "main": [
+        [
+          {
+            "node": "Animate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Animate Image": {
+      "main": [
+        [
+          {
+            "node": "Compose Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Script Generator": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Generate Subtitles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "// Generate viral SEO title, description, and hashtags\nreturn [{\n  json: {\n    title: \"{{AI Viral Title}}\",\n    description: \"{{Engaging YouTube description with keywords and CTA}}\",\n    hashtags: \"#ai #automation #youtube\"\n  }\n}];"
+      },
+      "name": "Generate SEO Metadata",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1000, 500]
+    },
+    {
+      "parameters": {
+        "videoPath": "={{$json[\"finalVideo\"]}}",
+        "title": "={{$json[\"title\"]}}",
+        "description": "={{$json[\"description\"]}}\n\n{{ $json[\"hashtags\"] }}",
+        "tags": "ai,automation,youtube",
+        "privacyStatus": "public"
+      },
+      "name": "Upload to YouTube",
+      "type": "custom.youtube.upload",
+      "typeVersion": 1,
+      "position": [1250, 500]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "text": "Thanks for watching! Like, Subscribe and Comment what you think!"
+      },
+      "name": "First Comment",
+      "type": "custom.youtube.comment",
+      "typeVersion": 1,
+      "position": [1500, 450]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "commentId": "={{$node[\"First Comment\"].json[\"commentId\"]}}"
+      },
+      "name": "Pin Comment",
+      "type": "custom.youtube.pinComment",
+      "typeVersion": 1,
+      "position": [1750, 450]
+    }
+  ],
+  "connections": {
+    "Compose Video": {
+      "main": [
+        [
+          {
+            "node": "Generate SEO Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate SEO Metadata": {
+      "main": [
+        [
+          {
+            "node": "Upload to YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to YouTube": {
+      "main": [
+        [
+          {
+            "node": "First Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First Comment": {
+      "main": [
+        [
+          {
+            "node": "Pin Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "// Schedule video for specific time\nconst now = new Date();\nnow.setHours(now.getHours() + 2); // 2 hours later\nreturn [{ json: { scheduledTime: now.toISOString() } }];"
+      },
+      "name": "Auto Scheduler",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1000, 800]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "scheduledStartTime": "={{$json[\"scheduledTime\"]}}"
+      },
+      "name": "Set Scheduled Time",
+      "type": "custom.youtube.scheduleVideo",
+      "typeVersion": 1,
+      "position": [1250, 800]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Generate a dynamic thumbnail (placeholder logic)\nreturn [{\n  json: {\n    thumbnailPath: \"/files/generated_thumbnail.jpg\"\n  }\n}];"
+      },
+      "name": "Generate Thumbnail",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1000, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "thumbnailPath": "={{$json[\"thumbnailPath\"]}}"
+      },
+      "name": "Upload Thumbnail",
+      "type": "custom.youtube.uploadThumbnail",
+      "typeVersion": 1,
+      "position": [1250, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}"
+      },
+      "name": "Track Performance",
+      "type": "custom.youtube.analytics",
+      "typeVersion": 1,
+      "position": [1500, 1000]
+    }
+  ],
+  "connections": {
+    "Upload to YouTube": {
+      "main": [
+        [
+          {
+            "node": "Auto Scheduler",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Thumbnail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto Scheduler": {
+      "main": [
+        [
+          {
+            "node": "Set Scheduled Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "Upload Thumbnail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "Track Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "monetize": true,
+        "adFormats": [
+          "skippable",
+          "nonSkippable",
+          "bumper"
+        ]
+      },
+      "name": "Enable Monetization",
+      "type": "custom.youtube.setMonetization",
+      "typeVersion": 1,
+      "position": [1750, 1000]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Log performance stats to Airtable/Notion/Google Sheets\nreturn [{\n  json: {\n    videoId: $node[\"Upload to YouTube\"].json[\"videoId\"],\n    views: 0,\n    likes: 0,\n    comments: 0,\n    date: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Smart Analytics Logger",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2000, 1000]
+    },
+    {
+      "parameters": {
+        "sheetId": "your_google_sheet_id",
+        "range": "Sheet1!A1:D1",
+        "valueInputMode": "RAW",
+        "values": "={{ [$json.videoId, $json.views, $json.likes, $json.comments] }}"
+      },
+      "name": "Export to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [2250, 1000],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-cred-id",
+          "name": "Google Sheets OAuth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Track Performance": {
+      "main": [
+        [
+          {
+            "node": "Enable Monetization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enable Monetization": {
+      "main": [
+        [
+          {
+            "node": "Smart Analytics Logger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Analytics Logger": {
+      "main": [
+        [
+          {
+            "node": "Export to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "text": "Thanks for watching! Let me know what you think in the comments below!",
+        "pin": true
+      },
+      "name": "Post Pinned Comment",
+      "type": "custom.youtube.comment",
+      "typeVersion": 1,
+      "position": [2500, 1000]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Auto-generate YouTube chapters based on script timestamps\nreturn [{\n  json: {\n    descriptionUpdate: `\n0:00 Intro\n1:00 Key Point 1\n2:00 Key Point 2\n3:30 Conclusion\n`  }\n}];"
+      },
+      "name": "Generate Chapters",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [2750, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "description": "={{$node[\"Generate Chapters\"].json[\"descriptionUpdate\"]}}"
+      },
+      "name": "Update Description with Chapters",
+      "type": "custom.youtube.updateVideo",
+      "typeVersion": 1,
+      "position": [3000, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "functionCode": "// Update title based on best SEO keyword\nconst newTitle = `${$node[\"SEO Title Generator\"].json[\"bestTitle\"]}`;\nreturn [{ json: { newTitle } }];"
+      },
+      "name": "Smart Title Generator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [3250, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "title": "={{$node[\"Smart Title Generator\"].json[\"newTitle\"]}}"
+      },
+      "name": "Update Video Title",
+      "type": "custom.youtube.updateVideo",
+      "typeVersion": 1,
+      "position": [3500, 1000]
+    }
+  ],
+  "connections": {
+    "Export to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Post Pinned Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Pinned Comment": {
+      "main": [
+        [
+          {
+            "node": "Generate Chapters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Chapters": {
+      "main": [
+        [
+          {
+            "node": "Update Description with Chapters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Description with Chapters": {
+      "main": [
+        [
+          {
+            "node": "Smart Title Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Title Generator": {
+      "main": [
+        [
+          {
+            "node": "Update Video Title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "// Auto-slice long video into Shorts highlights\nreturn [{\n  json: {\n    shortsClips: [\n      { start: '00:01:00', end: '00:01:30' },\n      { start: '00:02:00', end: '00:02:30' }\n    ]\n  }\n}];"
+      },
+      "name": "Generate Shorts Clips",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [3750, 1000]
+    },
+    {
+      "parameters": {
+        "clipData": "={{$node[\"Generate Shorts Clips\"].json[\"shortsClips\"]}}",
+        "videoUrl": "={{$node[\"Upload to YouTube\"].json[\"videoUrl\"]}}"
+      },
+      "name": "Create Shorts Videos",
+      "type": "custom.video.shortSlicer",
+      "typeVersion": 1,
+      "position": [4000, 1000]
+    },
+    {
+      "parameters": {
+        "title": "={{$node[\"Smart Title Generator\"].json[\"newTitle\"]}}",
+        "keywords": "={{$node[\"SEO Title Generator\"].json[\"bestKeywords\"]}}"
+      },
+      "name": "AI Thumbnail Generator",
+      "type": "custom.ai.thumbnail",
+      "typeVersion": 1,
+      "position": [4250, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "thumbnailImage": "={{$node[\"AI Thumbnail Generator\"].json[\"thumbnailUrl\"]}}"
+      },
+      "name": "Upload YouTube Thumbnail",
+      "type": "custom.youtube.uploadThumbnail",
+      "typeVersion": 1,
+      "position": [4500, 1000]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Auto-schedule video 24 hours from now\nconst futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);\nreturn [{ json: { scheduledTime: futureDate.toISOString() } }];"
+      },
+      "name": "Generate Upload Schedule",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [4750, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "publishAt": "={{$node[\"Generate Upload Schedule\"].json[\"scheduledTime\"]}}"
+      },
+      "name": "Schedule YouTube Video",
+      "type": "custom.youtube.scheduleVideo",
+      "typeVersion": 1,
+      "position": [5000, 1000]
+    }
+  ],
+  "connections": {
+    "Update Video Title": {
+      "main": [
+        [
+          {
+            "node": "Generate Shorts Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Shorts Clips": {
+      "main": [
+        [
+          {
+            "node": "Create Shorts Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Shorts Videos": {
+      "main": [
+        [
+          {
+            "node": "AI Thumbnail Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Thumbnail Generator": {
+      "main": [
+        [
+          {
+            "node": "Upload YouTube Thumbnail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload YouTube Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "Generate Upload Schedule",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Upload Schedule": {
+      "main": [
+        [
+          {
+            "node": "Schedule YouTube Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "monetizationStatus": "monetized",
+        "adFormats": ["overlay", "skippable", "nonSkippable", "bumper"]
+      },
+      "name": "Set Monetization Settings",
+      "type": "custom.youtube.monetization",
+      "typeVersion": 1,
+      "position": [5250, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "commentText": "🔥 Thanks for watching! Don’t forget to like, comment & subscribe — what’s your favorite part? 🔥"
+      },
+      "name": "Post First Comment",
+      "type": "custom.youtube.postComment",
+      "typeVersion": 1,
+      "position": [5500, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "commentText": "={{$node[\"Post First Comment\"].json[\"commentId\"]}}"
+      },
+      "name": "Pin First Comment",
+      "type": "custom.youtube.pinComment",
+      "typeVersion": 1,
+      "position": [5750, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "likeComments": true,
+        "replyTextTemplate": "Thanks for your comment! Stay tuned for more amazing content!"
+      },
+      "name": "Auto-Like & Reply Comments",
+      "type": "custom.youtube.engageComments",
+      "typeVersion": 1,
+      "position": [6000, 1000]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Auto-create YouTube Community Post\nreturn [{\n  json: {\n    postContent: \"🎥 Our latest video is LIVE! Don’t miss it — click the link now! 🚀 #NewVideo #Subscribe\",\n    imageUrl: \"https://yourdomain.com/thumbnail.jpg\"\n  }\n}];"
+      },
+      "name": "Generate Community Post",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [6250, 1000]
+    },
+    {
+      "parameters": {
+        "content": "={{$node[\"Generate Community Post\"].json[\"postContent\"]}}",
+        "image": "={{$node[\"Generate Community Post\"].json[\"imageUrl\"]}}"
+      },
+      "name": "Post to Community Tab",
+      "type": "custom.youtube.communityPost",
+      "typeVersion": 1,
+      "position": [6500, 1000]
+    }
+  ],
+  "connections": {
+    "Schedule YouTube Video": {
+      "main": [
+        [
+          {
+            "node": "Set Monetization Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Monetization Settings": {
+      "main": [
+        [
+          {
+            "node": "Post First Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post First Comment": {
+      "main": [
+        [
+          {
+            "node": "Pin First Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pin First Comment": {
+      "main": [
+        [
+          {
+            "node": "Auto-Like & Reply Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-Like & Reply Comments": {
+      "main": [
+        [
+          {
+            "node": "Generate Community Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Community Post": {
+      "main": [
+        [
+          {
+            "node": "Post to Community Tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}"
+      },
+      "name": "Fetch Video Analytics",
+      "type": "custom.youtube.videoAnalytics",
+      "typeVersion": 1,
+      "position": [6750, 1000]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Smart SEO Performance Detection\nconst views = $node[\"Fetch Video Analytics\"].json[\"views\"];\nconst likes = $node[\"Fetch Video Analytics\"].json[\"likes\"];\nlet optimize = false;\nif (views < 500 && likes / views < 0.03) {\n  optimize = true;\n}\nreturn [{ json: { optimizeRecommended: optimize } }];"
+      },
+      "name": "SEO Performance Detector",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [7000, 1000]
+    },
+    {
+      "parameters": {
+        "prompt": "Suggest a better YouTube video title and description to boost views. Current title: {{$node[\"Upload to YouTube\"].json[\"title\"]}}. Current description: {{$node[\"Upload to YouTube\"].json[\"description\"]}}",
+        "temperature": 0.7,
+        "maxTokens": 600
+      },
+      "name": "GPT-4 SEO Optimizer",
+      "type": "custom.openai.gpt4",
+      "typeVersion": 1,
+      "position": [7250, 1000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload to YouTube\"].json[\"videoId\"]}}",
+        "newTitle": "={{$node[\"GPT-4 SEO Optimizer\"].json[\"title\"]}}",
+        "newDescription": "={{$node[\"GPT-4 SEO Optimizer\"].json[\"description\"]}}"
+      },
+      "name": "Update Video Metadata",
+      "type": "custom.youtube.updateVideo",
+      "typeVersion": 1,
+      "position": [7500, 1000]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Final Confirmation + Clean Log\nreturn [{ json: { status: '✅ Video Published & Fully Optimized' } }];"
+      },
+      "name": "Final Success Log",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [7750, 1000]
+    }
+  ],
+  "connections": {
+    "Post to Community Tab": {
+      "main": [
+        [
+          {
+            "node": "Fetch Video Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Video Analytics": {
+      "main": [
+        [
+          {
+            "node": "SEO Performance Detector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SEO Performance Detector": {
+      "main": [
+        [
+          {
+            "node": "GPT-4 SEO Optimizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4 SEO Optimizer": {
+      "main": [
+        [
+          {
+            "node": "Update Video Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Video Metadata": {
+      "main": [
+        [
+          {
+            "node": "Final Success Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "region": "US",
+        "category": "YouTube",
+        "timeFrame": "now 7-d"
+      },
+      "name": "Google Trends Fetcher",
+      "type": "custom.google.trends",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract top trending keywords\nconst trends = $node[\"Google Trends Fetcher\"].json[\"trendingSearches\"];\nconst keywords = trends.map(t => t.title.query).slice(0, 10);\nreturn [{ json: { trendingKeywords: keywords } }];"
+      },
+      "name": "Extract Top Keywords",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "competitorChannelId": "UCXXXXXXXXXXXXXX",
+        "fetchType": "latestVideos",
+        "numberOfVideos": 5
+      },
+      "name": "Competitor Videos Fetcher",
+      "type": "custom.youtube.competitorSpy",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract competitor video titles, tags, descriptions\nconst videos = $node[\"Competitor Videos Fetcher\"].json[\"videos\"];\nlet data = videos.map(video => {\n  return {\n    title: video.title,\n    tags: video.tags,\n    description: video.description\n  };\n});\nreturn [{ json: { competitorData: data } }];"
+      },
+      "name": "Parse Competitor Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [350, 300]
+    }
+  ],
+  "connections": {
+    "Google Trends Fetcher": {
+      "main": [
+        [
+          {
+            "node": "Extract Top Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Competitor Videos Fetcher": {
+      "main": [
+        [
+          {
+            "node": "Parse Competitor Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "titleVariants": [
+          "Top 10 {keyword} You Must Know",
+          "{keyword} Secrets No One Tells You",
+          "How to Master {keyword} in 5 Minutes",
+          "The Ultimate Guide to {keyword}",
+          "Why {keyword} is Blowing Up Right Now"
+        ]
+      },
+      "name": "Title Variants Generator",
+      "type": "custom.titleVariantsGenerator",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Replace {keyword} with trending keyword\nconst keyword = $node[\"Extract Top Keywords\"].json[\"trendingKeywords\"][0];\nlet titles = $node[\"Title Variants Generator\"].parameters.titleVariants;\nlet generated = titles.map(t => t.replace('{keyword}', keyword));\nreturn [{ json: { titles: generated } }];"
+      },
+      "name": "Insert Trending Keyword",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID",
+        "comments": [
+          "🔥 Awesome video! Thanks for sharing!",
+          "Very informative and engaging — loved it!",
+          "This is exactly what I was looking for, thank you!",
+          "Great insights — looking forward to more uploads!",
+          "Wow! Subscribed immediately!"
+        ]
+      },
+      "name": "Auto Comment Responder",
+      "type": "custom.youtube.autoComment",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Randomly select a comment\nconst comments = $node[\"Auto Comment Responder\"].parameters.comments;\nconst randomIndex = Math.floor(Math.random() * comments.length);\nreturn [{ json: { commentText: comments[randomIndex] } }];"
+      },
+      "name": "Pick Random Comment",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [350, 300]
+    },
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID",
+        "commentText": "={{$node[\"Pick Random Comment\"].json[\"commentText\"]}}",
+        "pin": true
+      },
+      "name": "Post & Pin Comment",
+      "type": "custom.youtube.postComment",
+      "typeVersion": 1,
+      "position": [600, 300]
+    }
+  ],
+  "connections": {
+    "Title Variants Generator": {
+      "main": [
+        [
+          {
+            "node": "Insert Trending Keyword",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto Comment Responder": {
+      "main": [
+        [
+          {
+            "node": "Pick Random Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Random Comment": {
+      "main": [
+        [
+          {
+            "node": "Post & Pin Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "// Simple Retention Predictor based on video length\nconst length = $node[\"Video Metadata\"].json[\"duration\"];\nlet retention;\nif (length < 300) retention = 'Short — Expect ~70-90% retention';\nelse if (length < 900) retention = 'Medium — Expect ~50-70% retention';\nelse retention = 'Long — Expect ~30-50% retention';\nreturn [{ json: { retentionPrediction: retention } }];"
+      },
+      "name": "Predict Retention",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "executionMode": "regular",
+        "timezone": "America/New_York",
+        "dateTime": "={{$node[\"Suggested Upload Time\"].json[\"uploadTime\"]}}"
+      },
+      "name": "Auto Scheduler",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "playlistTitle": "={{$node[\"Extract Top Keywords\"].json[\"trendingKeywords\"][0]}} Essentials",
+        "description": "Auto-generated playlist around trending keyword topic.",
+        "privacyStatus": "public"
+      },
+      "name": "Create Playlist",
+      "type": "custom.youtube.createPlaylist",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "playlistId": "={{$node[\"Create Playlist\"].json[\"playlistId\"]}}",
+        "videoId": "AUTO_GENERATED_VIDEO_ID"
+      },
+      "name": "Add Video to Playlist",
+      "type": "custom.youtube.addToPlaylist",
+      "typeVersion": 1,
+      "position": [350, 300]
+    }
+  ],
+  "connections": {
+    "Create Playlist": {
+      "main": [
+        [
+          {
+            "node": "Add Video to Playlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://source.unsplash.com/1280x720/?{{ $node[\"Extract Top Keywords\"].json[\"trendingKeywords\"][0] }}",
+        "responseFormat": "file",
+        "options": {}
+      },
+      "name": "Auto Thumbnail Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "text": "={{$node[\"Generate Captions\"].json[\"captions\"]}}",
+        "language": "en",
+        "format": "srt"
+      },
+      "name": "Embed Captions",
+      "type": "custom.video.embedCaptions",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Generate smart hashtags from keywords\nconst keywords = $node[\"Extract Top Keywords\"].json[\"trendingKeywords\"];\nconst hashtags = keywords.slice(0, 10).map(k => '#' + k.replace(/\\s+/g, '').toLowerCase());\nreturn [{ json: { smartHashtags: hashtags.join(' ') } }];"
+      },
+      "name": "Smart Hashtag Optimizer",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID",
+        "thumbnailFilePath": "={{$node[\"Auto Thumbnail Generator\"].binary.data.fileName}}"
+      },
+      "name": "Upload Thumbnail",
+      "type": "custom.youtube.uploadThumbnail",
+      "typeVersion": 1,
+      "position": [100, 300]
+    }
+  ],
+  "connections": {
+    "Auto Thumbnail Generator": {
+      "main": [
+        [
+          {
+            "node": "Upload Thumbnail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "// Generate dynamic CTA text based on video topic\nconst topic = $node[\"Extract Top Keywords\"].json[\"trendingKeywords\"][0];\nreturn [{\n  json: {\n    ctaText: `Enjoyed this video about ${topic}? Don’t forget to like, comment, and subscribe for more!`\n  }\n}];"
+      },
+      "name": "Smart CTA Generator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "resource": "post",
+        "operation": "create",
+        "channelId": "YOUR_YOUTUBE_CHANNEL_ID",
+        "text": "={{$node[\"Smart CTA Generator\"].json[\"ctaText\"]}}",
+        "options": {}
+      },
+      "name": "Community Post Auto-Publisher",
+      "type": "custom.youtubeCommunity.createPost",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID"
+      },
+      "name": "YouTube Analytics Fetcher",
+      "type": "custom.youtube.fetchAnalytics",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "sheetId": "YOUR_GOOGLE_SHEET_ID",
+        "range": "Analytics!A1",
+        "valueInputMode": "RAW",
+        "values": "={{ [$node[\"YouTube Analytics Fetcher\"].json] }}"
+      },
+      "name": "Store Analytics",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 2,
+      "position": [850, 100]
+    }
+  ],
+  "connections": {
+    "Smart CTA Generator": {
+      "main": [
+        [
+          {
+            "node": "Community Post Auto-Publisher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube Analytics Fetcher": {
+      "main": [
+        [
+          {
+            "node": "Store Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID",
+        "text": "Thanks for watching! What did you think of today’s video? Comment below!",
+        "pin": true
+      },
+      "name": "Auto-Pin Comment",
+      "type": "custom.youtubeComment.create",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID",
+        "fetch": "recent",
+        "limit": 5
+      },
+      "name": "Fetch Recent Comments",
+      "type": "custom.youtubeComment.fetch",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Generate simple replies to comments\nreturn items.map(item => ({\n  json: {\n    commentId: item.json.commentId,\n    replyText: `Thanks for your comment! Glad you enjoyed the video.`\n  }\n}));"
+      },
+      "name": "Generate Replies",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "commentId": "={{$json[\"commentId\"]}}",
+        "text": "={{$json[\"replyText\"]}}"
+      },
+      "name": "Auto-Reply Comment",
+      "type": "custom.youtubeComment.reply",
+      "typeVersion": 1,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID"
+      },
+      "name": "Fetch Engagement Stats",
+      "type": "custom.youtube.fetchEngagement",
+      "typeVersion": 1,
+      "position": [1100, 100]
+    },
+    {
+      "parameters": {
+        "sheetId": "YOUR_GOOGLE_SHEET_ID",
+        "range": "EngagementStats!A1",
+        "valueInputMode": "RAW",
+        "values": "={{ [$node[\"Fetch Engagement Stats\"].json] }}"
+      },
+      "name": "Store Engagement Stats",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 2,
+      "position": [1350, 100]
+    }
+  ],
+  "connections": {
+    "Auto-Pin Comment": {
+      "main": [
+        [
+          {
+            "node": "Fetch Recent Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Recent Comments": {
+      "main": [
+        [
+          {
+            "node": "Generate Replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Replies": {
+      "main": [
+        [
+          {
+            "node": "Auto-Reply Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Engagement Stats": {
+      "main": [
+        [
+          {
+            "node": "Store Engagement Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoTextInput": "={{$node[\"Video Script Generator\"].json[\"script\"]}}",
+        "aiModel": "gpt-4-turbo",
+        "prompt": "Generate YouTube chapters timestamps and titles for this script. Return in JSON array format with {\"time\": \"00:00\", \"title\": \"Chapter Title\"}"
+      },
+      "name": "Auto-Chapters Generator",
+      "type": "custom.openai.chapterGenerator",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID",
+        "chapters": "={{$json[\"chapters\"]}}"
+      },
+      "name": "Apply Chapters to Video",
+      "type": "custom.youtube.addChapters",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID",
+        "language": "en",
+        "aiModel": "gpt-4-turbo",
+        "prompt": "Clean and optimize captions text for clarity, grammar, and readability. Return clean text."
+      },
+      "name": "AI Captions Enhancer",
+      "type": "custom.openai.captionsEnhancer",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID",
+        "captions": "={{$json[\"enhancedCaptions\"]}}"
+      },
+      "name": "Upload Enhanced Captions",
+      "type": "custom.youtube.uploadCaptions",
+      "typeVersion": 1,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "inputImageUrl": "={{$node[\"Auto Thumbnail Selector\"].json[\"thumbnailUrl\"]}}",
+        "enhancementType": "sharpness+brightness+contrast",
+        "addTextOverlay": "Subscribe Now!",
+        "fontStyle": "bold",
+        "position": "bottom",
+        "color": "red"
+      },
+      "name": "AI Thumbnail Enhancer",
+      "type": "custom.image.enhancer",
+      "typeVersion": 1,
+      "position": [1100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "AUTO_GENERATED_VIDEO_ID",
+        "thumbnailUrl": "={{$json[\"enhancedThumbnail\"]}}"
+      },
+      "name": "Upload Enhanced Thumbnail",
+      "type": "custom.youtube.uploadThumbnail",
+      "typeVersion": 1,
+      "position": [1350, 100]
+    }
+  ],
+  "connections": {
+    "Auto-Chapters Generator": {
+      "main": [
+        [
+          {
+            "node": "Apply Chapters to Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Captions Enhancer": {
+      "main": [
+        [
+          {
+            "node": "Upload Enhanced Captions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Thumbnail Enhancer": {
+      "main": [
+        [
+          {
+            "node": "Upload Enhanced Thumbnail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "longFormScript": "={{$node[\"Video Script Generator\"].json[\"script\"]}}",
+        "aiModel": "gpt-4-turbo",
+        "prompt": "Extract 3 highly engaging short video ideas (under 60 seconds each) from this script. Return in JSON array format with {\"title\": \"Short Title\", \"script\": \"Short Script\"}"
+      },
+      "name": "Smart Shorts Generator",
+      "type": "custom.openai.shortGenerator",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "shortScript": "={{$json[\"shorts\"][0][\"script\"]}}",
+        "voiceProvider": "ElevenLabs",
+        "voiceStyle": "Adam (Friendly)",
+        "outputFormat": "mp3"
+      },
+      "name": "Generate Voiceover for Shorts",
+      "type": "custom.elevenlabs.voiceover",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "scriptText": "={{$json[\"shorts\"][0][\"script\"]}}",
+        "aiModel": "gpt-4-turbo",
+        "prompt": "Generate SEO optimized YouTube Shorts description and 10 trending hashtags for this short script. Return as JSON with {\"description\": \"...\", \"hashtags\": [\"#tag1\", \"#tag2\"]}"
+      },
+      "name": "Shorts SEO Writer",
+      "type": "custom.openai.shortsSEO",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "videoFilePath": "={{$node[\"Assemble Short Video\"].json[\"videoPath\"]}}",
+        "title": "={{$json[\"shorts\"][0][\"title\"]}}",
+        "description": "={{$node[\"Shorts SEO Writer\"].json[\"description\"]}}",
+        "tags": "={{$node[\"Shorts SEO Writer\"].json[\"hashtags\"]}}",
+        "privacyStatus": "public",
+        "category": "22"
+      },
+      "name": "Upload YouTube Shorts",
+      "type": "custom.youtube.uploadShorts",
+      "typeVersion": 1,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload YouTube Shorts\"].json[\"videoId\"]}}",
+        "publishTime": "={{$node[\"Smart Scheduler\"].json[\"nextOptimalTime\"]}}"
+      },
+      "name": "Auto-Scheduler",
+      "type": "custom.youtube.scheduleShort",
+      "typeVersion": 1,
+      "position": [1100, 100]
+    },
+    {
+      "parameters": {
+        "channelId": "YOUR_CHANNEL_ID",
+        "strategy": "high_engagement_time",
+        "fetchAnalytics": true
+      },
+      "name": "Smart Scheduler",
+      "type": "custom.youtube.smartScheduler",
+      "typeVersion": 1,
+      "position": [600, 350]
+    }
+  ],
+  "connections": {
+    "Smart Shorts Generator": {
+      "main": [
+        [
+          {
+            "node": "Generate Voiceover for Shorts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Shorts SEO Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shorts SEO Writer": {
+      "main": [
+        [
+          {
+            "node": "Upload YouTube Shorts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Scheduler": {
+      "main": [
+        [
+          {
+            "node": "Auto-Scheduler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "scriptText": "={{$node[\"Video Script Generator\"].json[\"script\"]}}",
+        "aiModel": "gpt-4-turbo",
+        "prompt": "From this script, suggest 3 relevant affiliate products with titles and URLs. Return JSON array {\"product\": \"...\", \"url\": \"...\"}"
+      },
+      "name": "Affiliate Link Generator",
+      "type": "custom.openai.affiliateLinks",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload YouTube Shorts\"].json[\"videoId\"]}}",
+        "commentText": "Check out these recommended products: {{ $json[\"products\"] | map(p => p.product + ': ' + p.url).join(', ') }}",
+        "pinComment": true
+      },
+      "name": "Post & Pin Affiliate Links",
+      "type": "custom.youtube.commentPoster",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "channelId": "YOUR_CHANNEL_ID",
+        "merchProvider": "Teespring",
+        "fetchTopProducts": true
+      },
+      "name": "Fetch Merch Products",
+      "type": "custom.merch.fetchProducts",
+      "typeVersion": 1,
+      "position": [100, 350]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload YouTube Shorts\"].json[\"videoId\"]}}",
+        "commentText": "Grab exclusive merch here: {{ $json[\"products\"] | map(p => p.title + ': ' + p.url).join(', ') }}",
+        "pinComment": false
+      },
+      "name": "Post Merch Link",
+      "type": "custom.youtube.commentPoster",
+      "typeVersion": 1,
+      "position": [350, 350]
+    }
+  ],
+  "connections": {
+    "Affiliate Link Generator": {
+      "main": [
+        [
+          {
+            "node": "Post & Pin Affiliate Links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Merch Products": {
+      "main": [
+        [
+          {
+            "node": "Post Merch Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload YouTube Shorts\"].json[\"videoId\"]}}",
+        "fetchRecentComments": true,
+        "maxResults": 20
+      },
+      "name": "Fetch Recent Comments",
+      "type": "custom.youtube.fetchComments",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "commentIds": "={{$node[\"Fetch Recent Comments\"].json[\"comments\"] | map(c => c.id).join(',')}}",
+        "action": "like"
+      },
+      "name": "Auto-Like Comments",
+      "type": "custom.youtube.likeComments",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "comments": "={{$node[\"Fetch Recent Comments\"].json[\"comments\"]}}",
+        "aiModel": "gpt-4-turbo",
+        "prompt": "Reply politely to positive comments, and thank users for engagement. Return JSON array {\"commentId\": \"...\", \"reply\": \"...\"}"
+      },
+      "name": "AI Smart Replier",
+      "type": "custom.openai.replyGenerator",
+      "typeVersion": 1,
+      "position": [100, 350]
+    },
+    {
+      "parameters": {
+        "replies": "={{$node[\"AI Smart Replier\"].json[\"replies\"]}}"
+      },
+      "name": "Post Replies",
+      "type": "custom.youtube.postReplies",
+      "typeVersion": 1,
+      "position": [350, 350]
+    },
+    {
+      "parameters": {
+        "channelId": "YOUR_CHANNEL_ID",
+        "postText": "Thank you all for the amazing support on our latest video! Don't forget to subscribe and check out more content.",
+        "addImage": false
+      },
+      "name": "Community Tab Auto-Post",
+      "type": "custom.youtube.communityPoster",
+      "typeVersion": 1,
+      "position": [100, 600]
+    }
+  ],
+  "connections": {
+    "Fetch Recent Comments": {
+      "main": [
+        [
+          {
+            "node": "Auto-Like Comments",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Smart Replier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Smart Replier": {
+      "main": [
+        [
+          {
+            "node": "Post Replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoFile": "={{$node[\"Main Video Processor\"].json[\"videoFile\"]}}",
+        "splitDuration": 60
+      },
+      "name": "Auto Shorts Splitter",
+      "type": "custom.video.splitter",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "clips": "={{$node[\"Auto Shorts Splitter\"].json[\"clips\"]}}",
+        "aiModel": "gpt-4-turbo",
+        "prompt": "Generate catchy SEO-optimized YouTube Shorts titles, descriptions and hashtags for each clip. Return JSON array with {\"title\": \"\", \"description\": \"\", \"hashtags\": \"\"}"
+      },
+      "name": "AI Shorts SEO Optimizer",
+      "type": "custom.openai.shortsSeoGenerator",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "clips": "={{$node[\"Auto Shorts Splitter\"].json[\"clips\"]}}",
+        "metadata": "={{$node[\"AI Shorts SEO Optimizer\"].json}}",
+        "privacyStatus": "public",
+        "scheduleUpload": true,
+        "intervalHours": 2
+      },
+      "name": "Auto Shorts Uploader",
+      "type": "custom.youtube.shortsUploader",
+      "typeVersion": 1,
+      "position": [600, 100]
+    }
+  ],
+  "connections": {
+    "Auto Shorts Splitter": {
+      "main": [
+        [
+          {
+            "node": "AI Shorts SEO Optimizer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Auto Shorts Uploader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Shorts SEO Optimizer": {
+      "main": [
+        [
+          {
+            "node": "Auto Shorts Uploader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoContent": "={{$node[\"Main Video Processor\"].json[\"videoFile\"]}}",
+        "prompt": "Generate a vibrant, clickbait-style YouTube thumbnail image with bold text overlay and relevant imagery",
+        "style": "YouTube_Thumbnail",
+        "imageResolution": "1280x720"
+      },
+      "name": "AI Thumbnail Generator",
+      "type": "custom.openai.imageGenerator",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "title": "={{$node[\"AI Shorts SEO Optimizer\"].json[\"title\"]}}",
+        "bestTimes": "YouTubeInsights",
+        "preferredDays": ["Monday", "Wednesday", "Friday"],
+        "timeSlots": ["12:00 PM", "6:00 PM"]
+      },
+      "name": "Smart Upload Scheduler",
+      "type": "custom.youtube.smartScheduler",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "videoFile": "={{$node[\"Main Video Processor\"].json[\"videoFile\"]}}",
+        "thumbnail": "={{$node[\"AI Thumbnail Generator\"].json[\"imageUrl\"]}}",
+        "metadata": "={{$node[\"AI Shorts SEO Optimizer\"].json}}",
+        "scheduledTime": "={{$node[\"Smart Upload Scheduler\"].json[\"scheduledTime\"]}}",
+        "privacyStatus": "public"
+      },
+      "name": "Pro Video Uploader",
+      "type": "custom.youtube.videoUploader",
+      "typeVersion": 1,
+      "position": [600, 100]
+    }
+  ],
+  "connections": {
+    "AI Thumbnail Generator": {
+      "main": [
+        [
+          {
+            "node": "Pro Video Uploader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Upload Scheduler": {
+      "main": [
+        [
+          {
+            "node": "Pro Video Uploader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "channelId": "={{$env[\"YOUTUBE_CHANNEL_ID\"]}}",
+        "message": "Hey everyone! Thanks for watching. Let me know your thoughts below — I reply to every comment!",
+        "pinComment": true
+      },
+      "name": "Auto First Pinned Comment",
+      "type": "custom.youtube.commentPoster",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "channelId": "={{$env[\"YOUTUBE_CHANNEL_ID\"]}}",
+        "fetchLatestComments": true
+      },
+      "name": "Fetch Latest Comments",
+      "type": "custom.youtube.commentFetcher",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "commentText": "={{$node[\"Fetch Latest Comments\"].json[\"comment\"]}}",
+        "replyTemplate": [
+          "Thanks a lot for your comment!",
+          "Glad you found it useful!",
+          "I appreciate you watching — stay tuned!"
+        ]
+      },
+      "name": "AI Auto-Reply Generator",
+      "type": "custom.openai.replyGenerator",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "commentId": "={{$node[\"Fetch Latest Comments\"].json[\"commentId\"]}}",
+        "replyText": "={{$node[\"AI Auto-Reply Generator\"].json[\"reply\"]}}"
+      },
+      "name": "Auto Reply Poster",
+      "type": "custom.youtube.commentReplier",
+      "typeVersion": 1,
+      "position": [850, 100]
+    }
+  ],
+  "connections": {
+    "Fetch Latest Comments": {
+      "main": [
+        [
+          {
+            "node": "AI Auto-Reply Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Auto Reply Poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Auto-Reply Generator": {
+      "main": [
+        [
+          {
+            "node": "Auto Reply Poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "topic": "={{$node[\"AI Topic Generator\"].json[\"topic\"]}}",
+        "scriptStyle": "Shorts",
+        "maxDurationSeconds": 59
+      },
+      "name": "AI Shorts Script Generator",
+      "type": "custom.openai.shortsScriptWriter",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "scriptText": "={{$node[\"AI Shorts Script Generator\"].json[\"script\"]}}",
+        "voice": "ElevenLabs - Energetic Male",
+        "language": "en-US"
+      },
+      "name": "ElevenLabs Shorts Voiceover",
+      "type": "custom.elevenlabs.tts",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "scriptText": "={{$node[\"AI Shorts Script Generator\"].json[\"script\"]}}",
+        "mediaType": "motion-images",
+        "soundtrack": "upbeat_background_music"
+      },
+      "name": "AI Shorts Video Generator",
+      "type": "custom.videomaker.shortVideoBuilder",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "titleSeed": "={{$node[\"AI Shorts Script Generator\"].json[\"topic\"]}}",
+        "videoType": "Shorts"
+      },
+      "name": "AI Shorts Title Generator",
+      "type": "custom.openai.titleGenerator",
+      "typeVersion": 1,
+      "position": [100, 350]
+    },
+    {
+      "parameters": {
+        "scriptKeywords": "={{$node[\"AI Shorts Script Generator\"].json[\"keywords\"]}}",
+        "videoType": "Shorts"
+      },
+      "name": "AI Shorts SEO Hashtag Writer",
+      "type": "custom.openai.hashtagWriter",
+      "typeVersion": 1,
+      "position": [350, 350]
+    }
+  ],
+  "connections": {
+    "AI Shorts Script Generator": {
+      "main": [
+        [
+          {
+            "node": "ElevenLabs Shorts Voiceover",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Shorts Video Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Shorts Title Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Shorts SEO Hashtag Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "channelID": "={{$env[\"YOUTUBE_CHANNEL_ID\"]}}"
+      },
+      "name": "YouTube Monetization Status Checker",
+      "type": "custom.youtube.monetizationChecker",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoID": "={{$node[\"Upload Final Video\"].json[\"videoId\"]}}",
+        "monetizationType": "ads, memberships, supers"
+      },
+      "name": "Enable Monetization Features",
+      "type": "custom.youtube.enableMonetization",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "audienceInsights": "={{$node[\"YouTube Analytics\"].json}}",
+        "actionType": "Smart CTA",
+        "ctaText": "If you enjoyed this, don’t forget to Subscribe!"
+      },
+      "name": "Smart Auto-Engagement Inserter",
+      "type": "custom.ai.smartEngage",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "videoID": "={{$node[\"Upload Final Video\"].json[\"videoId\"]}}",
+        "commentText": "Thanks for watching! Let me know your thoughts below!",
+        "pinComment": true
+      },
+      "name": "Auto First + Pinned Comment",
+      "type": "custom.youtube.commentPoster",
+      "typeVersion": 1,
+      "position": [100, 350]
+    },
+    {
+      "parameters": {
+        "hashtags": "#shorts #trending #youtubeshorts",
+        "commentType": "SEO-Boost Comment"
+      },
+      "name": "SEO Comment Writer",
+      "type": "custom.openai.seoCommentWriter",
+      "typeVersion": 1,
+      "position": [350, 350]
+    }
+  ],
+  "connections": {
+    "YouTube Monetization Status Checker": {
+      "main": [
+        [
+          {
+            "node": "Enable Monetization Features",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enable Monetization Features": {
+      "main": [
+        [
+          {
+            "node": "Smart Auto-Engagement Inserter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Auto First + Pinned Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto First + Pinned Comment": {
+      "main": [
+        [
+          {
+            "node": "SEO Comment Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoID": "={{$node[\"Upload Final Video\"].json[\"videoId\"]}}"
+      },
+      "name": "Fetch Video Analytics",
+      "type": "custom.youtube.analyticsFetcher",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "analyticsData": "={{$node[\"Fetch Video Analytics\"].json}}",
+        "insightsType": "AI Optimizer Report"
+      },
+      "name": "AI Content Optimizer",
+      "type": "custom.openai.contentOptimizer",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "performanceData": "={{$node[\"Fetch Video Analytics\"].json}}",
+        "actionType": "Auto-SEO Adjuster",
+        "adjustmentFocus": "Title, Description, Tags"
+      },
+      "name": "AI Auto SEO Adjuster",
+      "type": "custom.openai.autoSEOAdjuster",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "reportType": "Weekly Insights",
+        "email": "={{$env[\"ADMIN_EMAIL\"]}}"
+      },
+      "name": "Weekly AI Insights Emailer",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [350, 350]
+    }
+  ],
+  "connections": {
+    "Fetch Video Analytics": {
+      "main": [
+        [
+          {
+            "node": "AI Content Optimizer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Auto SEO Adjuster",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Weekly AI Insights Emailer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "channelId": "={{$env[\"YOUTUBE_CHANNEL_ID\"]}}",
+        "pollInterval": 60
+      },
+      "name": "Watch New Comments",
+      "type": "custom.youtube.commentWatcher",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "comments": "={{$node[\"Watch New Comments\"].json[\"comments\"]}}",
+        "aiModel": "gpt-4-turbo",
+        "prompt": "For each of these YouTube comments, generate a friendly, engaging reply that adds value and encourages further discussion. Return JSON array of {\"commentId\": \"...\", \"replyText\": \"...\"}."
+      },
+      "name": "AI Reply Generator",
+      "type": "custom.openai.replyGenerator",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "replyData": "={{$node[\"AI Reply Generator\"].json[\"replies\"]}}"
+      },
+      "name": "Post Comment Replies",
+      "type": "custom.youtube.postReplies",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload Final Video\"].json[\"videoId\"]}}",
+        "question": "What topic should we cover next? Vote below!",
+        "options": ["AI Tools", "Automation Tips", "Monetization Hacks", "Shorts Strategies"],
+        "scheduleTime": "={{$now.plus({ hours: 2 }).toISOString()}}"
+      },
+      "name": "Generate Community Poll",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "contentType": "poll",
+        "content": "={{$node[\"Generate Community Poll\"].json[\"question\"]}}",
+        "options": "={{$node[\"Generate Community Poll\"].json[\"options\"]}}",
+        "scheduleTime": "={{$node[\"Generate Community Poll\"].json[\"scheduleTime\"]}}"
+      },
+      "name": "Post Community Poll",
+      "type": "custom.youtube.communityPost",
+      "typeVersion": 1,
+      "position": [350, 300]
+    }
+  ],
+  "connections": {
+    "Watch New Comments": {
+      "main": [
+        [
+          {
+            "node": "AI Reply Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Reply Generator": {
+      "main": [
+        [
+          {
+            "node": "Post Comment Replies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "channelId": "={{$env[\"YOUTUBE_CHANNEL_ID\"]}}",
+        "timePeriod": "30d",
+        "metrics": ["views", "engagement", "likes", "comments", "subscriptions"]
+      },
+      "name": "Fetch Channel Analytics",
+      "type": "custom.youtube.analyticsFetcher",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "analyticsData": "={{$node[\"Fetch Channel Analytics\"].json}}",
+        "dashboardType": "AI Optimized Dashboard"
+      },
+      "name": "AI Dashboard Optimizer",
+      "type": "custom.openai.dashboardOptimizer",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "alertType": "threshold",
+        "thresholds": {
+          "views": 10000,
+          "engagement": 500,
+          "likes": 300,
+          "comments": 100
+        },
+        "alertMessage": "AI Alert: Your video has exceeded the engagement threshold!"
+      },
+      "name": "Engagement Alert System",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "email": "={{$env[\"ADMIN_EMAIL\"]}}",
+        "subject": "AI Channel Analytics Report",
+        "message": "={{$node[\"AI Dashboard Optimizer\"].json}}"
+      },
+      "name": "Send Analytics Report via Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [850, 100]
+    }
+  ],
+  "connections": {
+    "Fetch Channel Analytics": {
+      "main": [
+        [
+          {
+            "node": "AI Dashboard Optimizer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Engagement Alert System",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Dashboard Optimizer": {
+      "main": [
+        [
+          {
+            "node": "Send Analytics Report via Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload Final Video\"].json[\"videoId\"]}}",
+        "segments": [
+          { "type": "highlight", "count": 3 },
+          { "type": "tutorial", "count": 2 }
+        ]
+      },
+      "name": "Smart Repurpose Segments",
+      "type": "custom.video.segmenter",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "segments": "={{$node[\"Smart Repurpose Segments\"].json[\"segments\"]}}",
+        "template": "shorts",
+        "overlayCTA": "Subscribe for more tips!"
+      },
+      "name": "Auto-Shorts Builder",
+      "type": "custom.videomaker.autoShorts",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "shorts": "={{$node[\"Auto-Shorts Builder\"].json[\"shorts\"]}}",
+        "schedule": true,
+        "intervalMinutes": 120
+      },
+      "name": "Upload & Schedule Shorts",
+      "type": "custom.youtube.shortsUploader",
+      "typeVersion": 1,
+      "position": [600, 100]
+    }
+  ],
+  "connections": {
+    "Smart Repurpose Segments": {
+      "main": [
+        [
+          {
+            "node": "Auto-Shorts Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-Shorts Builder": {
+      "main": [
+        [
+          {
+            "node": "Upload & Schedule Shorts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload Final Video\"].json[\"videoId\"]}}",
+        "fetchMetrics": ["affiliateClicks", "conversionRate", "revenue"]
+      },
+      "name": "Fetch Affiliate Metrics",
+      "type": "custom.affiliate.fetchMetrics",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "affiliateProducts": "={{$node[\"Affiliate Link Generator\"].json[\"products\"]}}",
+        "metrics": "={{$node[\"Fetch Affiliate Metrics\"].json}}",
+        "thresholds": {
+          "clicks": 100,
+          "conversionRate": 0.05
+        }
+      },
+      "name": "Affiliate Performance Analyzer",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "alerts": "Affiliate product {{product}} has {{clicks}} clicks and {{conversionRate}} conversion rate.",
+        "channel": "email",
+        "recipients": ["{{ $env.ADMIN_EMAIL }}"]
+      },
+      "name": "Send Affiliate Alerts",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Upload Final Video\"].json[\"videoId\"]}}",
+        "descriptionInsert": "Top affiliate product: {{ $node[\"Affiliate Performance Analyzer\"].json[\"topProduct\"] }} – get it here: {{ $node[\"Affiliate Performance Analyzer\"].json[\"topUrl\"] }}"
+      },
+      "name": "Update Description with Top Affiliate",
+      "type": "custom.youtube.updateVideo",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "sheetId": "YOUR_GOOGLE_SHEET_ID",
+        "range": "AffiliateReport!A1:D1",
+        "valueInputMode": "RAW",
+        "values": "=[[ $node[\"Fetch Affiliate Metrics\"].json.affiliateClicks, $node[\"Fetch Affiliate Metrics\"].json.conversionRate, $node[\"Fetch Affiliate Metrics\"].json.revenue, new Date().toISOString() ]]"
+      },
+      "name": "Log Affiliate Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [350, 300]
+    }
+  ],
+  "connections": {
+    "Fetch Affiliate Metrics": {
+      "main": [
+        [
+          {
+            "node": "Affiliate Performance Analyzer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Affiliate Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Affiliate Performance Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Send Affiliate Alerts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Description with Top Affiliate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "query": "AI tools automation",
+        "filter": "Channel",
+        "minSubscribers": 1000,
+        "maxResults": 10
+      },
+      "name": "Find Potential Partners",
+      "type": "custom.youtube.searchChannels",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "channelId": "={{$node[\"Find Potential Partners\"].json[\"id\"]}}",
+        "metrics": ["subscriberCount", "viewCount", "averageEngagementRate"]
+      },
+      "name": "Fetch Partner Metrics",
+      "type": "custom.youtube.fetchChannelAnalytics",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Score by subs + engagement\nconst m = $node[\"Fetch Partner Metrics\"].json;\nconst score = m.subscriberCount / 1000 * m.averageEngagementRate;\nreturn [{ json: { channelId: m.id, channelName: m.title, score } }];"
+      },
+      "name": "Score & Rank Partners",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "prompt": "Write a personalized collaboration pitch email to {{$json.channelName}} mentioning our channel’s  growth, audience overlap, and a joint AI workflow video idea.",
+        "temperature": 0.7
+      },
+      "name": "Generate Pitch Email",
+      "type": "custom.openai.gpt4",
+      "typeVersion": 1,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "toEmail": "partner@example.com",
+        "subject": "Collab Opportunity: AI Workflow Video",
+        "body": "={{$json.choices[0].text}}"
+      },
+      "name": "Send Pitch via Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [1100, 100]
+    },
+    {
+      "parameters": {
+        "databaseId": "YOUR_NOTION_DATABASE_ID",
+        "properties": {
+          "Channel": "={{$json.channelName}}",
+          "Score": "={{$json.score}}",
+          "Status": "Contacted",
+          "LastEmailDate": "={{$now.toISOString()}}"
+        }
+      },
+      "name": "Log Outreach in Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 1,
+      "position": [1350, 100]
+    },
+    {
+      "parameters": {
+        "triggerProperty": "Status",
+        "value": "={{$json.Status}}",
+        "followUpDays": 7
+      },
+      "name": "Follow-Up Reminder",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1600, 100]
+    },
+    {
+      "parameters": {
+        "filter": {
+          "property": "Status",
+          "value": "Contacted"
+        }
+      },
+      "name": "Fetch Pending Follow-Ups",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "prompt": "Send a friendly follow-up to {{$json.Channel}} checking in on our collab proposal sent on {{$json.LastEmailDate}}.",
+        "temperature": 0.7
+      },
+      "name": "Generate Follow-Up Email",
+      "type": "custom.openai.gpt4",
+      "typeVersion": 1,
+      "position": [350, 300]
+    },
+    {
+      "parameters": {
+        "toEmail": "partner@example.com",
+        "subject": "Quick Follow-Up: Collab Proposal",
+        "body": "={{$json.choices[0].text}}"
+      },
+      "name": "Send Follow-Up via Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "databaseId": "YOUR_NOTION_DATABASE_ID",
+        "pageId": "={{$node[\"Fetch Pending Follow-Ups\"].json[\"id\"]}}",
+        "properties": {
+          "Status": "Followed-Up",
+          "LastFollowUpDate": "={{$now.toISOString()}}"
+        }
+      },
+      "name": "Update Notion Status",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 1,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Find Potential Partners": {
+      "main": [
+        [
+          { "node": "Fetch Partner Metrics", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Fetch Partner Metrics": {
+      "main": [
+        [
+          { "node": "Score & Rank Partners", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Score & Rank Partners": {
+      "main": [
+        [
+          { "node": "Generate Pitch Email", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Generate Pitch Email": {
+      "main": [
+        [
+          { "node": "Send Pitch via Gmail", "type": "main", "index": 0 },
+          { "node": "Log Outreach in Notion", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Outreach in Notion": {
+      "main": [
+        [
+          { "node": "Follow-Up Reminder", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Follow-Up Reminder": {
+      "main": [
+        [
+          { "node": "Fetch Pending Follow-Ups", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Fetch Pending Follow-Ups": {
+      "main": [
+        [
+          { "node": "Generate Follow-Up Email", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Generate Follow-Up Email": {
+      "main": [
+        [
+          { "node": "Send Follow-Up via Gmail", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Send Follow-Up via Gmail": {
+      "main": [
+        [
+          { "node": "Update Notion Status", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "title": "={{$node[\"Generate Video Metadata\"].json[\"title\"]}} Live Stream: AI Automation Deep Dive",
+        "description": "Join our real-time Q&A and see the full workflow in action!",
+        "startTime": "={{$now.plus({ hours: 24 }).toISOString()}}",
+        "privacyStatus": "public",
+        "enableAutoArchive": true
+      },
+      "name": "Schedule Livestream",
+      "type": "custom.youtube.liveScheduler",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "greetingMessage": "Welcome to the AI Automation Live Stream! 🎉",
+        "faqResponses": [
+          { "trigger": "how", "response": "You can find details at ..." },
+          { "trigger": "cost", "response": "Pricing details are in the description." }
+        ]
+      },
+      "name": "Initialize Chat Bot",
+      "type": "custom.youtube.liveChatBot",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "condition": "viewers > 100",
+        "overlayText": "100+ viewers – smash that like button!",
+        "duration": 5000
+      },
+      "name": "Hype Overlay Trigger",
+      "type": "custom.video.overlayTrigger",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "videoUrl": "={{$node[\"Schedule Livestream\"].json[\"archiveUrl\"]}}",
+        "courseTitle": "AI Automation Masterclass",
+        "modules": [
+          "Intro & Hook",
+          "Workflow Setup",
+          "Voice & Motion",
+          "SEO & Upload",
+          "Live Q&A"
+        ],
+        "quizQuestions": [
+          "What’s the first step of the automation?",
+          "Which AI voice did we use?",
+          "Name one SEO tip shared."
+        ]
+      },
+      "name": "Create Webinar Course",
+      "type": "custom.webinar.courseBuilder",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "formUrl": "https://forms.gle/yourFormID",
+        "fields": ["Name", "Email", "Company"],
+        "sendReminders": true,
+        "reminderSchedule": ["24hBefore", "1hBefore"]
+      },
+      "name": "Setup Registration & Reminders",
+      "type": "custom.form.registration",
+      "typeVersion": 1,
+      "position": [350, 300]
+    },
+    {
+      "parameters": {
+        "triggerProperty": "attendeeList",
+        "followUpSequence": [
+          { "delay": "0h", "emailTemplate": "thankYouTemplate" },
+          { "delay": "24h", "emailTemplate": "resourceTemplate" },
+          { "delay": "72h", "emailTemplate": "offerTemplate" }
+        ]
+      },
+      "name": "Post-Webinar Follow-Up",
+      "type": "custom.webinar.emailSequencer",
+      "typeVersion": 1,
+      "position": [600, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Livestream": {
+      "main": [
+        [
+          { "node": "Initialize Chat Bot", "type": "main", "index": 0 },
+          { "node": "Hype Overlay Trigger", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Create Webinar Course": {
+      "main": [
+        [
+          { "node": "Setup Registration & Reminders", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Setup Registration & Reminders": {
+      "main": [
+        [
+          { "node": "Post-Webinar Follow-Up", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "sourceVideoId": "={{$node[\"Video Upload\"].json[\"videoId\"]}}",
+        "languages": ["es", "de", "fr", "zh", "ar"],
+        "autoTranslate": true
+      },
+      "name": "Generate Translations",
+      "type": "custom.video.translationGenerator",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "sourceLanguage": "en",
+        "targetLanguage": "es",
+        "videoId": "={{$node[\"Generate Translations\"].json[\"videoId\"]}}",
+        "captionType": "auto"
+      },
+      "name": "Generate Subtitles Spanish",
+      "type": "custom.video.subtitleGenerator",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "sourceLanguage": "en",
+        "targetLanguage": "de",
+        "videoId": "={{$node[\"Generate Translations\"].json[\"videoId\"]}}",
+        "captionType": "auto"
+      },
+      "name": "Generate Subtitles German",
+      "type": "custom.video.subtitleGenerator",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "sourceLanguage": "en",
+        "targetLanguage": "fr",
+        "videoId": "={{$node[\"Generate Translations\"].json[\"videoId\"]}}",
+        "captionType": "auto"
+      },
+      "name": "Generate Subtitles French",
+      "type": "custom.video.subtitleGenerator",
+      "typeVersion": 1,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Generate Subtitles Spanish\"].json[\"videoId\"]}}",
+        "language": "es",
+        "captionType": "manual",
+        "autoPublish": true
+      },
+      "name": "Publish Spanish Subtitles",
+      "type": "custom.video.subtitlePublisher",
+      "typeVersion": 1,
+      "position": [1100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Generate Subtitles German\"].json[\"videoId\"]}}",
+        "language": "de",
+        "captionType": "manual",
+        "autoPublish": true
+      },
+      "name": "Publish German Subtitles",
+      "type": "custom.video.subtitlePublisher",
+      "typeVersion": 1,
+      "position": [1350, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Generate Subtitles French\"].json[\"videoId\"]}}",
+        "language": "fr",
+        "captionType": "manual",
+        "autoPublish": true
+      },
+      "name": "Publish French Subtitles",
+      "type": "custom.video.subtitlePublisher",
+      "typeVersion": 1,
+      "position": [1600, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Publish Spanish Subtitles\"].json[\"videoId\"]}}",
+        "targetRegions": ["US", "MX", "AR"],
+        "targetPlatforms": ["YouTube"]
+      },
+      "name": "Promote Video Spanish",
+      "type": "custom.video.promoter",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Publish German Subtitles\"].json[\"videoId\"]}}",
+        "targetRegions": ["DE", "AT", "CH"],
+        "targetPlatforms": ["YouTube"]
+      },
+      "name": "Promote Video German",
+      "type": "custom.video.promoter",
+      "typeVersion": 1,
+      "position": [350, 300]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Publish French Subtitles\"].json[\"videoId\"]}}",
+        "targetRegions": ["FR", "BE", "CA"],
+        "targetPlatforms": ["YouTube"]
+      },
+      "name": "Promote Video French",
+      "type": "custom.video.promoter",
+      "typeVersion": 1,
+      "position": [600, 300]
+    }
+  ],
+  "connections": {
+    "Generate Translations": {
+      "main": [
+        [
+          { "node": "Generate Subtitles Spanish", "type": "main", "index": 0 },
+          { "node": "Generate Subtitles German", "type": "main", "index": 0 },
+          { "node": "Generate Subtitles French", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Generate Subtitles Spanish": {
+      "main": [
+        [
+          { "node": "Publish Spanish Subtitles", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Generate Subtitles German": {
+      "main": [
+        [
+          { "node": "Publish German Subtitles", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Generate Subtitles French": {
+      "main": [
+        [
+          { "node": "Publish French Subtitles", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Publish Spanish Subtitles": {
+      "main": [
+        [
+          { "node": "Promote Video Spanish", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Publish German Subtitles": {
+      "main": [
+        [
+          { "node": "Promote Video German", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Publish French Subtitles": {
+      "main": [
+        [
+          { "node": "Promote Video French", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Video Upload\"].json[\"videoId\"]}}",
+        "keywords": ["amazing", "incredible", "must-watch", "viral", "trending"],
+        "randomize": true
+      },
+      "name": "Auto-Pinned Comment Generator",
+      "type": "custom.youtube.commentGenerator",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Auto-Pinned Comment Generator\"].json[\"videoId\"]}}",
+        "commentText": "={{$node[\"Auto-Pinned Comment Generator\"].json[\"comment\"]}}",
+        "pinComment": true,
+        "likeComment": true
+      },
+      "name": "Post Pinned Comment",
+      "type": "custom.youtube.commentPoster",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Video Upload\"].json[\"videoId\"]}}",
+        "fetchTopComments": true,
+        "likeThreshold": 5
+      },
+      "name": "Auto-Like Top Comments",
+      "type": "custom.youtube.commentAutoLiker",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Video Upload\"].json[\"videoId\"]}}",
+        "replyText": "Thanks for watching! Check out our other videos too!",
+        "autoReplyToTopComments": true
+      },
+      "name": "Auto-Reply to Comments",
+      "type": "custom.youtube.commentAutoReplier",
+      "typeVersion": 1,
+      "position": [350, 300]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Video Upload\"].json[\"videoId\"]}}",
+        "chapters": [
+          { "time": "00:00", "title": "Attention-Grabbing Hook" },
+          { "time": "05:00", "title": "Main Content" },
+          { "time": "50:00", "title": "Pro Tips" },
+          { "time": "70:00", "title": "Final CTA + Subscribe" }
+        ]
+      },
+      "name": "Auto-Chapter Generator",
+      "type": "custom.youtube.chapterGenerator",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Video Upload\"].json[\"videoId\"]}}",
+        "cards": [
+          {
+            "time": "10:00",
+            "type": "video",
+            "target": "https://www.youtube.com/watch?v=related_video_1"
+          },
+          {
+            "time": "60:00",
+            "type": "channel",
+            "target": "https://www.youtube.com/c/YourChannel"
+          }
+        ]
+      },
+      "name": "Auto-Cards Generator",
+      "type": "custom.youtube.cardsGenerator",
+      "typeVersion": 1,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Video Upload\"].json[\"videoId\"]}}",
+        "endScreens": [
+          {
+            "type": "subscribe",
+            "time": "118:00"
+          },
+          {
+            "type": "video",
+            "target": "https://www.youtube.com/watch?v=related_video_2",
+            "time": "118:30"
+          }
+        ]
+      },
+      "name": "Auto-End Screen Generator",
+      "type": "custom.youtube.endScreenGenerator",
+      "typeVersion": 1,
+      "position": [1100, 100]
+    }
+  ],
+  "connections": {
+    "Auto-Pinned Comment Generator": {
+      "main": [
+        [
+          { "node": "Post Pinned Comment", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "sourceVideoId": "={{$node[\"Video Upload\"].json[\"videoId\"]}}",
+        "clipDurations": ["00:00-00:58", "05:00-05:59", "10:00-10:59"],
+        "autoDetectBestClips": true
+      },
+      "name": "Shorts Clip Extractor",
+      "type": "custom.youtube.shortsClipExtractor",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "clipId": "={{$node[\"Shorts Clip Extractor\"].json[\"clipId\"]}}",
+        "autoAddCaptions": true,
+        "dynamicCaptions": true,
+        "captionStyle": "trendy",
+        "soundFX": "viral_pack"
+      },
+      "name": "Shorts Enhancer",
+      "type": "custom.youtube.shortsEnhancer",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "clipId": "={{$node[\"Shorts Enhancer\"].json[\"clipId\"]}}",
+        "autoGenerateTitle": true,
+        "keywordsFocus": ["viral", "trending", "funny", "amazing"],
+        "seoOptimized": true
+      },
+      "name": "Shorts SEO Title Generator",
+      "type": "custom.youtube.shortsSEOTitleGen",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "clipId": "={{$node[\"Shorts SEO Title Generator\"].json[\"clipId\"]}}",
+        "hashtags": ["#shorts", "#trending", "#viral", "#foryou"],
+        "autoGenerateDescription": true
+      },
+      "name": "Shorts Description + Hashtag Writer",
+      "type": "custom.youtube.shortsDescGen",
+      "typeVersion": 1,
+      "position": [850, 100]
+    },
+    {
+      "parameters": {
+        "clipId": "={{$node[\"Shorts Description + Hashtag Writer\"].json[\"clipId\"]}}",
+        "uploadSchedule": "autoBestTime",
+        "privacyStatus": "public",
+        "category": "Entertainment"
+      },
+      "name": "Shorts Uploader + Scheduler",
+      "type": "custom.youtube.shortsUploader",
+      "typeVersion": 1,
+      "position": [1100, 100]
+    }
+  ],
+  "connections": {
+    "Shorts Clip Extractor": {
+      "main": [
+        [{ "node": "Shorts Enhancer", "type": "main", "index": 0 }]
+      ]
+    },
+    "Shorts Enhancer": {
+      "main": [
+        [{ "node": "Shorts SEO Title Generator", "type": "main", "index": 0 }]
+      ]
+    },
+    "Shorts SEO Title Generator": {
+      "main": [
+        [{ "node": "Shorts Description + Hashtag Writer", "type": "main", "index": 0 }]
+      ]
+    },
+    "Shorts Description + Hashtag Writer": {
+      "main": [
+        [{ "node": "Shorts Uploader + Scheduler", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"Shorts Uploader + Scheduler\"].json[\"videoId\"]}}",
+        "enableMonetization": true,
+        "adFormats": ["skippable", "nonSkippable", "overlay", "sponsoredCards"],
+        "regionRestrictions": {
+          "allowed": ["US", "CA", "GB", "AU"],
+          "blocked": []
+        }
+      },
+      "name": "YouTube Monetization Enabler",
+      "type": "custom.youtube.monetizationEnabler",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Monetization Enabler\"].json[\"videoId\"]}}",
+        "enableAffiliateLinks": true,
+        "affiliatePrograms": ["Amazon", "ClickBank"],
+        "autoInsertLinks": true
+      },
+      "name": "Affiliate Links Auto-Adder",
+      "type": "custom.youtube.affiliateLinkAdder",
+      "typeVersion": 1,
+      "position": [350, 100]
+    },
+    {
+      "parameters": {
+        "channelId": "={{$node[\"YouTube Monetization Enabler\"].json[\"channelId\"]}}",
+        "fetchFrequency": "daily",
+        "metrics": ["views", "watchTime", "revenue", "engagement"],
+        "generateAutoReport": true
+      },
+      "name": "YouTube Analytics Fetcher",
+      "type": "custom.youtube.analyticsFetcher",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "reportData": "={{$node[\"YouTube Analytics Fetcher\"].json}}",
+        "reportFormat": "PDF",
+        "autoEmailReport": true,
+        "recipients": ["youremail@example.com"]
+      },
+      "name": "Analytics Report Generator",
+      "type": "custom.report.analyticsPDFGen",
+      "typeVersion": 1,
+      "position": [850, 100]
+    }
+  ],
+  "connections": {
+    "YouTube Monetization Enabler": {
+      "main": [
+        [{ "node": "Affiliate Links Auto-Adder", "type": "main", "index": 0 }],
+        [{ "node": "YouTube Analytics Fetcher", "type": "main", "index": 0 }]
+      ]
+    },
+    "YouTube Analytics Fetcher": {
+      "main": [
+        [{ "node": "Analytics Report Generator", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Monetization Enabler\"].json[\"videoId\"]}}",
+        "autoPinTopComment": true,
+        "commentText": "🔥 What did you enjoy most about this video? Comment below! Don’t forget to like & subscribe!",
+        "detectTrendingComments": true,
+        "autoLikeDetectedComments": true
+      },
+      "name": "Auto-Pin & Smart Commenter",
+      "type": "custom.youtube.commentManager",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "triggerWords": ["awesome", "love", "helpful", "best"],
+        "autoReplyTemplate": "Thanks so much for the kind words! Stay tuned for more — don’t forget to subscribe!",
+        "languageDetection": true,
+        "multiLanguageReplies": {
+          "es": "¡Gracias por tu comentario! Suscríbete para más contenido.",
+          "fr": "Merci pour ton commentaire ! Abonne-toi pour plus de vidéos.",
+          "hi": "आपके कमेंट के लिए धन्यवाद! और वीडियो के लिए सब्सक्राइब करें।"
+        }
+      },
+      "name": "AI Auto-Replier",
+      "type": "custom.youtube.autoReplier",
+      "typeVersion": 1,
+      "position": [400, 100]
+    },
+    {
+      "parameters": {
+        "fetchFrequency": "daily",
+        "engagementMetrics": ["topCommenters", "commentSentiment", "replyRate"],
+        "generateInsights": true
+      },
+      "name": "Engagement Insights Analyzer",
+      "type": "custom.youtube.engagementAnalyzer",
+      "typeVersion": 1,
+      "position": [700, 100]
+    },
+    {
+      "parameters": {
+        "insightsData": "={{$node[\"Engagement Insights Analyzer\"].json}}",
+        "autoSuggestActions": true,
+        "suggestionTypes": ["replyBoost", "pinTrends", "engagementTactics"]
+      },
+      "name": "Smart Engagement Booster",
+      "type": "custom.youtube.engagementBooster",
+      "typeVersion": 1,
+      "position": [1000, 100]
+    }
+  ],
+  "connections": {
+    "Auto-Pin & Smart Commenter": {
+      "main": [
+        [{ "node": "AI Auto-Replier", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Auto-Replier": {
+      "main": [
+        [{ "node": "Engagement Insights Analyzer", "type": "main", "index": 0 }]
+      ]
+    },
+    "Engagement Insights Analyzer": {
+      "main": [
+        [{ "node": "Smart Engagement Booster", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Video Uploader\"].json[\"videoId\"]}}",
+        "clipDurations": ["0:00-0:59", "1:00-1:59", "2:00-2:59"],
+        "autoDetectViralSegments": true,
+        "hookTemplate": "🔥 You won’t believe this…",
+        "ctaTemplate": "Like & Subscribe for more!",
+        "outputFormat": "vertical",
+        "resolution": "1080x1920"
+      },
+      "name": "YouTube Shorts Auto-Cutter",
+      "type": "custom.youtube.shortCutter",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "motionEffects": ["zoom", "pan", "subtitleBounce"],
+        "autoAddDynamicCaptions": true,
+        "soundFXPack": "trending",
+        "autoBackgroundMusic": true
+      },
+      "name": "Shorts Motion Enhancer",
+      "type": "custom.video.motionEnhancer",
+      "typeVersion": 1,
+      "position": [400, 100]
+    },
+    {
+      "parameters": {
+        "shortDescriptionTemplate": "Check out this highlight from our latest video! #Shorts #Viral",
+        "autoHashtags": true,
+        "thumbnailAutoGenerator": true,
+        "schedulePublish": "immediate"
+      },
+      "name": "YouTube Shorts Auto-Uploader",
+      "type": "custom.youtube.shortUploader",
+      "typeVersion": 1,
+      "position": [700, 100]
+    },
+    {
+      "parameters": {
+        "shortsEngagementBooster": true,
+        "autoComment": "🔥 More like this? Comment below!",
+        "autoPinComment": true
+      },
+      "name": "Shorts Engagement Maximizer",
+      "type": "custom.youtube.shortEngager",
+      "typeVersion": 1,
+      "position": [1000, 100]
+    }
+  ],
+  "connections": {
+    "YouTube Shorts Auto-Cutter": {
+      "main": [
+        [{ "node": "Shorts Motion Enhancer", "type": "main", "index": 0 }]
+      ]
+    },
+    "Shorts Motion Enhancer": {
+      "main": [
+        [{ "node": "YouTube Shorts Auto-Uploader", "type": "main", "index": 0 }]
+      ]
+    },
+    "YouTube Shorts Auto-Uploader": {
+      "main": [
+        [{ "node": "Shorts Engagement Maximizer", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "sourceFrameSelection": "best-face-detection",
+        "autoAddTextOverlays": true,
+        "headlineTemplate": "TOP SECRET REVEALED!",
+        "fontStyle": "bold-impact",
+        "brandColors": ["#FF0000", "#FFFF00"],
+        "autoAddLogo": true,
+        "logoPosition": "top-right"
+      },
+      "name": "Auto-Thumbnail Generator",
+      "type": "custom.youtube.thumbnailGenerator",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Video Uploader\"].json[\"videoId\"]}}",
+        "trackViewsLikesComments": true,
+        "autoDetectDropOffPoints": true,
+        "autoSuggestSEOImprovements": true,
+        "sendDailyReport": true,
+        "reportDelivery": "email",
+        "emailRecipient": "your_email@example.com"
+      },
+      "name": "Smart Analytics Tracker",
+      "type": "custom.youtube.analyticsTracker",
+      "typeVersion": 1,
+      "position": [400, 100]
+    },
+    {
+      "parameters": {
+        "autoSplitTesting": true,
+        "thumbnailVariants": 2,
+        "trackCTR": true,
+        "autoSwitchBestThumbnail": true
+      },
+      "name": "Auto Thumbnail A/B Split Tester",
+      "type": "custom.youtube.thumbnailTester",
+      "typeVersion": 1,
+      "position": [700, 100]
+    }
+  ],
+  "connections": {
+    "Auto-Thumbnail Generator": {
+      "main": [
+        [{ "node": "Smart Analytics Tracker", "type": "main", "index": 0 }]
+      ]
+    },
+    "Smart Analytics Tracker": {
+      "main": [
+        [{ "node": "Auto Thumbnail A/B Split Tester", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Video Uploader\"].json[\"videoId\"]}}",
+        "autoLikePositiveComments": true,
+        "positiveKeywords": ["great", "amazing", "awesome", "love", "useful"],
+        "autoReplyEnabled": true,
+        "replyTemplates": [
+          "Thanks for watching!",
+          "Glad you enjoyed it!",
+          "Appreciate your support!",
+          "Thanks for your comment!"
+        ],
+        "autoPinTopComment": true
+      },
+      "name": "Auto Comment Liker & Replier",
+      "type": "custom.youtube.commentManager",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "monitorNewComments": true,
+        "sendSummaryReport": true,
+        "reportFrequency": "daily",
+        "emailRecipient": "your_email@example.com",
+        "detectCommunityQuestions": true,
+        "autoFlagSpamComments": true
+      },
+      "name": "Smart Community Manager",
+      "type": "custom.youtube.communityManager",
+      "typeVersion": 1,
+      "position": [400, 100]
+    }
+  ],
+  "connections": {
+    "Auto Comment Liker & Replier": {
+      "main": [
+        [{ "node": "Smart Community Manager", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "inputText": "={{$node[\"Final Script Generator\"].json[\"content\"]}}",
+        "chapterDetectionMode": "semantic",
+        "minChapterLengthSeconds": 60,
+        "outputFormat": "timestamped",
+        "includeChapterTitles": true
+      },
+      "name": "Smart Auto-Chapter Generator",
+      "type": "custom.ai.chapterGenerator",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "baseDescription": "={{$node[\"SEO Description Generator\"].json[\"description\"]}}",
+        "includeAutoChapters": true,
+        "chaptersInput": "={{$node[\"Smart Auto-Chapter Generator\"].json[\"chapters\"]}}",
+        "autoInsertHashtags": true,
+        "hashtagsFromChapters": true,
+        "addContactLinks": true,
+        "contactLinks": ["https://yourwebsite.com", "https://instagram.com/yourprofile"],
+        "callToActionText": "Don’t forget to like, share & subscribe for more amazing content!"
+      },
+      "name": "SEO-Optimized Description Enhancer",
+      "type": "custom.youtube.descriptionEnhancer",
+      "typeVersion": 1,
+      "position": [400, 200]
+    }
+  ],
+  "connections": {
+    "Smart Auto-Chapter Generator": {
+      "main": [
+        [{ "node": "SEO-Optimized Description Enhancer", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoInput": "={{$node[\"Final Video Composer\"].json[\"video\"]}}",
+        "thumbnailFrameTimeSeconds": 10,
+        "enhanceMode": "vividContrast",
+        "addTextOverlay": true,
+        "overlayText": "={{$node[\"Hook Generator\"].json[\"hook\"]}}",
+        "fontStyle": "bold",
+        "textPosition": "top",
+        "brandLogoPath": "/assets/logo.png",
+        "logoPosition": "bottom-right",
+        "outputFormat": "png"
+      },
+      "name": "Smart Thumbnail Generator",
+      "type": "custom.video.thumbnailGenerator",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "thumbnailImage": "={{$node[\"Smart Thumbnail Generator\"].json[\"thumbnail\"]}}",
+        "applyYouTubeThumbnailSpecs": true,
+        "autoOptimizeForCTR": true
+      },
+      "name": "Thumbnail CTR Optimizer",
+      "type": "custom.youtube.thumbnailOptimizer",
+      "typeVersion": 1,
+      "position": [400, 300]
+    }
+  ],
+  "connections": {
+    "Smart Thumbnail Generator": {
+      "main": [
+        [{ "node": "Thumbnail CTR Optimizer", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoFilePath": "={{$node[\"Final Video Composer\"].json[\"video\"]}}",
+        "title": "={{$node[\"SEO Title Generator\"].json[\"title\"]}}",
+        "description": "={{$node[\"SEO Description Generator\"].json[\"description\"]}}",
+        "tags": "={{$node[\"SEO Tag Generator\"].json[\"tags\"]}}",
+        "thumbnailImage": "={{$node[\"Thumbnail CTR Optimizer\"].json[\"optimizedThumbnail\"]}}",
+        "privacyStatus": "public",
+        "autoSchedule": true,
+        "scheduleDateTime": "={{$node[\"Smart Scheduler\"].json[\"publish_time\"]}}",
+        "addChapters": true,
+        "chaptersInput": "={{$node[\"Auto Chapters Generator\"].json[\"chapters\"]}}",
+        "pinnedComment": "={{$node[\"Pinned Comment Generator\"].json[\"comment\"]}}"
+      },
+      "name": "YouTube Smart Uploader",
+      "type": "custom.youtube.smartUploader",
+      "typeVersion": 1,
+      "position": [100, 500]
+    },
+    {
+      "parameters": {
+        "scheduleStrategy": "peakEngagement",
+        "timeZone": "America/New_York",
+        "customDaysOffset": 0
+      },
+      "name": "Smart Scheduler",
+      "type": "custom.youtube.scheduler",
+      "typeVersion": 1,
+      "position": [400, 500]
+    }
+  ],
+  "connections": {
+    "Smart Scheduler": {
+      "main": [
+        [{ "node": "YouTube Smart Uploader", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Smart Uploader\"].json[\"videoId\"]}}",
+        "autoLike": true,
+        "autoReply": true,
+        "replyTextTemplate": "Thank you for watching! Let me know your thoughts below — I respond to everyone!",
+        "filterComments": "top"
+      },
+      "name": "YouTube Auto-Engagement",
+      "type": "custom.youtube.autoEngagement",
+      "typeVersion": 1,
+      "position": [100, 800]
+    },
+    {
+      "parameters": {
+        "monitorDurationHours": 48,
+        "engagementBoostStrategy": "replyTopComments",
+        "likeOwnVideo": true,
+        "replyDelaySeconds": 10
+      },
+      "name": "Engagement Booster Settings",
+      "type": "custom.youtube.engagementSettings",
+      "typeVersion": 1,
+      "position": [400, 800]
+    }
+  ],
+  "connections": {
+    "Engagement Booster Settings": {
+      "main": [
+        [{ "node": "YouTube Auto-Engagement", "type": "main", "index": 0 }]
+      ]
+    },
+    "YouTube Smart Uploader": {
+      "main": [
+        [{ "node": "YouTube Auto-Engagement", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoInput": "={{$node[\"YouTube Smart Uploader\"].json[\"videoUrl\"]}}",
+        "languageCode": "en",
+        "captionStyle": "dynamic",
+        "autoTranslate": false
+      },
+      "name": "AI Dynamic Captions Generator",
+      "type": "custom.video.dynamicCaptions",
+      "typeVersion": 1,
+      "position": [100, 1000]
+    },
+    {
+      "parameters": {
+        "audioInput": "={{$node[\"YouTube Smart Uploader\"].json[\"videoUrl\"]}}",
+        "masteringPreset": "Broadcast",
+        "enhanceVoice": true,
+        "normalizeVolume": true
+      },
+      "name": "AI Audio Mastering",
+      "type": "custom.audio.mastering",
+      "typeVersion": 1,
+      "position": [400, 1000]
+    },
+    {
+      "parameters": {
+        "videoInput": "={{$node[\"AI Audio Mastering\"].json[\"masteredVideoUrl\"]}}",
+        "captionsInput": "={{$node[\"AI Dynamic Captions Generator\"].json[\"captionsUrl\"]}}",
+        "outputFormat": "mp4"
+      },
+      "name": "Merge Captions + Mastered Audio",
+      "type": "custom.video.mergeAssets",
+      "typeVersion": 1,
+      "position": [700, 1000]
+    }
+  ],
+  "connections": {
+    "AI Dynamic Captions Generator": {
+      "main": [
+        [{ "node": "Merge Captions + Mastered Audio", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Audio Mastering": {
+      "main": [
+        [{ "node": "Merge Captions + Mastered Audio", "type": "main", "index": 0 }]
+      ]
+    },
+    "YouTube Smart Uploader": {
+      "main": [
+        [{ "node": "AI Dynamic Captions Generator", "type": "main", "index": 0 }],
+        [{ "node": "AI Audio Mastering", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoInput": "={{$node[\"Merge Captions + Mastered Audio\"].json[\"finalVideoUrl\"]}}",
+        "smartDetection": "faces, objects",
+        "highlightFrame": "auto-best",
+        "overlayText": "New Video!",
+        "textStyle": "bold",
+        "brandingLogo": "={{$env[\"BRANDING_LOGO_URL\"]}}",
+        "outputFormat": "jpg"
+      },
+      "name": "AI Smart Thumbnail Generator",
+      "type": "custom.image.smartThumbnail",
+      "typeVersion": 1,
+      "position": [100, 1400]
+    },
+    {
+      "parameters": {
+        "videoInput": "={{$node[\"Merge Captions + Mastered Audio\"].json[\"finalVideoUrl\"]}}",
+        "logoInput": "={{$env[\"BRANDING_LOGO_URL\"]}}",
+        "position": "top-right",
+        "opacity": 80
+      },
+      "name": "Auto-Embed Branding Logo",
+      "type": "custom.video.embedLogo",
+      "typeVersion": 1,
+      "position": [400, 1400]
+    }
+  ],
+  "connections": {
+    "Merge Captions + Mastered Audio": {
+      "main": [
+        [{ "node": "AI Smart Thumbnail Generator", "type": "main", "index": 0 }],
+        [{ "node": "Auto-Embed Branding Logo", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoTranscript": "={{$node[\"Transcription Generator\"].json[\"fullTranscript\"]}}",
+        "language": "English",
+        "chapterStyle": "YouTube Standard",
+        "outputFormat": "plainText"
+      },
+      "name": "AI Auto-Generate Chapters",
+      "type": "custom.video.autoChapters",
+      "typeVersion": 1,
+      "position": [100, 1600]
+    },
+    {
+      "parameters": {
+        "topicInput": "={{$node[\"Topic Generator\"].json[\"topic\"]}}",
+        "keywords": "trending, viral, must-watch",
+        "titleLength": "60-80",
+        "seoBoost": true,
+        "outputFormat": "plainText"
+      },
+      "name": "SEO Optimized Title Generator",
+      "type": "custom.ai.seoTitleGenerator",
+      "typeVersion": 1,
+      "position": [400, 1600]
+    },
+    {
+      "parameters": {
+        "chaptersInput": "={{$node[\"AI Auto-Generate Chapters\"].json[\"chapters\"]}}",
+        "titleInput": "={{$node[\"SEO Optimized Title Generator\"].json[\"optimizedTitle\"]}}",
+        "descriptionInput": "={{$node[\"AI SEO Description Writer\"].json[\"description\"]}}",
+        "hashtagsInput": "={{$node[\"AI SEO Description Writer\"].json[\"hashtags\"]}}",
+        "outputFormat": "YouTube Metadata Package"
+      },
+      "name": "YouTube Metadata Packager",
+      "type": "custom.youtube.metaPackager",
+      "typeVersion": 1,
+      "position": [700, 1600]
+    }
+  ],
+  "connections": {
+    "Transcription Generator": {
+      "main": [[{ "node": "AI Auto-Generate Chapters", "type": "main", "index": 0 }]]
+    },
+    "Topic Generator": {
+      "main": [[{ "node": "SEO Optimized Title Generator", "type": "main", "index": 0 }]]
+    },
+    "AI Auto-Generate Chapters": {
+      "main": [[{ "node": "YouTube Metadata Packager", "type": "main", "index": 0 }]]
+    },
+    "SEO Optimized Title Generator": {
+      "main": [[{ "node": "YouTube Metadata Packager", "type": "main", "index": 0 }]]
+    },
+    "AI SEO Description Writer": {
+      "main": [[{ "node": "YouTube Metadata Packager", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "metadataPackage": "={{$node[\"YouTube Metadata Packager\"].json}}",
+        "videoFilePath": "={{$node[\"Video Finalizer\"].json[\"outputFile\"]}}",
+        "publishDateTime": "={{$node[\"Smart Scheduler\"].json[\"scheduledTime\"]}}",
+        "privacyStatus": "public",
+        "autoTags": true,
+        "autoChapters": true
+      },
+      "name": "YouTube Auto-Uploader",
+      "type": "custom.youtube.autoUploader",
+      "typeVersion": 1,
+      "position": [100, 1900]
+    },
+    {
+      "parameters": {
+        "ctaText": "Don’t forget to LIKE, SUBSCRIBE, and hit the BELL icon!",
+        "ctaStyle": "animatedLowerThird",
+        "position": "startAndEnd",
+        "animationStyle": "popIn",
+        "duration": "7"
+      },
+      "name": "Smart CTA Inserter",
+      "type": "custom.video.ctaInserter",
+      "typeVersion": 1,
+      "position": [400, 1900]
+    },
+    {
+      "parameters": {
+        "engagementBoost": true,
+        "bestTimeAnalysis": true,
+        "contentCategory": "Education/Entertainment",
+        "outputFormat": "ISODateTime"
+      },
+      "name": "Smart Scheduler",
+      "type": "custom.analytics.bestTimeScheduler",
+      "typeVersion": 1,
+      "position": [700, 1900]
+    }
+  ],
+  "connections": {
+    "YouTube Metadata Packager": {
+      "main": [[{ "node": "YouTube Auto-Uploader", "type": "main", "index": 0 }]]
+    },
+    "Video Finalizer": {
+      "main": [[{ "node": "YouTube Auto-Uploader", "type": "main", "index": 0 }]]
+    },
+    "Smart Scheduler": {
+      "main": [[{ "node": "YouTube Auto-Uploader", "type": "main", "index": 0 }]]
+    },
+    "Smart CTA Inserter": {
+      "main": [[{ "node": "Video Finalizer", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "commentText": "What was your favorite part of the video? Let us know below! Don’t forget to like and subscribe for more!",
+        "pinComment": true,
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}"
+      },
+      "name": "Auto First Comment",
+      "type": "custom.youtube.commentPoster",
+      "typeVersion": 1,
+      "position": [100, 2300]
+    },
+    {
+      "parameters": {
+        "engagementCTA": true,
+        "ctaType": "question",
+        "customQuestion": "Did you find today’s video helpful? Share your thoughts!",
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "pinComment": false
+      },
+      "name": "Smart Comment Booster",
+      "type": "custom.youtube.commentGenerator",
+      "typeVersion": 1,
+      "position": [400, 2300]
+    },
+    {
+      "parameters": {
+        "hashtagSet": "#YouTubeAutomation #ContentCreator #AIpowered",
+        "addToDescription": true,
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}"
+      },
+      "name": "Hashtag Injector",
+      "type": "custom.youtube.hashtagInjector",
+      "typeVersion": 1,
+      "position": [700, 2300]
+    }
+  ],
+  "connections": {
+    "YouTube Auto-Uploader": {
+      "main": [
+        [{ "node": "Auto First Comment", "type": "main", "index": 0 }],
+        [{ "node": "Smart Comment Booster", "type": "main", "index": 0 }],
+        [{ "node": "Hashtag Injector", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "metrics": ["views", "likes", "comments", "averageViewDuration"]
+      },
+      "name": "Fetch YouTube Analytics",
+      "type": "custom.youtube.analyticsFetcher",
+      "typeVersion": 1,
+      "position": [100, 2500]
+    },
+    {
+      "parameters": {
+        "spreadsheetId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "YouTubeAnalytics",
+        "columns": [
+          "Video ID",
+          "Title",
+          "Views",
+          "Likes",
+          "Comments",
+          "Avg View Duration",
+          "Report Date"
+        ],
+        "values": [
+          "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+          "={{$node[\"YouTube Auto-Uploader\"].json[\"title\"]}}",
+          "={{$node[\"Fetch YouTube Analytics\"].json[\"views\"]}}",
+          "={{$node[\"Fetch YouTube Analytics\"].json[\"likes\"]}}",
+          "={{$node[\"Fetch YouTube Analytics\"].json[\"comments\"]}}",
+          "={{$node[\"Fetch YouTube Analytics\"].json[\"averageViewDuration\"]}}",
+          "={{$now}}"
+        ]
+      },
+      "name": "Save Analytics to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 2,
+      "position": [400, 2500]
+    },
+    {
+      "parameters": {
+        "fromEmail": "your-email@example.com",
+        "toEmail": "your-email@example.com",
+        "subject": "YouTube Video Performance Report",
+        "text": "Video Report:\n\nTitle: {{$node[\"YouTube Auto-Uploader\"].json[\"title\"]}}\nViews: {{$node[\"Fetch YouTube Analytics\"].json[\"views\"]}}\nLikes: {{$node[\"Fetch YouTube Analytics\"].json[\"likes\"]}}\nComments: {{$node[\"Fetch YouTube Analytics\"].json[\"comments\"]}}\nAvg View Duration: {{$node[\"Fetch YouTube Analytics\"].json[\"averageViewDuration\"]}} seconds\n\nReported on: {{$now}}"
+      },
+      "name": "Send Analytics Report Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [700, 2500]
+    }
+  ],
+  "connections": {
+    "Fetch YouTube Analytics": {
+      "main": [
+        [{ "node": "Save Analytics to Google Sheets", "type": "main", "index": 0 }],
+        [{ "node": "Send Analytics Report Email", "type": "main", "index": 0 }]
+      ]
+    },
+    "YouTube Auto-Uploader": {
+      "main": [[{ "node": "Fetch YouTube Analytics", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "templateText": "Thanks for watching! Don’t forget to Subscribe and check out these videos!",
+        "subscribeButton": true,
+        "recommendedVideo": "={{$node[\"YouTube Auto-Uploader\"].json[\"relatedVideoId\"]}}"
+      },
+      "name": "Generate End Screen Template",
+      "type": "custom.video.endScreenTemplateGenerator",
+      "typeVersion": 1,
+      "position": [100, 2700]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "endScreenData": "={{$node[\"Generate End Screen Template\"].json}}"
+      },
+      "name": "Attach End Screen to Video",
+      "type": "custom.youtube.attachEndScreen",
+      "typeVersion": 1,
+      "position": [400, 2700]
+    }
+  ],
+  "connections": {
+    "Generate End Screen Template": {
+      "main": [[{ "node": "Attach End Screen to Video", "type": "main", "index": 0 }]]
+    },
+    "YouTube Auto-Uploader": {
+      "main": [[{ "node": "Generate End Screen Template", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "commentText": "What did you think about this video? Drop your thoughts below — and don’t forget to subscribe!"
+      },
+      "name": "Post First Comment",
+      "type": "custom.youtube.commentPoster",
+      "typeVersion": 1,
+      "position": [100, 2850]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "commentId": "={{$node[\"Post First Comment\"].json[\"commentId\"]}}"
+      },
+      "name": "Pin Comment",
+      "type": "custom.youtube.commentPinner",
+      "typeVersion": 1,
+      "position": [400, 2850]
+    },
+    {
+      "parameters": {
+        "commentId": "={{$node[\"Post First Comment\"].json[\"commentId\"]}}"
+      },
+      "name": "Like Comment",
+      "type": "custom.youtube.commentLiker",
+      "typeVersion": 1,
+      "position": [700, 2850]
+    }
+  ],
+  "connections": {
+    "Post First Comment": {
+      "main": [
+        [{ "node": "Pin Comment", "type": "main", "index": 0 }],
+        [{ "node": "Like Comment", "type": "main", "index": 0 }]
+      ]
+    },
+    "YouTube Auto-Uploader": {
+      "main": [[{ "node": "Post First Comment", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoTitle": "={{$node[\"YouTube Auto-Uploader\"].json[\"title\"]}}",
+        "videoKeywords": "={{$node[\"YouTube Auto-Uploader\"].json[\"keywords\"]}}",
+        "prompt": "Write an SEO-optimized YouTube video description (250 words max) based on the title: {{$json[\"videoTitle\"]}} and these keywords: {{$json[\"videoKeywords\"]}}. Include clear call-to-actions and relevant trending hashtags at the end."
+      },
+      "name": "Generate SEO Description",
+      "type": "custom.openai.gptDescriptionGenerator",
+      "typeVersion": 1,
+      "position": [100, 3100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "descriptionText": "={{$node[\"Generate SEO Description\"].json[\"description\"]}}"
+      },
+      "name": "Update Video Description",
+      "type": "custom.youtube.descriptionUpdater",
+      "typeVersion": 1,
+      "position": [400, 3100]
+    }
+  ],
+  "connections": {
+    "Generate SEO Description": {
+      "main": [[{ "node": "Update Video Description", "type": "main", "index": 0 }]]
+    },
+    "YouTube Auto-Uploader": {
+      "main": [[{ "node": "Generate SEO Description", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "originalTitle": "={{$node[\"YouTube Auto-Uploader\"].json[\"title\"]}}",
+        "prompt": "Enhance this YouTube video title for maximum click-through rate (CTR) while keeping it under 100 characters. Make it engaging, curiosity-driven, and optimized for search. Original title: {{$json[\"originalTitle\"]}}"
+      },
+      "name": "Generate Optimized Title",
+      "type": "custom.openai.gptTitleEnhancer",
+      "typeVersion": 1,
+      "position": [100, 3300]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "optimizedTitle": "={{$node[\"Generate Optimized Title\"].json[\"enhancedTitle\"]}}"
+      },
+      "name": "Update Video Title",
+      "type": "custom.youtube.titleUpdater",
+      "typeVersion": 1,
+      "position": [400, 3300]
+    }
+  ],
+  "connections": {
+    "Generate Optimized Title": {
+      "main": [[{ "node": "Update Video Title", "type": "main", "index": 0 }]]
+    },
+    "YouTube Auto-Uploader": {
+      "main": [[{ "node": "Generate Optimized Title", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "description": "={{$node[\"Generate Optimized Title\"].json[\"enhancedTitle\"]}}",
+        "prompt": "Based on this YouTube video title and topic, generate the top 15 trending and SEO-friendly tags (single words or short phrases only, no # symbol). Separate tags by commas. Title: {{$json[\"description\"]}}"
+      },
+      "name": "Generate Smart Tags",
+      "type": "custom.openai.gptTagsGenerator",
+      "typeVersion": 1,
+      "position": [100, 3600]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "tags": "={{$node[\"Generate Smart Tags\"].json[\"generatedTags\"]}}"
+      },
+      "name": "Update Video Tags",
+      "type": "custom.youtube.tagsUpdater",
+      "typeVersion": 1,
+      "position": [400, 3600]
+    }
+  ],
+  "connections": {
+    "Generate Smart Tags": {
+      "main": [[{ "node": "Update Video Tags", "type": "main", "index": 0 }]]
+    },
+    "Generate Optimized Title": {
+      "main": [[{ "node": "Generate Smart Tags", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "title": "={{$node[\"Generate Optimized Title\"].json[\"enhancedTitle\"]}}",
+        "prompt": "Write a YouTube video description (around 200-300 words) that is SEO-optimized and engaging, based on the following title. Include relevant hashtags (5 to 10) at the end of the description. Title: {{$json[\"title\"]}}"
+      },
+      "name": "Generate SEO Description",
+      "type": "custom.openai.descriptionGenerator",
+      "typeVersion": 1,
+      "position": [100, 4000]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "description": "={{$node[\"Generate SEO Description\"].json[\"generatedDescription\"]}}"
+      },
+      "name": "Update Video Description",
+      "type": "custom.youtube.descriptionUpdater",
+      "typeVersion": 1,
+      "position": [400, 4000]
+    }
+  ],
+  "connections": {
+    "Generate SEO Description": {
+      "main": [[{ "node": "Update Video Description", "type": "main", "index": 0 }]]
+    },
+    "Generate Optimized Title": {
+      "main": [[{ "node": "Generate SEO Description", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "title": "={{$node[\"Generate Optimized Title\"].json[\"enhancedTitle\"]}}",
+        "prompt": "Write a highly engaging YouTube first comment for the video titled '{{$json[\"title\"]}}'. The comment should encourage viewers to share their thoughts, subscribe, and like the video. Keep it conversational and concise (30 to 60 words)."
+      },
+      "name": "Generate Pinned Comment",
+      "type": "custom.openai.commentGenerator",
+      "typeVersion": 1,
+      "position": [100, 4200]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "commentText": "={{$node[\"Generate Pinned Comment\"].json[\"generatedComment\"]}}",
+        "pinComment": true
+      },
+      "name": "Post & Pin Comment",
+      "type": "custom.youtube.commentPoster",
+      "typeVersion": 1,
+      "position": [400, 4200]
+    }
+  ],
+  "connections": {
+    "Generate Pinned Comment": {
+      "main": [[{ "node": "Post & Pin Comment", "type": "main", "index": 0 }]]
+    },
+    "Generate Optimized Title": {
+      "main": [[{ "node": "Generate Pinned Comment", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoTranscript": "={{$node[\"Fetch Video Transcript\"].json[\"transcript\"]}}",
+        "prompt": "Based on the transcript below, automatically generate YouTube chapters with timestamps and short descriptive titles (maximum 7 chapters). Format output like:\n\n0:00 - Introduction\n0:45 - Key Point 1\n..."
+      },
+      "name": "Generate Video Chapters",
+      "type": "custom.openai.chapterGenerator",
+      "typeVersion": 1,
+      "position": [100, 4300]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "descriptionAppend": "={{$node[\"Generate Video Chapters\"].json[\"generatedChapters\"]}}"
+      },
+      "name": "Append Chapters to Description",
+      "type": "custom.youtube.descriptionUpdater",
+      "typeVersion": 1,
+      "position": [400, 4300]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}"
+      },
+      "name": "Fetch Video Transcript",
+      "type": "custom.youtube.transcriptFetcher",
+      "typeVersion": 1,
+      "position": [-200, 4300]
+    }
+  ],
+  "connections": {
+    "Fetch Video Transcript": {
+      "main": [[{ "node": "Generate Video Chapters", "type": "main", "index": 0 }]]
+    },
+    "Generate Video Chapters": {
+      "main": [[{ "node": "Append Chapters to Description", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$node[\"YouTube Auto-Uploader\"].json[\"videoId\"]}}",
+        "maxResults": 20
+      },
+      "name": "Fetch Top Comments",
+      "type": "custom.youtube.commentsFetcher",
+      "typeVersion": 1,
+      "position": [-300, 4600]
+    },
+    {
+      "parameters": {
+        "commentId": "={{$json[\"commentId\"]}}"
+      },
+      "name": "Auto-Like Comment",
+      "type": "custom.youtube.likeComment",
+      "typeVersion": 1,
+      "position": [0, 4600]
+    },
+    {
+      "parameters": {
+        "commentText": "={{$json[\"commentText\"]}}",
+        "prompt": "Reply warmly and briefly to this YouTube comment to encourage more engagement. Keep it friendly and aligned with the video content."
+      },
+      "name": "Generate Smart Reply",
+      "type": "custom.openai.commentReplier",
+      "typeVersion": 1,
+      "position": [300, 4600]
+    },
+    {
+      "parameters": {
+        "commentId": "={{$json[\"commentId\"]}}",
+        "replyText": "={{$node[\"Generate Smart Reply\"].json[\"generatedReply\"]}}"
+      },
+      "name": "Post Smart Reply",
+      "type": "custom.youtube.postReply",
+      "typeVersion": 1,
+      "position": [600, 4600]
+    }
+  ],
+  "connections": {
+    "Fetch Top Comments": {
+      "main": [
+        [{ "node": "Auto-Like Comment", "type": "main", "index": 0 }],
+        [{ "node": "Generate Smart Reply", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Smart Reply": {
+      "main": [[{ "node": "Post Smart Reply", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$json[\"videoId\"]}}",
+        "maxResults": 20
+      },
+      "id": "FetchComments",
+      "name": "Fetch Latest Comments",
+      "type": "custom-youtube-get-comments",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "prompt": "Reply to this YouTube comment in a helpful, friendly, and engaging way: {{$json[\"text\"]}}",
+        "temperature": 0.7
+      },
+      "id": "OpenAIReply",
+      "name": "Generate AI Reply",
+      "type": "custom-openai-completion",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json[\"videoId\"]}}",
+        "commentId": "={{$json[\"commentId\"]}}",
+        "text": "={{$json[\"reply\"]}}"
+      },
+      "id": "PostReply",
+      "name": "Post Comment Reply",
+      "type": "custom-youtube-post-reply",
+      "typeVersion": 1,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => ({ json: { videoId: item.json.videoId, commentId: item.json.id, text: item.json.textDisplay } }))"
+      },
+      "id": "PrepareForReply",
+      "name": "Format Comment Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [200, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => ({ json: { ...item.json, reply: item.json.choices[0].text.trim() } }))"
+      },
+      "id": "PrepareReplyText",
+      "name": "Extract OpenAI Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [400, 200]
+    }
+  ],
+  "connections": {
+    "FetchComments": {
+      "main": [[{ "node": "PrepareForReply", "type": "main", "index": 0 }]]
+    },
+    "PrepareForReply": {
+      "main": [[{ "node": "OpenAIReply", "type": "main", "index": 0 }]]
+    },
+    "OpenAIReply": {
+      "main": [[{ "node": "PrepareReplyText", "type": "main", "index": 0 }]]
+    },
+    "PrepareReplyText": {
+      "main": [[{ "node": "PostReply", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "// Schedule logic based on region\nconst regions = ['US', 'IN', 'ES', 'DE', 'FR'];\nconst hours = { US: 16, IN: 19, ES: 18, DE: 17, FR: 17 };\nconst region = $json[\"region\"] || 'US';\nconst hour = hours[region] || 16;\n\nconst date = new Date();\ndate.setUTCHours(hour, 0, 0, 0);\n\nreturn [{ json: { publishTime: date.toISOString() } }];"
+      },
+      "id": "ScheduleCalculator",
+      "name": "Calculate Best Upload Time",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "videoPath": "={{$json[\"videoPath\"]}}",
+        "title": "={{$json[\"title\"]}}",
+        "description": "={{$json[\"description\"]}}",
+        "tags": "={{$json[\"tags\"]}}",
+        "publishAt": "={{$json[\"publishTime\"]}}",
+        "privacyStatus": "private"
+      },
+      "id": "ScheduleUpload",
+      "name": "YouTube Scheduled Upload",
+      "type": "custom-youtube-upload",
+      "typeVersion": 1,
+      "position": [300, 200]
+    }
+  ],
+  "connections": {
+    "ScheduleCalculator": {
+      "main": [[{ "node": "ScheduleUpload", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "startDate": "={{$now.subtract(7, 'days').format('YYYY-MM-DD')}}",
+        "endDate": "={{$now.format('YYYY-MM-DD')}}",
+        "metrics": "views,estimatedMinutesWatched,averageViewDuration,likes,subscribersGained",
+        "dimensions": "day",
+        "filters": "video=={{$json[\"videoId\"]}}"
+      },
+      "id": "FetchVideoAnalytics",
+      "name": "Get Video Analytics",
+      "type": "custom-youtube-analytics",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Format for easy dashboard use\nreturn items.map(item => {\n  const row = item.json.rows[0];\n  return {\n    json: {\n      views: row[0],\n      watchMinutes: row[1],\n      avgDuration: row[2],\n      likes: row[3],\n      subsGained: row[4],\n      videoId: $json.videoId\n    }\n  };\n});"
+      },
+      "id": "FormatAnalytics",
+      "name": "Format Analytics Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "sheetId": "your_google_sheet_id",
+        "range": "Analytics!A1:F",
+        "valueInputMode": "RAW",
+        "values": "={{[{ videoId: $json.videoId, views: $json.views, watchMinutes: $json.watchMinutes, avgDuration: $json.avgDuration, likes: $json.likes, subsGained: $json.subsGained }]}}"
+      },
+      "id": "UpdateDashboard",
+      "name": "Update Analytics Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [500, 200]
+    }
+  ],
+  "connections": {
+    "FetchVideoAnalytics": {
+      "main": [[{ "node": "FormatAnalytics", "type": "main", "index": 0 }]]
+    },
+    "FormatAnalytics": {
+      "main": [[{ "node": "UpdateDashboard", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "// Define A/B titles\nreturn [\n  { json: { title: 'This Changed Everything About YouTube!' } },\n  { json: { title: 'You’ve Been Doing YouTube Wrong (Fix This)' } },\n  { json: { title: 'Top 5 Secrets No One Told You About Going Viral' } }\n];"
+      },
+      "id": "DefineTitles",
+      "name": "Define Title Variants",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "interval": 60,
+        "unit": "minutes"
+      },
+      "id": "WaitBetweenSwitches",
+      "name": "Wait 60 min",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "title": "={{$json.title}}"
+      },
+      "id": "UpdateVideoTitle",
+      "name": "Update YouTube Title",
+      "type": "custom-youtube-update",
+      "typeVersion": 1,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "metrics": "views,averageViewDuration,impressionsClickThroughRate",
+        "filters": "video=={{$json.videoId}}",
+        "startDate": "={{$now.subtract(1, 'hours').format('YYYY-MM-DD')}}",
+        "endDate": "={{$now.format('YYYY-MM-DD')}}"
+      },
+      "id": "FetchCTR",
+      "name": "Fetch CTR",
+      "type": "custom-youtube-analytics",
+      "typeVersion": 1,
+      "position": [700, 200]
+    },
+    {
+      "parameters": {
+        "sheetId": "your_ab_test_sheet_id",
+        "range": "Tests!A1:D",
+        "values": "={{[{ title: $json.title, views: $json.views, ctr: $json.impressionsClickThroughRate, avgWatch: $json.averageViewDuration }]}}"
+      },
+      "id": "LogResults",
+      "name": "Log A/B Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [900, 200]
+    }
+  ],
+  "connections": {
+    "DefineTitles": {
+      "main": [[
+        { "node": "WaitBetweenSwitches", "type": "main", "index": 0 }
+      ]]
+    },
+    "WaitBetweenSwitches": {
+      "main": [[
+        { "node": "UpdateVideoTitle", "type": "main", "index": 0 }
+      ]]
+    },
+    "UpdateVideoTitle": {
+      "main": [[
+        { "node": "FetchCTR", "type": "main", "index": 0 }
+      ]]
+    },
+    "FetchCTR": {
+      "main": [[
+        { "node": "LogResults", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "Write a professional YouTube video description including SEO keywords: {{$json[\"topic\"]}}. Add relevant viral hashtags at the end. Keep it natural, friendly and engaging, around 500 characters.",
+        "temperature": 0.7,
+        "max_tokens": 500
+      },
+      "id": "GenerateDescription",
+      "name": "AI Description Writer",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "description": "={{$json.description}}"
+      },
+      "id": "UpdateDescription",
+      "name": "Update YouTube Description",
+      "type": "custom-youtube-update",
+      "typeVersion": 1,
+      "position": [300, 200]
+    }
+  ],
+  "connections": {
+    "GenerateDescription": {
+      "main": [[
+        { "node": "UpdateDescription", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoUrl": "={{$json.videoUrl}}",
+        "prompt": "Analyze this YouTube video and generate time-based chapters with titles. Output should be in this format:\n00:00 Intro\n00:45 Tip 1 - How to Grow\n02:10 Tip 2 - Algorithm Hack\nKeep the output natural, useful, and SEO-friendly."
+      },
+      "id": "GenerateChapters",
+      "name": "AI Scene Splitter",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "description": "={{$json.description + '\\n\\n' + $json.chapters}}"
+      },
+      "id": "UpdateWithChapters",
+      "name": "Add Chapters to Description",
+      "type": "custom-youtube-update",
+      "typeVersion": 1,
+      "position": [300, 200]
+    }
+  ],
+  "connections": {
+    "GenerateChapters": {
+      "main": [[
+        { "node": "UpdateWithChapters", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "maxResults": 5
+      },
+      "id": "FetchComments",
+      "name": "Get New Comments",
+      "type": "custom-youtube-get-comments",
+      "typeVersion": 1,
+      "position": [100, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Like each comment\nreturn items.map(item => ({ json: { commentId: item.json.commentId } }));"
+      },
+      "id": "PrepareLikes",
+      "name": "Prep Likes",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "commentId": "={{$json.commentId}}"
+      },
+      "id": "LikeComment",
+      "name": "Like Comment",
+      "type": "custom-youtube-like-comment",
+      "typeVersion": 1,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "prompt": "Reply to this YouTube comment supportively and helpfully: {{$json.text}}",
+        "temperature": 0.6,
+        "max_tokens": 100
+      },
+      "id": "GenerateReply",
+      "name": "AI Reply Generator",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [700, 200]
+    },
+    {
+      "parameters": {
+        "commentId": "={{$json.commentId}}",
+        "text": "={{$json.reply}}"
+      },
+      "id": "ReplyToComment",
+      "name": "Reply to Comment",
+      "type": "custom-youtube-reply",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "commentId": "={{$json.commentId}}"
+      },
+      "id": "PinComment",
+      "name": "Pin Strategic Comment",
+      "type": "custom-youtube-pin-comment",
+      "typeVersion": 1,
+      "position": [1100, 200]
+    }
+  ],
+  "connections": {
+    "FetchComments": {
+      "main": [[
+        { "node": "PrepareLikes", "type": "main", "index": 0 }
+      ]]
+    },
+    "PrepareLikes": {
+      "main": [[
+        { "node": "LikeComment", "type": "main", "index": 0 }
+      ]]
+    },
+    "LikeComment": {
+      "main": [[
+        { "node": "GenerateReply", "type": "main", "index": 0 }
+      ]]
+    },
+    "GenerateReply": {
+      "main": [[
+        { "node": "ReplyToComment", "type": "main", "index": 0 }
+      ]]
+    },
+    "ReplyToComment": {
+      "main": [[
+        { "node": "PinComment", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoUrl": "={{$json.videoUrl}}",
+        "prompt": "From this video, extract 3 viral-worthy short segments under 60 seconds. Give start & end timestamps, and a short title for each."
+      },
+      "id": "ShortClipFinder",
+      "name": "Find Short Segments",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "sourceVideo": "={{$json.videoUrl}}",
+        "clipData": "={{$json.clips}}",
+        "overlayCaptions": true,
+        "style": "bold-white-bottom",
+        "format": "9:16"
+      },
+      "id": "ShortsEditor",
+      "name": "Shorts Video Cutter",
+      "type": "custom-video-cutter",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "title": "={{$json.shortTitle}}",
+        "videoFile": "={{$json.shortVideo}}",
+        "tags": ["#Shorts", "#Viral", "#Trending"],
+        "isShort": true
+      },
+      "id": "UploadShort",
+      "name": "Upload YouTube Short",
+      "type": "custom-youtube-upload",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "ShortClipFinder": {
+      "main": [[
+        { "node": "ShortsEditor", "type": "main", "index": 0 }
+      ]]
+    },
+    "ShortsEditor": {
+      "main": [[
+        { "node": "UploadShort", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "Create a viral YouTube thumbnail headline for this video topic: {{$json.topic}}",
+        "temperature": 0.7,
+        "max_tokens": 60
+      },
+      "id": "ThumbnailHeadlineGenerator",
+      "name": "AI Thumbnail Title",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "headline": "={{$json.headline}}",
+        "backgroundStyle": "bright-gradient",
+        "textStyle": "bold-shadow",
+        "elementOptions": {
+          "emoji": true,
+          "sticker": true,
+          "faceExpression": "surprised"
+        }
+      },
+      "id": "ThumbnailBuilder",
+      "name": "Auto Thumbnail Designer",
+      "type": "custom-thumbnail-generator",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "thumbnailImage": "={{$json.thumbnail}}"
+      },
+      "id": "AttachThumbnail",
+      "name": "Upload Thumbnail",
+      "type": "custom-youtube-attach-thumbnail",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "ThumbnailHeadlineGenerator": {
+      "main": [[
+        { "node": "ThumbnailBuilder", "type": "main", "index": 0 }
+      ]]
+    },
+    "ThumbnailBuilder": {
+      "main": [[
+        { "node": "AttachThumbnail", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "Generate an engaging community post (poll or question) for YouTube about: {{$json.topic}}. Keep it short, fun, and interactive.",
+        "temperature": 0.8
+      },
+      "id": "PostContentGenerator",
+      "name": "AI Post Writer",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "contentType": "poll",
+        "content": "={{$json.postContent}}",
+        "options": ["Absolutely!", "Maybe later", "Not sure"],
+        "scheduleTime": "={{$json.scheduleTime}}"
+      },
+      "id": "PostScheduler",
+      "name": "YouTube Community Poster",
+      "type": "custom-youtube-community",
+      "typeVersion": 1,
+      "position": [300, 100]
+    }
+  ],
+  "connections": {
+    "PostContentGenerator": {
+      "main": [[
+        { "node": "PostScheduler", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "Suggest 3 affiliate products related to {{$json.topic}}, with short compelling descriptions and URLs. Format for YouTube description.",
+        "temperature": 0.7
+      },
+      "id": "AffiliateSuggestor",
+      "name": "AI Affiliate Ideas",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "description": "={{$json.videoDescription}} \n\n{{$json.affiliateSection}}",
+        "comment": "Check this out! {{$json.affiliateShortLink}}",
+        "pin": true
+      },
+      "id": "MonetizationInjector",
+      "name": "Affiliate Description + Comment",
+      "type": "custom-youtube-monetize",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "scriptSegment": "={{$json.affiliateCallout}}",
+        "voice": "elevenlabs-male-neutral",
+        "style": "calm-promotional"
+      },
+      "id": "VoiceCallout",
+      "name": "Affiliate TTS Insert",
+      "type": "custom-elevenlabs-tts",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "AffiliateSuggestor": {
+      "main": [[
+        { "node": "MonetizationInjector", "type": "main", "index": 0 },
+        { "node": "VoiceCallout", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "Based on this video script:\n{{$json.script}}\n\nGenerate structured YouTube chapters with timestamps (mm:ss format), compelling titles, and a short video summary.",
+        "temperature": 0.6,
+        "max_tokens": 600
+      },
+      "id": "ChapterGenerator",
+      "name": "AI Chapters + Summary",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "description": "={{$json.summary}}\n\n{{$json.chapters}}\n\n{{ $json.affiliateSection }}\n\n#YouTube #{{$json.topic}} #{{$json.keyword}}",
+        "videoId": "={{$json.videoId}}"
+      },
+      "id": "FormattedDescriptionUpdater",
+      "name": "Update Description",
+      "type": "custom-youtube-update-description",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "comment": "Chapters:\n{{$json.chapters}}\n\nSummary: {{$json.summary}}",
+        "pin": true
+      },
+      "id": "PostChaptersAsComment",
+      "name": "Comment Chapters",
+      "type": "custom-youtube-comment",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "ChapterGenerator": {
+      "main": [[
+        { "node": "FormattedDescriptionUpdater", "type": "main", "index": 0 },
+        { "node": "PostChaptersAsComment", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "From this long video transcript, find 3 high-engagement short moments under 60s with strong hooks.",
+        "max_tokens": 500
+      },
+      "id": "ShortsSegmentDetector",
+      "name": "Find Shorts Highlights",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "start": "={{$json.start}}",
+        "end": "={{$json.end}}",
+        "outputFormat": "9:16",
+        "addCaptions": true,
+        "insertCTA": "Subscribe for more AI videos!",
+        "voiceover": "elevenlabs"
+      },
+      "id": "ShortsVideoBuilder",
+      "name": "Generate Shorts Video",
+      "type": "custom-ai-video-editor",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "title": "={{$json.shortTitle}}",
+        "description": "={{$json.shortDescription}}",
+        "hashtags": "={{$json.hashtags}}",
+        "uploadType": "shorts"
+      },
+      "id": "AutoUploadShorts",
+      "name": "Upload to YouTube",
+      "type": "custom-youtube-upload",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "ShortsSegmentDetector": {
+      "main": [[
+        { "node": "ShortsVideoBuilder", "type": "main", "index": 0 }
+      ]]
+    },
+    "ShortsVideoBuilder": {
+      "main": [[
+        { "node": "AutoUploadShorts", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "Given this video script:\n{{$json.script}}\n\nGenerate 5 viral YouTube titles, an SEO-friendly description, 10 relevant hashtags, and the best keywords to tag the video.",
+        "temperature": 0.7
+      },
+      "id": "GenerateSEO",
+      "name": "AI SEO & Titles",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "title": "={{$json.bestTitle}}",
+        "description": "={{$json.description}}",
+        "tags": "={{$json.keywords}}",
+        "hashtags": "={{$json.hashtags}}",
+        "videoId": "={{$json.videoId}}"
+      },
+      "id": "UpdateVideoMeta",
+      "name": "YouTube Metadata Updater",
+      "type": "custom-youtube-update-meta",
+      "typeVersion": 1,
+      "position": [300, 100]
+    }
+  ],
+  "connections": {
+    "GenerateSEO": {
+      "main": [[
+        { "node": "UpdateVideoMeta", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}"
+      },
+      "id": "FetchAnalytics",
+      "name": "YouTube Analytics Fetch",
+      "type": "custom-youtube-analytics",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "prompt": "Here is the video's performance data: CTR={{$json.ctr}}, WatchTime={{$json.watchTime}}, Likes={{$json.likes}}. Suggest 3 new titles if CTR < 5%",
+        "temperature": 0.6
+      },
+      "id": "SmartRetitleAI",
+      "name": "AI Retitle Suggestor",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "title": "={{$json.newTitle}}",
+        "videoId": "={{$json.videoId}}"
+      },
+      "id": "UpdateTitle",
+      "name": "YouTube Title Updater",
+      "type": "custom-youtube-update-meta",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "FetchAnalytics": {
+      "main": [[
+        { "node": "SmartRetitleAI", "type": "main", "index": 0 }
+      ]]
+    },
+    "SmartRetitleAI": {
+      "main": [[
+        { "node": "UpdateTitle", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "Generate a high-CTR YouTube thumbnail concept for the following video script:\n{{$json.script}}\nInclude clear emotion, bold text suggestions, and key visual focus points.",
+        "temperature": 0.7
+      },
+      "id": "ThumbnailPrompt",
+      "name": "AI Thumbnail Idea Generator",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "input_text": "={{$json.thumbnailConcept}}",
+        "style": "YouTube style, dark background, yellow or white bold text, sharp contrast",
+        "image_size": "1280x720"
+      },
+      "id": "ImageGen",
+      "name": "AI Thumbnail Generator",
+      "type": "custom-imagegen",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "imageUrl": "={{$json.generatedThumbnailUrl}}"
+      },
+      "id": "UploadThumbnail",
+      "name": "YouTube Thumbnail A/B Uploader",
+      "type": "custom-youtube-upload-thumb",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "ThumbnailPrompt": {
+      "main": [[{ "node": "ImageGen", "type": "main", "index": 0 }]]
+    },
+    "ImageGen": {
+      "main": [[{ "node": "UploadThumbnail", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "Based on the title and script, write a catchy pinned comment for YouTube:\nTitle: {{$json.title}}\nScript: {{$json.script}}"
+      },
+      "id": "PinnedCommentGen",
+      "name": "Generate Pinned Comment",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "comment": "={{$json.generatedComment}}"
+      },
+      "id": "PinComment",
+      "name": "Post Pinned Comment",
+      "type": "youtube-comment-pin",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "pollInterval": 30
+      },
+      "id": "FetchNewComments",
+      "name": "Get New Comments",
+      "type": "youtube-comment-monitor",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "prompt": "Reply to this YouTube comment in a friendly tone:\nComment: {{$json.commentText}}"
+      },
+      "id": "ReplyAI",
+      "name": "AI Comment Reply Generator",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "commentId": "={{$json.commentId}}",
+        "reply": "={{$json.generatedReply}}"
+      },
+      "id": "PostReply",
+      "name": "Post Auto-Reply",
+      "type": "youtube-comment-reply",
+      "typeVersion": 1,
+      "position": [500, 300]
+    }
+  ],
+  "connections": {
+    "PinnedCommentGen": { "main": [[{ "node": "PinComment", "type": "main", "index": 0 }]] },
+    "FetchNewComments": { "main": [[{ "node": "ReplyAI", "type": "main", "index": 0 }]] },
+    "ReplyAI": { "main": [[{ "node": "PostReply", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "Given this full YouTube video script:\n{{$json.script}}\n\nBreak it down into SEO-optimized YouTube chapters with timestamps (HH:MM format), each with a short teaser sentence.",
+        "temperature": 0.5
+      },
+      "id": "ChapterGen",
+      "name": "AI Chapters Generator",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "chaptersText": "={{$json.generatedChapters}}"
+      },
+      "id": "PostChapters",
+      "name": "Update YouTube Description with Chapters",
+      "type": "youtube-update-description",
+      "typeVersion": 1,
+      "position": [300, 100]
+    }
+  ],
+  "connections": {
+    "ChapterGen": {
+      "main": [[{ "node": "PostChapters", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "From this script, extract 3 viral Shorts ideas with timestamps:\n{{$json.script}}"
+      },
+      "id": "ShortIdeasGen",
+      "name": "Generate Viral Short Clips",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "start": "={{$json.clipStart}}",
+        "end": "={{$json.clipEnd}}"
+      },
+      "id": "ClipExtractor",
+      "name": "Extract Short Clip",
+      "type": "ffmpeg-clip",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "title": "={{$json.shortTitle}}",
+        "video": "={{$json.clippedVideo}}",
+        "tags": "ai,shorts,automation",
+        "privacy": "public"
+      },
+      "id": "UploadShort",
+      "name": "Upload to YouTube Shorts",
+      "type": "youtube-upload",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "ShortIdeasGen": { "main": [[{ "node": "ClipExtractor", "type": "main", "index": 0 }]] },
+    "ClipExtractor": { "main": [[{ "node": "UploadShort", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "prompt": "Generate 3 CTAs to increase YouTube engagement for this video:\n{{$json.title}}\n{{$json.description}}"
+      },
+      "id": "CTAGenerator",
+      "name": "AI CTA Split Test",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "comment": "={{$json.pinnedCTA}}"
+      },
+      "id": "PinComment",
+      "name": "Post & Pin Comment",
+      "type": "youtube-comment",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "content": "={{$json.communityPost}}"
+      },
+      "id": "CommunityPost",
+      "name": "Community Tab Post",
+      "type": "youtube-post",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "CTAGenerator": {
+      "main": [[{ "node": "PinComment", "type": "main", "index": 0 }, { "node": "CommunityPost", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "videoId": "={{$json.videoId}}"
+      },
+      "id": "YouTubeRevenue",
+      "name": "Fetch Video Revenue",
+      "type": "youtube-analytics",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "prompt": "Suggest 2 affiliate products based on this title and description:\n{{$json.title}}\n{{$json.description}}"
+      },
+      "id": "AffiliateAI",
+      "name": "AI Affiliate Generator",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "content": "={{$json.affiliateLinks}}\n\nFull earnings here: {{$json.revenueSummary}}"
+      },
+      "id": "SendSummary",
+      "name": "Weekly Revenue Summary",
+      "type": "telegram",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "YouTubeRevenue": { "main": [[{ "node": "AffiliateAI", "type": "main", "index": 0 }]] },
+    "AffiliateAI": { "main": [[{ "node": "SendSummary", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "parameters": {
+        "text": "={{$json.transcript}}"
+      },
+      "id": "SplitChapters",
+      "name": "Chapter Splitter AI",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "prompt": "Rewrite these chapter titles for YouTube with high-SEO keywords:\n{{$json.chapterList}}"
+      },
+      "id": "ChapterSEO",
+      "name": "SEO Chapter Enhancer",
+      "type": "openai-gpt4",
+      "typeVersion": 1,
+      "position": [300, 100]
+    },
+    {
+      "parameters": {
+        "format": "text",
+        "text": "={{$json.timestampedChapters}}"
+      },
+      "id": "AddToDescription",
+      "name": "Final Description Chapter Export",
+      "type": "youtube-upload",
+      "typeVersion": 1,
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "SplitChapters": { "main": [[{ "node": "ChapterSEO", "type": "main", "index": 0 }]] },
+    "ChapterSEO": { "main": [[{ "node": "AddToDescription", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "SplitIntoShorts",
+      "type": "ai-scene-detector",
+      "parameters": {
+        "videoUrl": "={{$json.videoUrl}}"
+      },
+      "position": [100, 100]
+    },
+    {
+      "name": "GenerateTitles",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Write viral Shorts titles and hashtags for these clips:\n{{$json.clips}}"
+      },
+      "position": [300, 100]
+    },
+    {
+      "name": "AddCTAOverlay",
+      "type": "video-overlay",
+      "parameters": {
+        "text": "Subscribe for more!",
+        "position": "bottom",
+        "animation": "slide-up"
+      },
+      "position": [500, 100]
+    },
+    {
+      "name": "UploadShorts",
+      "type": "youtube-upload",
+      "parameters": {
+        "title": "={{$json.title}}",
+        "description": "={{$json.description}}",
+        "hashtags": "={{$json.hashtags}}"
+      },
+      "position": [700, 100]
+    }
+  ],
+  "connections": {
+    "SplitIntoShorts": { "main": [[{ "node": "GenerateTitles", "type": "main", "index": 0 }]] },
+    "GenerateTitles": { "main": [[{ "node": "AddCTAOverlay", "type": "main", "index": 0 }]] },
+    "AddCTAOverlay": { "main": [[{ "node": "UploadShorts", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "GenerateThumbnail",
+      "type": "ai-thumbnail-generator",
+      "parameters": {
+        "inputVideo": "={{$json.shortVideo}}",
+        "overlayText": "={{$json.shortTitle}}"
+      },
+      "position": [100, 100]
+    },
+    {
+      "name": "OptimizeClickbait",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Analyze this thumbnail & title for clickbait power: {{$json.thumbnail}}, {{$json.title}}"
+      },
+      "position": [300, 100]
+    },
+    {
+      "name": "ScheduleShortUpload",
+      "type": "youtube-upload",
+      "parameters": {
+        "title": "={{$json.optimizedTitle}}",
+        "description": "={{$json.description}}",
+        "thumbnail": "={{$json.thumbnailImage}}",
+        "schedule": "random"
+      },
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "GenerateThumbnail": { "main": [[{ "node": "OptimizeClickbait", "type": "main", "index": 0 }]] },
+    "OptimizeClickbait": { "main": [[{ "node": "ScheduleShortUpload", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "FetchComments",
+      "type": "youtube-comment-fetcher",
+      "parameters": {
+        "videoId": "={{$json.videoId}}"
+      },
+      "position": [100, 100]
+    },
+    {
+      "name": "ReplyWithAI",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Reply like a friendly expert to: {{$json.comment}}"
+      },
+      "position": [300, 100]
+    },
+    {
+      "name": "PostReply",
+      "type": "youtube-comment-reply",
+      "parameters": {
+        "commentId": "={{$json.commentId}}",
+        "replyText": "={{$json.reply}}"
+      },
+      "position": [500, 100]
+    },
+    {
+      "name": "PostCommunityUpdate",
+      "type": "youtube-community-post",
+      "parameters": {
+        "content": "What's your favorite AI tool this week?"
+      },
+      "position": [700, 100]
+    }
+  ],
+  "connections": {
+    "FetchComments": { "main": [[{ "node": "ReplyWithAI", "type": "main", "index": 0 }]] },
+    "ReplyWithAI": { "main": [[{ "node": "PostReply", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "SEOTrendsFetcher",
+      "type": "web-scraper-trends",
+      "parameters": {
+        "source": "YouTube Trending + Google Trends",
+        "keywords": "AI tools, automation, niche"
+      },
+      "position": [100, 100]
+    },
+    {
+      "name": "AIRewriter",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Rewrite this video metadata for SEO using trends: {{$json.originalMetadata}}"
+      },
+      "position": [300, 100]
+    },
+    {
+      "name": "ApplySEO",
+      "type": "youtube-video-update",
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "metadata": "={{$json.optimizedMetadata}}"
+      },
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "SEOTrendsFetcher": { "main": [[{ "node": "AIRewriter", "type": "main", "index": 0 }]] },
+    "AIRewriter": { "main": [[{ "node": "ApplySEO", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "FindInfluencers",
+      "type": "youtube-search",
+      "parameters": {
+        "query": "AI tools automation",
+        "filter": "Channel",
+        "minSubscribers": 1000
+      },
+      "position": [100, 100]
+    },
+    {
+      "name": "GeneratePitch",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Write a collab email for YouTube creator {{$json.channelName}} based on our channel info."
+      },
+      "position": [300, 100]
+    },
+    {
+      "name": "SendEmail",
+      "type": "gmail-send",
+      "parameters": {
+        "to": "={{$json.email}}",
+        "subject": "Collab Idea – Let’s Build Something Viral",
+        "body": "={{$json.generatedEmail}}"
+      },
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "FindInfluencers": { "main": [[{ "node": "GeneratePitch", "type": "main", "index": 0 }]] },
+    "GeneratePitch": { "main": [[{ "node": "SendEmail", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "ScheduleLivestream",
+      "type": "youtube-live-scheduler",
+      "parameters": {
+        "title": "={{$json.title}}",
+        "description": "={{$json.description}}",
+        "startTime": "2025-05-01T18:00:00Z"
+      },
+      "position": [100, 100]
+    },
+    {
+      "name": "LiveChatHandler",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Respond to this YouTube live chat: {{$json.message}}"
+      },
+      "position": [300, 100]
+    },
+    {
+      "name": "ShowHypeOverlay",
+      "type": "video-overlay-trigger",
+      "parameters": {
+        "condition": "viewerCount > 100",
+        "overlayText": "100+ viewers – smash like!"
+      },
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "ScheduleLivestream": { "main": [[{ "node": "LiveChatHandler", "type": "main", "index": 0 }]] },
+    "LiveChatHandler": { "main": [[{ "node": "ShowHypeOverlay", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "FetchNewComments",
+      "type": "youtube-comment-fetch",
+      "parameters": {
+        "videoId": "latest",
+        "maxResults": 50
+      },
+      "position": [100, 100]
+    },
+    {
+      "name": "GenerateReply",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Write a friendly reply to this comment: {{$json.commentText}}"
+      },
+      "position": [300, 100]
+    },
+    {
+      "name": "PostReply",
+      "type": "youtube-comment-post",
+      "parameters": {
+        "replyTo": "={{$json.commentId}}",
+        "text": "={{$json.reply}}"
+      },
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "FetchNewComments": { "main": [[{ "node": "GenerateReply", "type": "main", "index": 0 }]] },
+    "GenerateReply": { "main": [[{ "node": "PostReply", "type": "main", "index": 0 }]] }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "CheckVideoPerformance",
+      "type": "youtube-analytics-fetch",
+      "parameters": {
+        "metric": "clickThroughRate",
+        "threshold": "<3%"
+      },
+      "position": [100, 100]
+    },
+    {
+      "name": "GenerateNewTitle",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Improve this YouTube title for high CTR: {{$json.oldTitle}}"
+      },
+      "position": [300, 100]
+    },
+    {
+      "name": "UpdateYouTubeTitle",
+      "type": "youtube-video-update",
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "newTitle": "={{$json.titleSuggestion}}"
+      },
+      "position": [500, 100]
+    }
+  ],
+  "connections": {
+    "CheckVideoPerformance": {
+      "main": [[{ "node": "GenerateNewTitle", "type": "main", "index": 0 }]]
+    },
+    "GenerateNewTitle": {
+      "main": [[{ "node": "UpdateYouTubeTitle", "type": "main", "index": 0 }]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "OldVideosFilter",
+      "type": "youtube-video-analytics",
+      "parameters": {
+        "daysOld": ">60",
+        "views": "<500"
+      },
+      "position": [100, 100]
+    },
+    {
+      "name": "SuggestSEORefresh",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Suggest updated YouTube tags for this topic: {{$json.title}}"
+      },
+      "position": [300, 100]
+    },
+    {
+      "name": "UpdateTags",
+      "type": "youtube-video-update",
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "tags": "={{$json.newTags}}"
+      },
+      "position": [500, 100]
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "FetchCompetitorVideos",
+      "type": "youtube-channel-scraper",
+      "parameters": {
+        "channels": ["CompetitorA", "CompetitorB"]
+      }
+    },
+    {
+      "name": "GenerateGapAnalysis",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Compare topics from these videos to my channel’s uploads. Suggest gaps and fresh ideas."
+      }
+    },
+    {
+      "name": "SuggestNewContent",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Based on gaps, generate new video titles and SEO-optimized descriptions."
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "ChapterGenerator",
+      "type": "audio-transcript",
+      "parameters": {
+        "source": "YouTubeVideoURL"
+      }
+    },
+    {
+      "name": "GenerateTimestamps",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Create video chapters with timestamps and SEO titles from this transcript."
+      }
+    },
+    {
+      "name": "UpdateYouTubeChapters",
+      "type": "youtube-video-editor",
+      "parameters": {
+        "videoId": "={{$json.videoId}}",
+        "chapters": "={{$json.timestamps}}"
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "ExtractHighlights",
+      "type": "video-scene-detector",
+      "parameters": {
+        "duration": "15-60s",
+        "criteria": "engagement spikes"
+      }
+    },
+    {
+      "name": "ReformatVertical",
+      "type": "ffmpeg-resize",
+      "parameters": {
+        "aspectRatio": "9:16"
+      }
+    },
+    {
+      "name": "CaptionSync",
+      "type": "speech-to-text-aligner",
+      "parameters": {
+        "audioSource": "ElevenLabsOutput"
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "ScanYouTubeComments",
+      "type": "youtube-comments-watcher",
+      "parameters": {
+        "channelId": "your-channel-id"
+      }
+    },
+    {
+      "name": "GenerateReply",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Reply to this comment in the same language. Add a friendly tone and use creator voice."
+      }
+    },
+    {
+      "name": "PostCommentReply",
+      "type": "youtube-reply-comment",
+      "parameters": {
+        "commentId": "={{$json.commentId}}",
+        "text": "={{$json.reply}}"
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "GenerateHashtags",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Suggest the best 10 viral hashtags for this YouTube Shorts script."
+      }
+    },
+    {
+      "name": "FetchTrendingHooks",
+      "type": "webhook-google-trends",
+      "parameters": {
+        "topic": "AI Tools"
+      }
+    },
+    {
+      "name": "InsertCustomCTA",
+      "type": "video-overlay-generator",
+      "parameters": {
+        "ctaText": "Subscribe for More AI Hacks!",
+        "position": "end",
+        "style": "bold + fade-in"
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "GenerateThumbnails",
+      "type": "ai-thumbnail-generator",
+      "parameters": {
+        "title": "{{$json.videoTitle}}",
+        "style": "Vibrant + Hook Text + Logo"
+      }
+    },
+    {
+      "name": "UploadThumbnails",
+      "type": "youtube-upload-thumbnail",
+      "parameters": {
+        "videoId": "{{$json.videoId}}",
+        "thumbnailVariant": "A"
+      }
+    },
+    {
+      "name": "TrackCTR",
+      "type": "google-sheets",
+      "parameters": {
+        "appendRow": {
+          "columns": ["VideoID", "ThumbnailVersion", "CTR", "Date"]
+        }
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "ApplyBrandKit",
+      "type": "video-branding-overlay",
+      "parameters": {
+        "logo": "channel-logo.png",
+        "colors": ["#ff5733", "#000000"],
+        "font": "Montserrat"
+      }
+    },
+    {
+      "name": "GenerateCommunityPost",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Write a poll for the YouTube community tab on AI tools."
+      }
+    },
+    {
+      "name": "SortPlaylists",
+      "type": "youtube-playlist-organizer",
+      "parameters": {
+        "strategy": "group-by-topic"
+      }
+    },
+    {
+      "name": "RotateCTAs",
+      "type": "cta-ab-tester",
+      "parameters": {
+        "variants": ["Subscribe Now", "Like + Share", "Watch More Shorts"],
+        "schedule": "auto"
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "SummarizeVideo",
+      "type": "openai-gpt4-video-summarizer",
+      "parameters": {
+        "transcript": "YouTube transcript or Whisper input",
+        "outputFormat": "short captions + summary"
+      }
+    },
+    {
+      "name": "TranslateCaptions",
+      "type": "deepl-translate",
+      "parameters": {
+        "languages": ["es", "hi", "fr", "de", "ar"]
+      }
+    },
+    {
+      "name": "GenerateShorts",
+      "type": "shorts-autosplitter",
+      "parameters": {
+        "sourceVideo": "final_edited.mp4",
+        "maxLength": 60
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "FindCollabCreators",
+      "type": "youtube-channel-analyzer",
+      "parameters": {
+        "keywords": ["AI tools", "automation"],
+        "minSubscribers": 5000
+      }
+    },
+    {
+      "name": "GenerateSponsorInsert",
+      "type": "openai-gpt4-insert-cta",
+      "parameters": {
+        "brandInfo": "From Notion DB",
+        "insertAt": "Intro & Midroll"
+      }
+    },
+    {
+      "name": "EmailOutreach",
+      "type": "openai-gpt4-email-writer",
+      "parameters": {
+        "target": "Creator or Brand",
+        "tone": "Professional + Friendly"
+      }
+    },
+    {
+      "name": "TrackCollab",
+      "type": "notion-db-updater",
+      "parameters": {
+        "status": "In Progress",
+        "reminder": "7 days"
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "TrackMilestones",
+      "type": "youtube-analytics",
+      "parameters": {
+        "metric": "subscribers",
+        "thresholds": [1000, 5000, 10000]
+      }
+    },
+    {
+      "name": "RunGiveaway",
+      "type": "comment-randomizer",
+      "parameters": {
+        "videoId": "latest",
+        "entryKeyword": "🔥"
+      }
+    },
+    {
+      "name": "ShoutoutGenerator",
+      "type": "openai-gpt4-shoutout",
+      "parameters": {
+        "source": "top commenters"
+      }
+    },
+    {
+      "name": "LoyaltyBadgeUpdater",
+      "type": "notion-loyalty-tracker",
+      "parameters": {
+        "tiers": ["Bronze", "Silver", "Gold"]
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "GenerateCourseOutline",
+      "type": "openai-gpt4-course-creator",
+      "parameters": {
+        "topic": "AI Automation for Beginners",
+        "levels": ["Intro", "Intermediate", "Advanced"]
+      }
+    },
+    {
+      "name": "EmailCollector",
+      "type": "typeform-email-capture",
+      "parameters": {
+        "formId": "xyz123",
+        "storeTo": "Mailchimp + Notion"
+      }
+    },
+    {
+      "name": "PaymentWebhook",
+      "type": "stripe-confirmation-handler",
+      "parameters": {
+        "trigger": "on payment success",
+        "action": "send unlock + access email"
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "DetectAffiliateMentions",
+      "type": "gpt-keyword-scanner",
+      "parameters": {
+        "input": "video transcript or description",
+        "keywords": ["ai tool", "automation app", "video maker"]
+      }
+    },
+    {
+      "name": "InjectSmartLinks",
+      "type": "description-inserter",
+      "parameters": {
+        "linkType": "Cloaked Affiliate",
+        "position": "top + CTA"
+      }
+    },
+    {
+      "name": "TrackClicks",
+      "type": "webhook-click-logger",
+      "parameters": {
+        "destination": "Google Sheets",
+        "notifyThreshold": 50
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "DetectOriginalLanguage",
+      "type": "speech-language-detector"
+    },
+    {
+      "name": "TranslateAndDub",
+      "type": "elevenlabs-multi-voice",
+      "parameters": {
+        "languages": ["es", "hi", "fr", "ar", "de"]
+      }
+    },
+    {
+      "name": "GenerateCaptions",
+      "type": "auto-sub-generator",
+      "parameters": {
+        "output": [".srt", ".vtt"]
+      }
+    },
+    {
+      "name": "LocalizeSEO",
+      "type": "gpt-seo-multilang",
+      "parameters": {
+        "targets": ["title", "description", "hashtags"]
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "ClipHighlights",
+      "type": "ai-scene-detector",
+      "parameters": {
+        "maxDuration": 60
+      }
+    },
+    {
+      "name": "GenerateHook",
+      "type": "gpt-hook-writer",
+      "parameters": {
+        "style": "viral shorts"
+      }
+    },
+    {
+      "name": "FormatForShorts",
+      "type": "video-resizer",
+      "parameters": {
+        "aspectRatio": "9:16",
+        "overlay": "subtitles + CTA"
+      }
+    },
+    {
+      "name": "AutoPostShorts",
+      "type": "multi-platform-scheduler",
+      "parameters": {
+        "platforms": ["YouTube Shorts", "TikTok", "Instagram Reels"]
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "ScriptAnalyzer",
+      "type": "gpt-keyword-extractor"
+    },
+    {
+      "name": "InsertBroll",
+      "type": "stock-broll-fetcher",
+      "parameters": {
+        "sources": ["pexels", "pixabay"]
+      }
+    },
+    {
+      "name": "AddZoomEffects",
+      "type": "video-animator",
+      "parameters": {
+        "effects": ["zoom", "pan", "cut"]
+      }
+    },
+    {
+      "name": "EmojisCaptions",
+      "type": "fun-overlay-generator",
+      "parameters": {
+        "style": "auto-react"
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "MonitorComments",
+      "type": "youtube.commentTrigger"
+    },
+    {
+      "name": "GenerateReply",
+      "type": "gpt-comment-reply",
+      "parameters": {
+        "tone": "friendly + engaging"
+      }
+    },
+    {
+      "name": "PostReply",
+      "type": "youtube.commentPoster"
+    },
+    {
+      "name": "PinnedCTA",
+      "type": "gpt-pinned-comment",
+      "parameters": {
+        "style": "question + CTA"
+      }
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "TranscriptParser",
+      "type": "text-analyzer"
+    },
+    {
+      "name": "GenerateTitle",
+      "type": "gpt-title-generator"
+    },
+    {
+      "name": "WriteDescription",
+      "type": "gpt-longform-writer"
+    },
+    {
+      "name": "FindHashtags",
+      "type": "trending-hashtag-grabber"
+    },
+    {
+      "name": "CompileSEO",
+      "type": "seo-data-bundler"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "ExtractClips",
+      "type": "smart-clipper"
+    },
+    {
+      "name": "ResizeForShorts",
+      "type": "video-formatter",
+      "parameters": {
+        "aspectRatio": "9:16"
+      }
+    },
+    {
+      "name": "AddCaptions",
+      "type": "caption-generator"
+    },
+    {
+      "name": "InsertHashtagsCTA",
+      "type": "shorts-meta-writer"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "UploadVideo",
+      "type": "youtube-upload"
+    },
+    {
+      "name": "SetPremiere",
+      "type": "youtube-premiere-config"
+    },
+    {
+      "name": "OrganizePlaylist",
+      "type": "youtube-playlist-manager"
+    },
+    {
+      "name": "OptimizePublish",
+      "type": "metadata-sync"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "DetectChapters",
+      "type": "ai-scene-analyzer"
+    },
+    {
+      "name": "GenerateChapterTitles",
+      "type": "gpt4-turbo-prompt"
+    },
+    {
+      "name": "FormatChapterTimestamps",
+      "type": "timestamp-formatter"
+    },
+    {
+      "name": "InsertIntoDescription",
+      "type": "video-metadata-updater"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "GeneratePinnedComment",
+      "type": "gpt4-comment-writer"
+    },
+    {
+      "name": "MonitorNewComments",
+      "type": "youtube-comment-watcher"
+    },
+    {
+      "name": "AutoReply",
+      "type": "comment-reply-generator"
+    },
+    {
+      "name": "CTAInsert",
+      "type": "video-script-optimizer"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "FrameAnalyzer",
+      "type": "video-frame-extractor"
+    },
+    {
+      "name": "GenerateThumbnail",
+      "type": "ai-thumbnail-designer"
+    },
+    {
+      "name": "CTRScore",
+      "type": "thumbnail-clickbait-score"
+    },
+    {
+      "name": "UploadThumbnail",
+      "type": "youtube-thumbnail-uploader"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "DetectHighlights",
+      "type": "video-moment-detector"
+    },
+    {
+      "name": "AutoCutShorts",
+      "type": "video-trimmer"
+    },
+    {
+      "name": "RemixShorts",
+      "type": "template-remixer"
+    },
+    {
+      "name": "SEOBoost",
+      "type": "shorts-meta-writer"
+    },
+    {
+      "name": "UploadShorts",
+      "type": "youtube-shorts-uploader"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "AnalyzeAudienceTime",
+      "type": "youtube-insight-fetcher"
+    },
+    {
+      "name": "TimeZoneAdjuster",
+      "type": "smart-scheduler"
+    },
+    {
+      "name": "QueueUploader",
+      "type": "youtube-publisher"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "GeneratePinnedComment",
+      "type": "ai-comment-generator"
+    },
+    {
+      "name": "PostFirstComment",
+      "type": "youtube-comment-uploader"
+    },
+    {
+      "name": "PollCreator",
+      "type": "community-tab-scheduler"
+    },
+    {
+      "name": "ReplyEngine",
+      "type": "auto-comment-responder"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "MonitorEngagement",
+      "type": "youtube-analytics-check"
+    },
+    {
+      "name": "TriggerBoostActions",
+      "type": "conditional-handler"
+    },
+    {
+      "name": "FollowUpShortCreator",
+      "type": "short-video-generator"
+    },
+    {
+      "name": "AlertDispatcher",
+      "type": "multi-platform-notifier"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "UploadThumbnailA",
+      "type": "youtube-api-upload-thumbnail"
+    },
+    {
+      "name": "WaitInterval",
+      "type": "delay-timer"
+    },
+    {
+      "name": "UploadThumbnailB",
+      "type": "youtube-api-upload-thumbnail"
+    },
+    {
+      "name": "EvaluatePerformance",
+      "type": "youtube-analytics-fetch"
+    },
+    {
+      "name": "DecideWinner",
+      "type": "conditional-thumbnail-swap"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "FetchNewComments",
+      "type": "youtube-comment-fetcher"
+    },
+    {
+      "name": "AnalyzeSentiment",
+      "type": "ai-sentiment-analyzer"
+    },
+    {
+      "name": "PinPositiveComment",
+      "type": "youtube-api-pin-comment"
+    },
+    {
+      "name": "DeleteToxicComments",
+      "type": "moderation-rule-checker"
+    }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "FetchNewVideoData",
+      "type": "youtube-api-fetch"
+    },
+    {
+      "name": "AnalyzeVideoTopic",
+      "type": "openai-keyword-mapper"
+    },
+    {
+      "name": "AssignToPlaylist",
+      "type": "youtube-api-playlist-assigner"
+    },
+    {
+      "name": "GenerateSmartLinks",
+      "type": "related-video-recommender"
+    }
+  ]
+}
+{
+  "nodes": [
+    { "name": "VideoInputTrigger", "type": "video-uploaded-check" },
+    { "name": "TitleBoost", "type": "openai-ctr-writer" },
+    { "name": "DescSEO", "type": "longform-description-optimizer" },
+    { "name": "TagGen", "type": "youtube-tag-ai" },
+    { "name": "UploadToYouTube", "type": "youtube-api-uploader" }
+  ]
+}
+{
+  "nodes": [
+    { "name": "GenerateThumbnails", "type": "image-ai-generator" },
+    { "name": "EmotionScan", "type": "audio-sentiment-analyzer" },
+    { "name": "AutoOverlayBuilder", "type": "thumbnail-enhancer" },
+    { "name": "CTRSplitTestRunner", "type": "youtube-thumbnail-swapper" },
+    { "name": "ResultTracker", "type": "performance-log-ai" }
+  ]
+}
+{
+  "nodes": [
+    { "name": "UploadVideo", "type": "youtube.upload" },
+    { "name": "MetadataPolisher", "type": "ai-metadata-optimizer" },
+    { "name": "RetentionBoost", "type": "watch-time-tactician" },
+    { "name": "PinnedCommentBot", "type": "youtube.comment.pinner" },
+    { "name": "ScheduleController", "type": "upload-scheduler" }
+  ]
+}
+{
+  "nodes": [
+    { "name": "VideoAnalyzer", "type": "scene-splitter-ai" },
+    { "name": "ClipCutter", "type": "auto-short-generator" },
+    { "name": "HookWriter", "type": "hook-injector" },
+    { "name": "CTARemixer", "type": "cta-randomizer" },
+    { "name": "ShortsUploader", "type": "youtube.shorts.upload" }
+  ]
+}
+{
+  "nodes": [
+    { "name": "SubtitleGen", "type": "caption-ai-dynamic" },
+    { "name": "VoiceSwitcher", "type": "elevenlabs-multi-voice" },
+    { "name": "TimingSync", "type": "visual-sync-aligner" }
+  ]
+}
+{
+  "nodes": [
+    { "name": "ThumbnailGen", "type": "ai-thumbnail-creator" },
+    { "name": "TitleOptimizer", "type": "seo-title-optimizer" },
+    { "name": "DescriptionTagsGen", "type": "description-tags-seo" },
+    { "name": "KeywordAnalyzer", "type": "keyword-analysis-tool" }
+  ]
+}
+{
+  "nodes": [
+    {
+      "name": "WatchComments",
+      "type": "youtube-comment-trigger",
+      "parameters": { "pollInterval": 60 }
+    },
+    {
+      "name": "GenerateCommentReply",
+      "type": "openai-gpt4",
+      "parameters": {
+        "prompt": "Write a friendly, engaging reply to this YouTube comment:\n{{$json.commentText}}"
+      }
+    },
+    {
+      "name": "PostCommentReply",
+      "type": "youtube-comment-post",
+      "parameters": {
+        "commentId": "={{$json.commentId}}",
+        "text": "={{$json.reply}}"
+      }
+    },
+    {
+      "name": "InsertSubCTA",
+      "type": "video-overlay-trigger",
+      "parameters": {
+        "triggerAtPercent": 25,
+        "overlayText": "Enjoying this? Subscribe for more! 🔔"
+      }
+    },
+    {
+      "name": "ShareToSocials",
+      "type": "multi-platform-poster",
+      "parameters": {
+        "platforms": ["Twitter", "LinkedIn", "Facebook"],
+        "messageTemplate": "New video: {{$json.title}} 🔗 {{$json.videoUrl}} #YouTube #AI"
+      }
+    }
+  ],
+  "connections": {
+    "WatchComments": {
+      "main": [[
+        { "node": "GenerateCommentReply", "type": "main", "index": 0 }
+      ]]
+    },
+    "GenerateCommentReply": {
+      "main": [[
+        { "node": "PostCommentReply", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "WebinarCreation",
+      "type": "webinar-funnel-creator",
+      "parameters": {
+        "videoContent": "={{$json.videoUrl}}",
+        "webinarTitle": "={{$json.title}}",
+        "webinarDate": "={{$json.date}}"
+      }
+    },
+    {
+      "name": "EmailCapture",
+      "type": "form-capture",
+      "parameters": {
+        "formUrl": "={{$json.formUrl}}",
+        "fields": ["Name", "Email", "Phone"]
+      }
+    },
+    {
+      "name": "PollIntegration",
+      "type": "live-poll",
+      "parameters": {
+        "questions": ["What did you find most interesting?", "What topics would you like to see next?"]
+      }
+    },
+    {
+      "name": "LiveQA",
+      "type": "qa-bot",
+      "parameters": {
+        "enableModeration": true,
+        "moderatorReview": true
+      }
+    },
+    {
+      "name": "FollowUpEmail",
+      "type": "email-sequence-sender",
+      "parameters": {
+        "subject": "Thank you for attending!",
+        "emailTemplate": "webinar-followup"
+      }
+    }
+  ],
+  "connections": {
+    "WebinarCreation": {
+      "main": [[
+        { "node": "EmailCapture", "type": "main", "index": 0 }
+      ]]
+    },
+    "EmailCapture": {
+      "main": [[
+        { "node": "PollIntegration", "type": "main", "index": 0 }
+      ]]
+    },
+    "PollIntegration": {
+      "main": [[
+        { "node": "LiveQA", "type": "main", "index": 0 }
+      ]]
+    },
+    "LiveQA": {
+      "main": [[
+        { "node": "FollowUpEmail", "type": "main", "index": 0 }
+      ]]
+    }
+  }
+}
+{
+  "nodes": [
+    {
+      "name": "RepurposeClips",
+      "type": "video-clip-generator",
+      "parameters": {
+        "videoSource": "={{$json.videoUrl}}",
+        "outputFormats": ["shorts", "reels", "quotes", "thumbnails"]
+      }
+    },
+    {
+      "name": "InjectTestimonials",
+      "type": "comment-overlay",
+      "parameters": {
+        "topComments": "={{$json.comments}}",
+        "design": "highlight-overlay"
+      }
+    },
+    {
+      "name": "PinLikeReply",
+      "type": "comment-manager",
+      "parameters": {
+        "autoPin": true,
+        "autoLike": true,
+        "replyTemplate": "Thanks for watching! Subscribe for more!"
+      }
+    },
+    {
+      "name": "AdsAssetPack",
+      "type": "ad-generator",
+      "parameters": {
+        "platforms": ["Google", "Facebook", "Instagram"],
+        "includeCaptions": true,
+        "autoThumbnail": true
+      }
+    }
+  ]
+}
