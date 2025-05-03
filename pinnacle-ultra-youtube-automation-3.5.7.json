@@ -1,0 +1,367 @@
+{
+  "name": "PINNACLE ULTRA YOUTUBE AUTOMATION SYSTEM 3.5.7",
+  "description": "Enterprise-level faceless YouTube channel automation workflow with advanced AI capabilities",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "minutesInterval": 0,
+              "hoursInterval": 0,
+              "daysInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "bd9a2471-defa-4d7c-9d31-3a3ccb18599a",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        140,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Enhanced System configuration\nreturn {\n  currentDate: \"2025-05-03 02:42:08\",\n  currentUser: \"onabellaabdullaziz\",\n  systemVersion: \"PINNACLE ULTRA 3.5.7\",\n  accessLevel: \"ENTERPRISE\",\n  concurrentProcesses: 32,\n  processingPriority: \"Maximum\",\n  sessionId: \"ultra-\" + Math.random().toString(36).substring(2, 15),\n  licenseStatus: \"ACTIVE\",\n  quotaRemaining: {\n    apiCalls: \"UNLIMITED\",\n    videoProcessingMinutes: \"UNLIMITED\",\n    audioProcessingMinutes: \"UNLIMITED\",\n    thumbnailGenerations: \"UNLIMITED\",\n    multimodalGeneration: \"UNLIMITED\",\n    crossPlatformAdaptation: \"UNLIMITED\"\n  },\n  preferences: {\n    preferredNiches: [\"finance\", \"cryptocurrency\", \"business\", \"personal development\"],\n    contentStyle: \"educational\",\n    monetizationFocus: \"omnichannel\",\n    qualityLevel: \"ultra-premium\",\n    languageSupport: [\"en\", \"es\", \"fr\", \"de\", \"pt\", \"ru\", \"ar\", \"hi\", \"zh\", \"ja\"],\n    brandSafetyLevel: \"maximum\"\n  },\n  channelConfig: {\n    channelName: \"Crypto Finance Insights\",\n    uploadSchedule: [\"Monday\", \"Thursday\"],\n    uploadTime: \"18:00\",\n    targetAudience: {\n      ageRange: \"25-45\",\n      interests: [\"cryptocurrency\", \"investing\", \"financial freedom\", \"business\"],\n      geographicFocus: [\"United States\", \"United Kingdom\", \"Canada\", \"Australia\", \"Europe\", \"Asia\"],\n      psychographicProfiles: [\n        {name: \"Ambitious Professional\", percentage: 35},\n        {name: \"Financial Freedom Seeker\", percentage: 25},\n        {name: \"Tech-Savvy Investor\", percentage: 20},\n        {name: \"Entrepreneurial Minded\", percentage: 20}\n      ],\n      deviceUsage: {\n        mobile: 65,\n        desktop: 30,\n        tablet: 5\n      },\n      viewingPatterns: {\n        morningCommute: 15,\n        lunchBreak: 25,\n        eveningLeisure: 45,\n        weekendDeepDive: 15\n      }\n    },\n    contentPlanning: {\n      videoLength: 12, // in minutes\n      shortsPerWeek: 5,\n      batchProductionSize: 8,\n      contentArchitecture: {\n        pillars: [\"Crypto Analysis\", \"Investment Strategies\", \"Financial Education\", \"Tech Deep Dives\"],\n        contentMix: {\n          educational: 50,\n          newsAnalysis: 20,\n          tutorialHowTo: 20,\n          entertainmentInspirational: 10\n        },\n        contentDepth: {\n          beginner: 30,\n          intermediate: 50,\n          advanced: 20\n        }\n      }\n    },\n    brandIdentity: {\n      colorScheme: \"#0A2342, #2CA58D, #84BC9C, #F3DFBF, #A997DF\",\n      fontFamily: \"Montserrat\",\n      styleGuide: \"professional, clean, authoritative, innovative\",\n      logoPath: \"/assets/brand/channel-logo.png\",\n      soundIdentity: {\n        introAudio: \"/assets/audio/intro-sound.mp3\",\n        backgroundMusicProfile: \"professional-tech\",\n        voiceCharacteristics: \"confident, authoritative, approachable\"\n      },\n      visualIdentity: {\n        animationStyle: \"dynamic-minimal\",\n        graphicsPackage: \"crypto-finance-premium\",\n        textAnimationStyle: \"smooth-modern\",\n        transitionStyle: \"sleek-professional\",\n        patternLanguage: \"geometric-tech\"\n      }\n    },\n    crossPlatformStrategy: {\n      platforms: [\n        {name: \"YouTube\", priority: 1, contentFormat: \"long-form\"},\n        {name: \"TikTok\", priority: 2, contentFormat: \"short-form\"},\n        {name: \"Instagram\", priority: 2, contentFormat: \"short-form+carousel\"},\n        {name: \"LinkedIn\", priority: 3, contentFormat: \"insight-focused\"},\n        {name: \"Twitter\", priority: 3, contentFormat: \"micro-content\"},\n        {name: \"Podcast\", priority: 4, contentFormat: \"audio-adaptation\"}\n      ],\n      crossPlatformSynergy: \"high\",\n      contentAdaptationStrategy: \"ai-optimized\"\n    },\n    monetizationStrategy: {\n      primaryStreams: [\"ad-revenue\", \"affiliate-marketing\", \"digital-products\", \"sponsorships\"],\n      secondaryStreams: [\"membership\", \"consulting\", \"speaking\", \"nft-collectibles\"],\n      affiliatePartners: [\"trading-platforms\", \"educational-courses\", \"financial-tools\"],\n      sponsorshipCategories: [\"fintech\", \"defi-projects\", \"investment-platforms\"],\n      productEcosystem: [\"crypto-courses\", \"investment-guides\", \"analytical-tools\"]\n    }\n  },\n  advancedFeatures: {\n    multimodalGeneration: true,\n    advancedAudienIntelligence: true,\n    semanticContentOptimization: true,\n    neuralEngagementModeling: true,\n    crossPlatformContentAdaptation: true,\n    realTimePerformanceOptimization: true,\n    predictiveAnalytics: true,\n    multilingualAutoTranslation: true,\n    audienceSegmentClustering: true,\n    competitiveIntelligence: true\n  }\n};"
+      },
+      "id": "dc8e3f6a-91b2-47e9-8c51-9fb54e4d1481",
+      "name": "Ultra System Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        140,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "api": "multimodalResearchAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.pinnacle.multimodal/v3/content-intelligence",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-ultra-api-key",
+              "value": "pinnacle-ultra-9e752-7d42-ad86-e7f4903gfd47"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"Ultra System Configuration\"].json.currentUser}}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "niches",
+              "value": "={{$node[\"Ultra System Configuration\"].json.preferences.preferredNiches.join(\",\")}}"
+            },
+            {
+              "name": "intelligence_depth",
+              "value": "maximum"
+            },
+            {
+              "name": "opportunity_count",
+              "value": "25"
+            },
+            {
+              "name": "analysis_dimensions",
+              "value": "all"
+            },
+            {
+              "name": "data_sources",
+              "value": "youtube,tiktok,twitter,google,reddit,forums,news,academic,proprietary"
+            },
+            {
+              "name": "include_semantic_network",
+              "value": "true"
+            },
+            {
+              "name": "include_trend_prediction",
+              "value": "true"
+            },
+            {
+              "name": "include_competitive_landscape",
+              "value": "true"
+            },
+            {
+              "name": "include_audience_interest_graph",
+              "value": "true"
+            },
+            {
+              "name": "include_content_gap_analysis",
+              "value": "true"
+            },
+            {
+              "name": "include_multimodal_opportunities",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "7c48d9e2-f31a-45b8-9e62-8f2c10a9e741",
+      "name": "Multimodal Intelligence Engine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "api": "competitiveIntelligenceAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.pinnacle.competitive/v2/advanced-analysis",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-ultra-api-key",
+              "value": "pinnacle-ultra-9e752-7d42-ad86-e7f4903gfd47"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"Ultra System Configuration\"].json.currentUser}}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "niches",
+              "value": "={{$node[\"Ultra System Configuration\"].json.preferences.preferredNiches.join(\",\")}}"
+            },
+            {
+              "name": "video_count",
+              "value": "150"
+            },
+            {
+              "name": "period",
+              "value": "90d"
+            },
+            {
+              "name": "include_multiplatform_analysis",
+              "value": "true"
+            },
+            {
+              "name": "include_content_pattern_analysis",
+              "value": "true"
+            },
+            {
+              "name": "include_audience_overlap_analysis",
+              "value": "true"
+            },
+            {
+              "name": "include_monetization_analysis",
+              "value": "true"
+            },
+            {
+              "name": "include_content_architecture",
+              "value": "true"
+            },
+            {
+              "name": "include_neural_engagement_mapping",
+              "value": "true"
+            },
+            {
+              "name": "include_pattern_recognition",
+              "value": "true"
+            },
+            {
+              "name": "include_competitive_gap_analysis",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "e4bf33a7-24cb-455e-887d-b23cf32a3e05",
+      "name": "Advanced Competitive Intelligence",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "api": "advancedAnalyticsAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.pinnacle.analytics/v3/audience-intelligence",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer pinnacle-ultra-9e752-7d42-ad86-e7f4903gfd47"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"Ultra System Configuration\"].json.currentUser}}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel_id",
+              "value": "UCpinnacledemo12345"
+            },
+            {
+              "name": "analysis_depth",
+              "value": "maximum"
+            },
+            {
+              "name": "period",
+              "value": "90d"
+            },
+            {
+              "name": "include_advanced_demographics",
+              "value": "true"
+            },
+            {
+              "name": "include_psychographic_profiles",
+              "value": "true"
+            },
+            {
+              "name": "include_behavioral_patterns",
+              "value": "true"
+            },
+            {
+              "name": "include_content_preferences",
+              "value": "true"
+            },
+            {
+              "name": "include_engagement_patterns",
+              "value": "true"
+            },
+            {
+              "name": "include_neural_response_mapping",
+              "value": "true"
+            },
+            {
+              "name": "include_device_ecosystem",
+              "value": "true"
+            },
+            {
+              "name": "include_value_perception_analysis",
+              "value": "true"
+            },
+            {
+              "name": "include_audience_segment_clustering",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "a4b8c94e-ecff-4e77-b175-bf390872452d",
+      "name": "Advanced Audience Intelligence",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "api": "predictiveAnalyticsAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.pinnacle.predictive/v2/performance-forecast",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-ultra-api-key",
+              "value": "pinnacle-ultra-9e752-7d42-ad86-e7f4903gfd47"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"Ultra System Configuration\"].json.currentUser}}"
+            }
+          ]
+        },
+        "jsonParameters": true,
+        "bodyParametersJson": "{\n  \"channel_id\": \"UCpinnacledemo12345\",\n  \"content_opportunities\": {{$node[\"Multimodal Intelligence Engine\"].json.opportunities}},\n  \"prediction_parameters\": {\n    \"forecast_horizon\": \"90d\",\n    \"confidence_interval\": 0.95,\n    \"include_topic_performance\": true,\n    \"include_format_performance\": true,\n    \"include_audience_response\": true,\n    \"include_monetization_projections\": true,\n    \"include_algorithm_favorability\": true,\n    \"include_competitive_position\": true,\n    \"include_growth_trajectory\": true\n  },\n  \"optimization_parameters\": {\n    \"include_optimal_timing\": true,\n    \"include_title_optimization\": true,\n    \"include_thumbnail_optimization\": true,\n    \"include_content_structure_optimization\": true,\n    \"include_monetization_optimization\": true,\n    \"include_cross_platform_optimization\": true\n  }\n}"
+      },
+      "id": "8b07f2e5-6c23-47a9-b5d4-e9f672c91325",
+      "name": "Predictive Performance Analytics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "api": "semanticAnalysisAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.pinnacle.semantic/v1/content-analysis",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-ultra-api-key",
+              "value": "pinnacle-ultra-9e752-7d42-ad86-e7f4903gfd47"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"Ultra System Configuration\"].json.currentUser}}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "niches",
+              "value": "={{$node[\"Ultra System Configuration\"].json.preferences.preferredNiches.join(\",\")}}"
+            },
+            {
+              "name": "content_count",
+              "value": "100"
+            },
+            {
+              "name": "include_topic_clusters",
+              "value": "true"
+            },
+            {
+              "name": "include_semantic_network",
+              "value": "true"
+            },
+            {
+              "name": "include_narrative_structures",
+              "value": "true"
+            },
+            {
+              "name": "include_engagement_drivers",
+              "value": "true"
+            },
+            {
+              "name": "include_value_frameworks",
+              "value": "true"
+            },
+            {
+              "name": "include_emotional_resonance",
+              "value": "true"
+            },
+            {
+              "name": "include_cognitive_frameworks",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "c9df36e1-a4fb-42b7-8d05-7f24c3f31c50",
+      "name": "Semantic Content Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Advanced Strategic Content Engine\n\n// Process data from all intelligence sources\nconst multimodalData = $node[\"Multimodal Intelligence Engine\"].json;\nconst competitiveData = $node[\"Advanced Competitive Intelligence\"].json;\nconst audienceData = $node[\"Advanced Audience Intelligence\"].json;\nconst predictiveData = $node[\"Predictive Performance Analytics\"].json;\nconst semanticData = $node[\"Semantic Content Analysis\"].json;\n\n// Extract system configuration\nconst system = $node[\"Ultra System Configuration\"].json;\nconst channelConfig = system.channelConfig;\nconst advancedFeatures = system.advancedFeatures;\n\n// Advanced hyperdimensional scoring function for content opportunities\nfunction hyperdimensionalScoring(opportunity) {\n  // Base score framework\n  let baseScore = 50;\n  let dimensions = {\n    audience: 0,\n    competitive: 0,\n    semantic: 0,\n    predictive: 0,\n    monetization: 0,\n    engagement: 0\n  };\n  \n  // Audience dimension\n  if (opportunity.audience_alignment_score) {\n    dimensions.audience = opportunity.audience_alignment_score * 0.2;\n  }\n  \n  // Audience psychographic alignment\n  if (opportunity.psychographic_alignment) {\n    const psychProfiles = channelConfig.targetAudience.psychographicProfiles || [];\n    let alignmentScore = 0;\n    psychProfiles.forEach(profile => {\n      if (opportunity.psychographic_alignment[profile.name]) {\n        alignmentScore += opportunity.psychographic_alignment[profile.name] * (profile.percentage / 100);\n      }\n    });\n    dimensions.audience += alignmentScore * 0.15;\n  }\n  \n  // Competitive dimension\n  if (opportunity.competitive_opportunity) {\n    dimensions.competitive = opportunity.competitive_opportunity * 0.25;\n  }\n  \n  // Semantic dimension\n  if (opportunity.semantic_richness) {\n    dimensions.semantic = opportunity.semantic_richness * 0.18;\n  }\n  \n  if (opportunity.narrative_potential) {\n    dimensions.semantic += opportunity.narrative_potential * 0.12;\n  }\n  \n  // Predictive dimension\n  if (opportunity.trend_trajectory) {\n    dimensions.predictive = opportunity.trend_trajectory * 0.2;\n  }\n  \n  if (opportunity.algorithmic_favorability) {\n    dimensions.predictive += opportunity.algorithmic_favorability * 0.15;\n  }\n  \n  // Monetization dimension\n  if (opportunity.monetization_potential) {\n    dimensions.monetization = opportunity.monetization_potential * 0.25;\n  }\n  \n  // Engagement dimension\n  if (opportunity.engagement_potential) {\n    dimensions.engagement = opportunity.engagement_potential * 0.2;\n  }\n  \n  if (opportunity.attention_retention) {\n    dimensions.engagement += opportunity.attention_retention * 0.15;\n  }\n  \n  // Cross-platform potential bonus\n  if (opportunity.cross_platform_potential && advancedFeatures.crossPlatformContentAdaptation) {\n    const platformBonus = opportunity.cross_platform_potential * 0.1;\n    dimensions.audience += platformBonus;\n    dimensions.monetization += platformBonus;\n  }\n  \n  // Neural engagement bonus\n  if (opportunity.neural_engagement_score && advancedFeatures.neuralEngagementModeling) {\n    dimensions.engagement += opportunity.neural_engagement_score * 0.2;\n  }\n  \n  // Calculate final hyperdimensional score\n  const dimensionSum = Object.values(dimensions).reduce((sum, value) => sum + value, 0);\n  const weightedScore = baseScore + dimensionSum;\n  \n  // Apply advanced intelligence multipliers\n  let finalScore = weightedScore;\n  \n  // Semantic network alignment bonus\n  if (opportunity.semantic_network_centrality && advancedFeatures.semanticContentOptimization) {\n    finalScore *= (1 + (opportunity.semantic_network_centrality * 0.15));\n  }\n  \n  // Audience intelligence bonus\n  if (opportunity.audience_segment_receptivity && advancedFeatures.advancedAudienIntelligence) {\n    finalScore *= (1 + (opportunity.audience_segment_receptivity * 0.12));\n  }\n  \n  // Cross-platform synergy\n  if (opportunity.platform_synergy_score && channelConfig.crossPlatformStrategy.crossPlatformSynergy === \"high\") {\n    finalScore *= (1 + (opportunity.platform_synergy_score * 0.1));\n  }\n  \n  // Cap at 100 and round\n  return Math.min(Math.round(finalScore), 100);\n}\n\n// Process and score all content opportunities\nlet contentOpportunities = [];\n\n// Add and score opportunities from multimodal intelligence\nif (multimodalData.opportunities) {\n  multimodalData.opportunities.forEach(opportunity => {\n    // Create enhanced opportunity object with all dimensions\n    const enhancedOpportunity = {\n      topic: opportunity.topic,\n      content_type: opportunity.content_type || 'educational',\n      audience_alignment_score: opportunity.audience_alignment_score || 0.7,\n      psychographic_alignment: opportunity.psychographic_alignment || {},\n      competitive_opportunity: opportunity.competitive_opportunity || 0.65,\n      semantic_richness: opportunity.semantic_richness || 0.72,\n      narrative_potential: opportunity.narrative_potential || 0.68,\n      trend_trajectory: opportunity.trend_trajectory || 0.6,\n      algorithmic_favorability: opportunity.algorithmic_favorability || 0.7,\n      monetization_potential: opportunity.monetization_potential || 0.75,\n      engagement_potential: opportunity.engagement_potential || 0.8,\n      attention_retention: opportunity.attention_retention || 0.7,\n      cross_platform_potential: opportunity.cross_platform_potential || 0.65,\n      neural_engagement_score: opportunity.neural_engagement_score || 0.72,\n      semantic_network_centrality: opportunity.semantic_network_centrality || 0.6,\n      audience_segment_receptivity: opportunity.audience_segment_receptivity || 0.7,\n      platform_synergy_score: opportunity.platform_synergy_score || 0.65,\n      content_pillars: opportunity.content_pillars || [],\n      content_structures: opportunity.content_structures || [],\n      supporting_research: opportunity.supporting_research || [],\n      search_volume: opportunity.search_volume || 5000,\n      trending_velocity: opportunity.trending_velocity || 0.2,\n      temporal_relevance: opportunity.temporal_relevance || \"high\",\n      multimodal_elements: opportunity.multimodal_elements || [],\n      key_subtopics: opportunity.key_subtopics || [],\n      expertise_requirement: opportunity.expertise_requirement || \"intermediate\"\n    };\n    \n    // Apply hyperdimensional scoring\n    enhancedOpportunity.score = hyperdimensionalScoring(enhancedOpportunity);\n    \n    // Add to opportunities list\n    contentOpportunities.push(enhancedOpportunity);\n  });\n}\n\n// Sort by hyperdimensional score\ncontentOpportunities.sort((a, b) => b.score - a.score);\n\n// Select top opportunity\nconst selectedOpportunity = contentOpportunities[0];\n\n// Extract advanced audience insights\nconst audienceInsights = {\n  demographics: audienceData.demographics || {\n    age_groups: [{name: '25-34', percentage: 42}, {name: '35-44', percentage: 38}],\n    genders: [{name: 'male', percentage: 65}, {name: 'female', percentage: 35}],\n    locations: [{name: 'United States', percentage: 40}, {name: 'United Kingdom', percentage: 15}],\n    education: [{name: 'College degree', percentage: 55}, {name: 'Graduate degree', percentage: 25}],\n    income_brackets: [{name: '$75k-$100k', percentage: 35}, {name: '$100k-$150k', percentage: 28}]\n  },\n  psychographics: audienceData.psychographics || {\n    personas: channelConfig.targetAudience.psychographicProfiles,\n    values: [{name: 'Financial independence', percentage: 80}, {name: 'Growth mindset', percentage: 75}],\n    aspirations: [{name: 'Wealth building', percentage: 85}, {name: 'Knowledge mastery', percentage: 70}],\n    pain_points: [{name: 'Information overload', percentage: 65}, {name: 'Analysis paralysis', percentage: 60}]\n  },\n  behavior: audienceData.behavior || {\n    watch_time_avg: 6.2, // minutes\n    retention_rate: 48, // percentage\n    engagement_rate: 4.8, // percentage\n    subscription_rate: 2.1, // percentage\n    sharing_rate: 1.2, // percentage\n    comment_rate: 0.8, // percentage\n    returning_viewer_rate: 32, // percentage\n    content_consumption_patterns: {\n      binge_watching: 15, // percentage\n      regular_schedule: 45, // percentage\n      topic_driven: 40 // percentage\n    }\n  },\n  engagement: audienceData.engagement || {\n    triggers: ['practical insights', 'actionable advice', 'intellectual stimulation', 'financial opportunity'],\n    high_engagement_indicators: ['complex concept simplification', 'contrarian perspectives', 'exclusive information'],\n    peak_engagement_moments: [0.25, 0.6, 0.85], // percentage of video\n    attention_drop_points: [0.45, 0.75], // percentage of video\n    optimal_pattern_interrupts: [180, 360, 540, 720] // seconds\n  },\n  neural_response: audienceData.neural_response || {\n    attention_curve: [{time: 0, level: 90}, {time: 180, level: 70}, {time: 360, level: 85}, {time: 540, level: 75}],\n    cognitive_processing: ['analytical', 'evaluative', 'decision-making'],\n    emotional_triggers: ['curiosity', 'ambition', 'validation', 'insight discovery'],\n    information_processing_preferences: ['visual data', 'conceptual frameworks', 'practical examples', 'expert testimony']\n  },\n  device_ecosystem: audienceData.device_ecosystem || {\n    primary_devices: channelConfig.targetAudience.deviceUsage,\n    viewing_contexts: channelConfig.targetAudience.viewingPatterns,\n    attention_span_by_device: {\n      mobile: 4.5, // minutes\n      desktop: 8.2, // minutes\n      tablet: 6.7, // minutes\n      smart_tv: 12.3 // minutes\n    }\n  },\n  value_perception: audienceData.value_perception || {\n    high_value_content_types: ['actionable insights', 'trend analysis', 'expert interviews', 'case studies'],\n    perceived_expertise_drivers: ['data visualization', 'market analysis', 'technical depth', 'predictive insights'],\n    trust_signals: ['research citations', 'track record references', 'transparent analysis', 'balanced perspective'],\n    credibility_enhancers: ['expert collaboration', 'data-driven approach', 'successful predictions', 'industry insider information']\n  },\n  segment_clusters: audienceData.segment_clusters || {\n    high_value_segments: ['Active Investors', 'Tech Professionals', 'Financial Advisors', 'Entrepreneurial Millennials'],\n    engagement_profiles: [\n      {name: 'Deep Divers', characteristics: ['long sessions', 'high comment rate', 'research-focused']},\n      {name: 'Quick Extractors', characteristics: ['efficient viewing', 'implementation-focused', 'time-constrained']},\n      {name: 'Community Engagers', characteristics: ['high interaction', 'sharing-focused', 'discussion-oriented']},\n      {name: 'Passive Consumers', characteristics: ['regular viewing', 'low interaction', 'entertainment-seeking']}\n    ]\n  }\n};\n\n// Extract enhanced competitive insights\nconst competitiveInsights = {\n  topPerformers: competitiveData.top_performers || [\n    {channel: 'CryptoMastery', subscribers: 1200000, avg_views: 180000, content_focus: 'Technical Analysis'},\n    {channel: 'Investor Insights', subscribers: 950000, avg_views: 145000, content_focus: 'Fundamental Analysis'},\n    {channel: 'Digital Asset Daily', subscribers: 875000, avg_views: 130000, content_focus: 'News & Updates'}\n  ],\n  contentPatterns: competitiveData.content_patterns || {\n    successful_formats: [\n      {format: 'Analytical Deep Dive', engagement_rate: 5.8, avg_retention: 52},\n      {format: 'News Analysis', engagement_rate: 5.2, avg_retention: 48},\n      {format: 'Step-by-Step Guide', engagement_rate: 6.1, avg_retention: 56},\n      {format: 'Case Study', engagement_rate: 5.5, avg_retention: 51}\n    ],\n    optimal_length: competitiveData.optimal_video_length || 12, // minutes\n    successful_hooks: [\n      {type: 'Contrarian Statement', effectiveness: 'very high', ctr_boost: 1.8},\n      {type: 'Future Prediction', effectiveness: 'high', ctr_boost: 1.6},\n      {type: 'Exclusive Information', effectiveness: 'high', ctr_boost: 1.5},\n      {type: 'Problem-Solution', effectiveness: 'medium', ctr_boost: 1.3}\n    ],\n    content_structure: {\n      sections: 5,\n      narrative_arcs: [\n        {name: 'Problem-Solution-Implementation', effectiveness: 'high'},\n        {name: 'Mystery-Investigation-Revelation', effectiveness: 'high'},\n        {name: 'Context-Analysis-Implication', effectiveness: 'medium'}\n      ],\n      pattern_interrupts: [180, 360, 540, 720], // seconds\n      cta_timing: [0.3, 0.7, 0.95] // percentage of video\n    }\n  },\n  visualPatterns: competitiveData.visual_patterns || {\n    thumbnail_patterns: [\n      {pattern: 'Data Visualization + Text', ctr: 8.7},\n      {pattern: 'Bold Statement + Icon', ctr: 8.2},\n      {pattern: 'Before/After Comparison', ctr: 7.9},\n      {pattern: 'Question + Visual Metaphor', ctr: 7.5}\n    ],\n    visual_styles: [\n      {style: 'Clean Minimalist', audience_reception: 'very positive'},\n      {style: 'Data-Rich', audience_reception: 'positive'},\n      {style: 'Modern Tech', audience_reception: 'positive'}\n    ],\n    motion_graphics: [\n      {type: 'Dynamic Charts', effectiveness: 'very high'},\n      {type: 'Conceptual Animations', effectiveness: 'high'},\n      {type: 'Process Visualizations', effectiveness: 'high'}\n    ]\n  },\n  monetizationPatterns: competitiveData.monetization_patterns || {\n    revenue_models: [\n      {model: 'Ad Revenue + Affiliate', prevalence: 'very high', effectiveness: 'high'},\n      {model: 'Premium Course Upsell', prevalence: 'high', effectiveness: 'very high'},\n      {model: 'Membership Community', prevalence: 'medium', effectiveness: 'high'},\n      {model: 'Sponsored Content', prevalence: 'medium', effectiveness: 'medium'}\n    ],\n    affiliate_strategies: [\n      {strategy: 'Educational Integration', conversion_rate: 3.8},\n      {strategy: 'Tool Demonstration', conversion_rate: 4.2},\n      {strategy: 'Exclusive Offer', conversion_rate: 5.1}\n    ],\n    pricing_tiers: [\n      {tier: 'Basic Course', price_range: '$97-$197', conversion_rate: 2.1},\n      {tier: 'Premium Course', price_range: '$497-$997', conversion_rate: 0.8},\n      {tier: 'Membership', price_range: '$29-$99/month', conversion_rate: 1.2}\n    ]\n  },\n  audience_overlap: competitiveData.audience_overlap || {\n    shared_audience_segments: [\n      {segment: 'Active Crypto Traders', overlap_percentage: 65},\n      {segment: 'Tech Professionals', overlap_percentage: 48},\n      {segment: 'Self-Directed Investors', overlap_percentage: 72}\n    ],\n    differentiation_opportunities: [\n      {segment: 'Crypto-Curious Professionals', competition_level: 'low'},\n      {segment: 'Institutional Decision Makers', competition_level: 'low'},\n      {segment: 'Early Adopter Entrepreneurs', competition_level: 'medium'}\n    ]\n  },\n  neural_engagement: competitiveData.neural_engagement || {\n    high_engagement_triggers: [\n      {trigger: 'Novel Information', neural_response: 'dopamine release'},\n      {trigger: 'Pattern Recognition', neural_response: 'cognitive reward'},\n      {trigger: 'Status Signaling', neural_response: 'social validation'},\n      {trigger: 'Future Security', neural_response: 'anxiety reduction'}\n    ],\n    engagement_architecture: {\n      attention_capture: ['pattern interruption', 'information gaps', 'unexpected statements'],\n      cognitive_engagement: ['moderate complexity challenge', 'insight moments', 'mental model building'],\n      emotional_resonance: ['aspiration alignment', 'identity reinforcement', 'goal congruence'],\n      behavioral_activation: ['clear next steps', 'perceived ease of implementation', 'immediate applicability']\n    }\n  },\n  gaps_and_opportunities: competitiveData.gaps_and_opportunities || {\n    underserved_content_areas: [\n      {area: 'Regulatory Impact Analysis', competition_level: 'low', audience_interest: 'high'},\n      {area: 'Institutional Integration Strategies', competition_level: 'low', audience_interest: 'medium-high'},\n      {area: 'Cross-Chain Investment Strategies', competition_level: 'medium', audience_interest: 'high'}\n    ],\n    format_opportunities: [\n      {format: 'Interactive Decision Frameworks', competition_level: 'low', audience_interest: 'high'},\n      {format: 'Scenario Analysis', competition_level: 'medium', audience_interest: 'high'},\n      {format: 'Expert Roundtables', competition_level: 'medium', audience_interest: 'high'}\n    ],\n    narrative_opportunities: [\n      {narrative: 'Long-term Historical Context', competition_level: 'low', engagement_potential: 'high'},\n      {narrative: 'First Principles Analysis', competition_level: 'medium', engagement_potential: 'very high'},\n      {narrative: 'Interdisciplinary Connections', competition_level: 'low', engagement_potential: 'high'}\n    ]\n  }\n};\n\n// Extract semantic insights\nconst semanticInsights = {\n  topic_clusters: semanticData.topic_clusters || [\n    {cluster: 'Technical Analysis', centrality: 0.82, audience_engagement: 'high'},\n    {cluster: 'Regulatory Developments', centrality: 0.75, audience_engagement: 'medium-high'},\n    {cluster: 'Institutional Adoption', centrality: 0.88, audience_engagement: 'very high'},\n    {cluster: 'DeFi Innovations', centrality: 0.79, audience_engagement: 'high'}\n  ],\n  semantic_networks: semanticData.semantic_networks || {\n    high_value_connections: [\n      {primary: 'Institutional Adoption', secondary: 'Regulatory Clarity', connection_strength: 0.85},\n      {primary: 'DeFi Innovations', secondary: 'Risk Management', connection_strength: 0.78},\n      {primary: 'Market Cycles', secondary: 'Investment Strategy', connection_strength: 0.91}\n    ],\n    emerging_connections: [\n      {primary: 'Tokenomics', secondary: 'Traditional Finance', connection_strength: 0.72},\n      {primary: 'Layer 2 Solutions', secondary: 'Enterprise Applications', connection_strength: 0.69},\n      {primary: 'Central Bank Digital Currencies', secondary: 'Privacy Technologies', connection_strength: 0.74}\n    ]\n  },\n  narrative_structures: semanticData.narrative_structures || {\n    high_engagement_narratives: [\n      {structure: 'Challenge-Solution-Future', engagement_score: 8.7},\n      {structure: 'Past-Present-Future', engagement_score: 8.2},\n      {structure: 'Theory-Evidence-Application', engagement_score: 8.5},\n      {structure: 'Problem-Cause-Solution-Action', engagement_score: 8.9}\n    ],\n    cognitive_frameworks: [\n      {framework: 'Risk-Reward Analysis', cognitive_alignment: 'high'},\n      {framework: 'Comparative Evaluation', cognitive_alignment: 'high'},\n      {framework: 'Historical Pattern Recognition', cognitive_alignment: 'high'},\n      {framework: 'First Principles Reasoning', cognitive_alignment: 'medium-high'}\n    ]\n  },\n  engagement_drivers: semanticData.engagement_drivers || {\n    linguistic_patterns: [\n      {pattern: 'Exclusive Revelation', engagement_impact: 'very high'},\n      {pattern: 'Future Projection', engagement_impact: 'high'},\n      {pattern: 'Counterintuitive Insight', engagement_impact: 'very high'},\n      {pattern: 'Strategic Framework', engagement_impact: 'high'}\n    ],\n    information_structures: [\n      {structure: 'Hierarchical Breakdown', cognitive_processing: 'efficient'},\n      {structure: 'Comparative Analysis', cognitive_processing: 'engaging'},\n      {structure: 'Conceptual Mapping', cognitive_processing: 'comprehensive'},\n      {structure: 'Progressive Revelation', cognitive_processing: 'attention-maintaining'}\n    ]\n  },\n  value_frameworks: semanticData.value_frameworks || {\n    high_value_content_characteristics: [\n      {characteristic: 'Actionable Specificity', value_perception: 'very high'},\n      {characteristic: 'Insider Perspective', value_perception: 'very high'},\n      {characteristic: 'Predictive Insight', value_perception: 'high'},\n      {characteristic: 'Conceptual Clarity', value_perception: 'high'}\n    ],\n    value_communication_frameworks: [\n      {framework: 'Problem-Solution-Outcome', effectiveness: 'high'},\n      {framework: 'Cost-Benefit-Implementation', effectiveness: 'high'},\n      {framework: 'Risk-Mitigation-Opportunity', effectiveness: 'very high'}\n    ]\n  }\n};\n\n// Extract predictive insights\nconst predictiveInsights = {\n  topic_forecasts: predictiveData.topic_forecasts || {\n    rising_topics: [\n      {topic: selectedOpportunity.topic, growth_trajectory: 0.85, confidence: 0.92},\n      {topic: 'Institutional DeFi Integration', growth_trajectory: 0.79, confidence: 0.88},\n      {topic: 'Cross-Chain Liquidity', growth_trajectory: 0.72, confidence: 0.85}\n    ],\n    peaking_topics: [\n      {topic: 'NFT Marketplaces', growth_trajectory: 0.15, peak_duration: '3-6 months'},\n      {topic: 'Meme Coins', growth_trajectory: 0.05, peak_duration: '1-2 months'}\n    ],\n    evergreen_topics: [\n      {topic: 'Bitcoin Investment Strategy', stability: 0.88},\n      {topic: 'Risk Management', stability: 0.92},\n      {topic: 'Portfolio Allocation', stability: 0.87}\n    ]\n  },\n  performance_projections: predictiveData.performance_projections || {\n    selected_topic: {\n      views_30d: 75000,\n      ctr_prediction: '8.2%',\n      retention_prediction: '52%',\n      engagement_rate: '6.3%',\n      subscriber_conversion: '2.8%',\n      revenue_potential: '$2,200-$3,100'\n    },\n    algorithm_favorability: {\n      youtube_algorithm: 0.85,\n      recommendation_engine: 0.82,\n      search_visibility: 0.88,\n      browse_features: 0.79\n    },\n    audience_growth: {\n      subscriber_growth_30d: '2,200-3,100',\n      optimal_publishing_frequency: 'twice weekly',\n      growth_trajectory: 'accelerating',\n      audience_composition_shift: 'trending toward professional investors'\n    }\n  },\n  optimization_recommendations: predictiveData.optimization_recommendations || {\n    title_optimization: {\n      high_performing_patterns: [\n        {pattern: 'How [Unusual Method] Is [Transforming/Disrupting] [Industry]', ctr_impact: '+1.8%'},\n        {pattern: '[Number] [Unexpected] Ways to [Desirable Outcome] with [Topic]', ctr_impact: '+1.6%'},\n        {pattern: 'Why [Common Belief] Is Wrong About [Topic] (And What's Really Happening)', ctr_impact: '+2.1%'}\n      ],\n      power_phrases: ['unprecedented opportunity', 'strategic advantage', 'insider perspective', 'critical analysis'],\n      ctr_optimization_score: 9.2\n    },\n    thumbnail_optimization: {\n      high_performing_elements: [\n        {element: 'Bold text overlay with contrasting colors', ctr_impact: '+1.7%'},\n        {element: 'Clear visual metaphor', ctr_impact: '+1.5%'},\n        {element: 'Data visualization element', ctr_impact: '+1.9%'},\n        {element: 'Before/after comparison', ctr_impact: '+1.6%'}\n      ],\n      visual_psychology: ['pattern interruption', 'curiosity gap', 'value proposition visibility'],\n      ctr_optimization_score: 9.4\n    },\n    content_structure_optimization: {\n      optimal_hook_length: '30-45 seconds',\n      optimal_sections: 5,\n      optimal_pacing: 'dynamic with strategic acceleration',\n      pattern_interrupt_timing: [180, 360, 540, 720], // seconds\n      attention_reset_techniques: ['visual state change', 'narrative pattern break', 'cognitive reframing', 'emotional shift'],\n      retention_optimization_score: 9.1\n    },\n    timing_optimization: {\n      optimal_publishing_days: ['Tuesday', 'Thursday'],\n      optimal_publishing_times: ['11:00 AM EST', '6:00 PM EST'],\n      seasonal_adjustments: {'Q2 2025': 'Increase regulatory focus due to anticipated legislation'},\n      timing_optimization_score: 8.9\n    }\n  }\n};\n\n// Extract cross-platform insights\nconst crossPlatformInsights = {\n  platform_specific_strategies: channelConfig.crossPlatformStrategy.platforms.map(platform => {\n    let platformData = {};\n    switch(platform.name) {\n      case 'YouTube':\n        platformData = {\n          content_format: 'long-form educational',\n          optimal_length: predictiveInsights.optimization_recommendations.content_structure_optimization.optimal_sections * 2.5 + ' minutes',\n          algorithm_focus: 'watch time and engagement rate',\n          monetization_strategy: 'ads + affiliate + product ecosystem'\n        };\n        break;\n      case 'TikTok':\n        platformData = {\n          content_format: 'insight-focused short form',\n          optimal_length: '45-60 seconds',\n          algorithm_focus: 'engagement velocity and completion rate',\n          monetization_strategy: 'brand visibility + funnel entry'\n        };\n        break;\n      case 'Instagram':\n        platformData = {\n          content_format: 'visual insight + carousel deep dive',\n          optimal_length: '60 seconds video, 8-10 carousel slides',\n          algorithm_focus: 'saves, shares, and completion rate',\n          monetization_strategy: 'community building + product awareness'\n        };\n        break;\n      case 'LinkedIn':\n        platformData = {\n          content_format: 'professional insight + practical application',\n          optimal_length: '1-2 minute video, 1200-1500 word article',\n          algorithm_focus: 'comments and professional relevance',\n          monetization_strategy: 'authority building + high-ticket client acquisition'\n        };\n        break;\n      case 'Twitter':\n        platformData = {\n          content_format: 'insight threads + short clips',\n          optimal_length: '2-3 minute thread, 30 second clips',\n          algorithm_focus: 'retweets and reply velocity',\n          monetization_strategy: 'community engagement + funnel entry'\n        };\n        break;\n      case 'Podcast':\n        platformData = {\n          content_format: 'analysis + expert conversation',\n          optimal_length: '30-45 minutes',\n          algorithm_focus: 'subscribers and completion rate',\n          monetization_strategy: 'sponsorships + premium subscriptions'\n        };\n        break;\n      default:\n        platformData = {\n          content_format: 'platform-optimized adaptation',\n          optimal_length: 'variable',\n          algorithm_focus: 'platform-specific',\n          monetization_strategy: '

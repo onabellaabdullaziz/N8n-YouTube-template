@@ -1,0 +1,899 @@
+{
+  "name": "Quantum YouTube Enterprise Suite 2025",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "minutesInterval": 1,
+              "hoursInterval": 1,
+              "daysInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "bd9a2471-defa-4d7c-9d31-3a3ccb18599a",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        140,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Current date and user configuration\nreturn {\n  currentDate: \"2025-05-03 04:46:47\",\n  currentUser: \"onabellaabdullaziz\",\n  systemVersion: \"Quantum Enterprise 5.3.1\",\n  sessionId: \"qyt-\" + Date.now().toString(),\n  preferences: {\n    preferredNiches: [\"AI\", \"tech\", \"productivity\", \"personal development\", \"finance\"],\n    contentStyle: \"educational\",\n    audienceType: \"professionals\",\n    monetizationPreference: \"high-value\",\n    qualityPreference: \"premium\",\n    growthStrategy: \"neural-viral\",\n    localizationRegions: [\"north_america\", \"europe\", \"asia_pacific\"],\n    algorithmOptimization: \"engagement-retention\"\n  }\n};"
+      },
+      "id": "dc8e3f6a-91b2-47e9-8c51-9fb54e4d1481",
+      "name": "System Configuration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        140,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "api": "quantumCompetitorAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://quantum.tubeanalytics.ai/v4/competitor-neural-analysis",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "4bce493e76mshe116a601f32f509p187e24jsn1e0809dee1a3"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"System Configuration\"].json.currentUser}}"
+            },
+            {
+              "name": "x-session-id",
+              "value": "={{$node[\"System Configuration\"].json.sessionId}}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "niches",
+              "value": "={{$node[\"System Configuration\"].json.preferences.preferredNiches.join(\",\")}}"
+            },
+            {
+              "name": "video_count",
+              "value": "150"
+            },
+            {
+              "name": "period",
+              "value": "180d"
+            },
+            {
+              "name": "analysis_depth",
+              "value": "quantum"
+            },
+            {
+              "name": "include_sentiment",
+              "value": "true"
+            },
+            {
+              "name": "include_monetization",
+              "value": "true"
+            },
+            {
+              "name": "include_algorithm_patterns",
+              "value": "true"
+            },
+            {
+              "name": "include_audience_overlap",
+              "value": "true"
+            },
+            {
+              "name": "include_content_structure",
+              "value": "true"
+            },
+            {
+              "name": "include_growth_trajectory",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "7c48d9e2-f31a-45b8-9e62-8f2c10a9e741",
+      "name": "Quantum Competitor Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "api": "marketGapAnalysisAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.neuralmarketgap.com/v2/content-opportunities",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "neuralmarket-6791-41ea-d88g-4f839de99347"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"System Configuration\"].json.currentUser}}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "niches",
+              "value": "={{$node[\"System Configuration\"].json.preferences.preferredNiches.join(\",\")}}"
+            },
+            {
+              "name": "opportunity_count",
+              "value": "25"
+            },
+            {
+              "name": "competition_threshold",
+              "value": "all"
+            },
+            {
+              "name": "include_search_volume",
+              "value": "true"
+            },
+            {
+              "name": "include_audience_size",
+              "value": "true"
+            },
+            {
+              "name": "include_growth_trajectory",
+              "value": "true"
+            },
+            {
+              "name": "include_monetization_potential",
+              "value": "true"
+            },
+            {
+              "name": "use_neural_prediction",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "24b9c713-df48-42a6-b9cc-83e6f7de51a0",
+      "name": "Neural Market Gap Detector",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "api": "quantumTrendAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://quantum-trends.api.rapid.com/forecast",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-rapidapi-host",
+              "value": "quantum-trends.api.rapid.com"
+            },
+            {
+              "name": "x-rapidapi-key",
+              "value": "4bce493e76mshe116a601f32f509p187e24jsn1e0809dee1a3"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"System Configuration\"].json.currentUser}}"
+            },
+            {
+              "name": "x-session-id",
+              "value": "={{$node[\"System Configuration\"].json.sessionId}}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "categories",
+              "value": "={{$node[\"System Configuration\"].json.preferences.preferredNiches.join(\",\")}}"
+            },
+            {
+              "name": "forecast_period",
+              "value": "120d"
+            },
+            {
+              "name": "regions",
+              "value": "global,us,uk,ca,au,in,sg,de,fr,br,jp"
+            },
+            {
+              "name": "use_quantum_model",
+              "value": "true"
+            },
+            {
+              "name": "analyze_sentiment",
+              "value": "true"
+            },
+            {
+              "name": "include_viral_potential",
+              "value": "true"
+            },
+            {
+              "name": "include_cross_platform",
+              "value": "true"
+            },
+            {
+              "name": "include_historical_correlation",
+              "value": "true"
+            },
+            {
+              "name": "include_search_velocity",
+              "value": "true"
+            },
+            {
+              "name": "trending_threshold",
+              "value": "medium"
+            }
+          ]
+        }
+      },
+      "id": "a4b8c94e-ecff-4e77-b175-bf390872452d",
+      "name": "Predictive Viral Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "api": "viewerIntentAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.neuralintent.ai/v3/intent-analysis",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "intent-analysis-5631-21fa-c88g-3e839df99236"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"System Configuration\"].json.currentUser}}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "topics",
+              "value": "={{$node[\"System Configuration\"].json.preferences.preferredNiches.join(\",\")}}"
+            },
+            {
+              "name": "platform",
+              "value": "youtube,tiktok,instagram,linkedin,google_search"
+            },
+            {
+              "name": "intent_categories",
+              "value": "learn,solve,buy,compare,research,entertain"
+            },
+            {
+              "name": "sample_size",
+              "value": "maximum"
+            },
+            {
+              "name": "include_search_analysis",
+              "value": "true"
+            },
+            {
+              "name": "include_question_analysis",
+              "value": "true"
+            },
+            {
+              "name": "include_content_gaps",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "e8f45a17-bd2c-49e3-a7c1-ef53d0b14c28",
+      "name": "Viewer Intent Engine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "api": "neuroAudienceAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://neuro.tubeinsights.com/v5/neural-audience-modeling",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoib25hYmVsbGFhYmR1bGxheml6In0.ZWe"
+            },
+            {
+              "name": "x-timestamp",
+              "value": "={{$node[\"System Configuration\"].json.currentDate}}"
+            },
+            {
+              "name": "x-session-id",
+              "value": "={{$node[\"System Configuration\"].json.sessionId}}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "niches",
+              "value": "={{$node[\"System Configuration\"].json.preferences.preferredNiches.join(\",\")}}"
+            },
+            {
+              "name": "detail_level",
+              "value": "quantum"
+            },
+            {
+              "name": "include_psychographics",
+              "value": "true"
+            },
+            {
+              "name": "include_behavior_patterns",
+              "value": "true"
+            },
+            {
+              "name": "include_device_analytics",
+              "value": "true"
+            },
+            {
+              "name": "include_engagement_patterns",
+              "value": "true"
+            },
+            {
+              "name": "include_decision_framework",
+              "value": "true"
+            },
+            {
+              "name": "include_purchase_behavior",
+              "value": "true"
+            },
+            {
+              "name": "include_content_preferences",
+              "value": "true"
+            },
+            {
+              "name": "include_neural_profiles",
+              "value": "true"
+            },
+            {
+              "name": "include_cross_platform_behavior",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "c5e9fa72-3b10-48a9-b153-f67e932a7c54",
+      "name": "Quantum Audience Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "api": "revenueModelingAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.revenuequantum.ai/v2/forecast",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer revenue-qt-6791-41ea-d88g-4f839de99347"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"System Configuration\"].json.currentUser}}"
+            }
+          ]
+        },
+        "jsonParameters": true,
+        "bodyParametersJson": "{\n  \"content_type\": \"youtube_educational\",\n  \"niches\": {{JSON.stringify($node[\"System Configuration\"].json.preferences.preferredNiches)}},\n  \"forecast_parameters\": {\n    \"time_period\": \"12_months\",\n    \"confidence_interval\": \"high\",\n    \"scenario_analysis\": true\n  },\n  \"revenue_streams\": [\n    \"ad_revenue\",\n    \"channel_memberships\",\n    \"super_chat\",\n    \"merchandise\",\n    \"sponsorships\",\n    \"affiliate_marketing\",\n    \"course_sales\",\n    \"premium_content\"\n  ],\n  \"quantum_factors\": {\n    \"audience_growth_model\": \"exponential\",\n    \"engagement_depth\": \"maximum\",\n    \"conversion_optimization\": \"neural\",\n    \"brand_partnership_potential\": \"high\"\n  }\n}"
+      },
+      "id": "3fa569d7-a1c2-4c8d-ba8d-5f92e381cd05",
+      "name": "Quantum Revenue Forecasting",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "api": "blockchainAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.web3content.io/v2/monetization-opportunities",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "w3c-mon-6791-41ea-d88g-4f839de99347"
+            },
+            {
+              "name": "x-user-id",
+              "value": "={{$node[\"System Configuration\"].json.currentUser}}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "content_type",
+              "value": "educational_video"
+            },
+            {
+              "name": "niches",
+              "value": "={{$node[\"System Configuration\"].json.preferences.preferredNiches.join(\",\")}}"
+            },
+            {
+              "name": "blockchain_networks",
+              "value": "ethereum,solana,polygon,near,flow"
+            },
+            {
+              "name": "include_token_gating",
+              "value": "true"
+            },
+            {
+              "name": "include_nft_collectibles",
+              "value": "true"
+            },
+            {
+              "name": "include_dao_integration",
+              "value": "true"
+            },
+            {
+              "name": "include_micropayments",
+              "value": "true"
+            },
+            {
+              "name": "include_smart_contracts",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "6b82d5e9-fb73-4c1a-a3d2-e75f8b942c71",
+      "name": "Web3 Monetization Engine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        340,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Quantum Content Strategy with neural pattern recognition and opportunity scoring\n\n// Process data from all intelligence sources\nconst competitorData = $node[\"Quantum Competitor Analysis\"].json;\nconst marketGapData = $node[\"Neural Market Gap Detector\"].json;\nconst trendData = $node[\"Predictive Viral Analysis\"].json;\nconst intentData = $node[\"Viewer Intent Engine\"].json;\nconst audienceData = $node[\"Quantum Audience Analysis\"].json;\nconst revenueData = $node[\"Quantum Revenue Forecasting\"].json;\nconst web3Data = $node[\"Web3 Monetization Engine\"].json;\n\n// Neural opportunity scoring algorithm\nfunction scoreOpportunity(topic) {\n  const competitionScore = 100 - (topic.competitionLevel * 20);\n  const trendScore = topic.trendTrajectory * 25;\n  const searchScore = topic.searchVolume / 10;\n  const intentScore = topic.intentStrength * 15;\n  const monetizationScore = topic.monetizationPotential * 20;\n  const audienceScore = topic.audienceSize / 1000;\n  const algorithmScore = topic.algorithmAdvantage * 10;\n  \n  return {\n    totalScore: competitionScore + trendScore + searchScore + intentScore + monetizationScore + audienceScore + algorithmScore,\n    components: {\n      competition: competitionScore,\n      trend: trendScore,\n      search: searchScore,\n      intent: intentScore,\n      monetization: monetizationScore,\n      audience: audienceScore,\n      algorithm: algorithmScore\n    }\n  };\n}\n\n// Extract top market opportunities\nconst opportunities = marketGapData.opportunities.map(opportunity => {\n  const relevantTrend = trendData.trends.find(trend => trend.keyword === opportunity.keyword);\n  const relevantIntent = intentData.intents.find(intent => intent.topic === opportunity.keyword);\n  const relevantCompetitor = competitorData.competitors.find(comp => comp.mainKeyword === opportunity.keyword);\n  const relevantAudience = audienceData.audiences.find(aud => aud.interest === opportunity.keyword);\n  const relevantRevenue = revenueData.forecasts.find(rev => rev.contentTopic === opportunity.keyword);\n  const relevantWeb3 = web3Data.opportunities.find(w3 => w3.contentNiche === opportunity.keyword);\n  \n  return {\n    keyword: opportunity.keyword,\n    niche: opportunity.niche,\n    competitionLevel: opportunity.competitionLevel,\n    searchVolume: opportunity.searchVolume,\n    trendTrajectory: relevantTrend ? relevantTrend.growthTrajectory : 2,\n    intentStrength: relevantIntent ? relevantIntent.intentStrength : 3,\n    audienceSize: relevantAudience ? relevantAudience.potentialReach : 50000,\n    monetizationPotential: relevantRevenue ? relevantRevenue.revenuePotential : 3,\n    algorithmAdvantage: 4,\n    web3Potential: relevantWeb3 ? relevantWeb3.potentialScore : 2,\n    contentGaps: opportunity.contentGaps,\n    questions: relevantIntent ? relevantIntent.commonQuestions : [],\n    psychographics: relevantAudience ? relevantAudience.psychographicProfile : {}\n  };\n});\n\n// Score and sort opportunities\nconst scoredOpportunities = opportunities.map(opportunity => {\n  const score = scoreOpportunity(opportunity);\n  return {\n    ...opportunity,\n    score: score.totalScore,\n    scoreComponents: score.components\n  };\n}).sort((a, b) => b.score - a.score);\n\n// Select the top opportunity\nconst selectedTopic = {\n  keyword: scoredOpportunities[0].keyword,\n  niche: scoredOpportunities[0].niche,\n  score: scoredOpportunities[0].score,\n  videoLength: 10 + Math.floor(Math.random() * 5), // 10-15 minute video\n  contentStructure: [\n    \"Hook: Problem statement and curiosity gap\",\n    \"Intro: Value proposition and credibility\",\n    \"Main Points: 3-5 core insights with examples\",\n    \"Actionable Steps: Practical implementation\",\n    \"Conclusion: Key takeaways and CTA\"\n  ],\n  targetAudience: audienceData.primaryAudience,\n  monetizationStrategy: revenueData.recommendedStrategy,\n  psychographicTriggers: audienceData.psychographicTriggers,\n  engagementTactics: competitorData.topEngagementTactics,\n  visualStyle: \"clean, modern, data-driven\"\n};\n\n// Return the complete content strategy\nreturn {\n  selectedTopic,\n  alternativeTopics: scoredOpportunities.slice(1, 5),\n  contentStrategy: {\n    mainKeyword: selectedTopic.keyword,\n    secondaryKeywords: marketGapData.relatedKeywords.slice(0, 5),\n    contentStructure: selectedTopic.contentStructure,\n    videoLength: selectedTopic.videoLength,\n    visualStyle: selectedTopic.visualStyle,\n    hooks: competitorData.effectiveHooks.slice(0, 3),\n    callsToAction: revenueData.recommendedCTAs,\n    audienceInsights: audienceData.keyInsights,\n    trendAlignment: trendData.recommendedAlignment\n  },\n  algorithmStrategy: {\n    uploadTiming: trendData.optimalPublishingTime,\n    thumbnailStrategy: competitorData.thumbnailPatterns,\n    titleStructure: competitorData.titlePatterns,\n    descriptionStrategy: competitorData.descriptionPatterns,\n    tagStrategy: trendData.recommendedTags,\n    engagementTriggers: intentData.engagementTriggers\n  },\n  monetizationStrategy: {\n    primaryRevenue: revenueData.primaryRevenueStream,\n    secondaryRevenue: revenueData.secondaryRevenueStreams,\n    sponsorshipOpportunities: revenueData.sponsorshipMatches,\n    affiliateProducts: revenueData.affiliateMatches,\n    premiumContentStrategy: revenueData.premiumContentStrategy,\n    web3Integration: web3Data.primaryOpportunity\n  },\n  executionRequirements: {\n    scriptType: \"educational deep-dive\",\n    visualAssets: [\n      \"data visualizations\",\n      \"concept illustrations\",\n      \"comparison charts\",\n      \"process animations\",\n      \"expert quotes\"\n    ],\n    audioRequirements: {\n      voiceType: \"authoritative yet conversational\",\n      musicStyle: \"subtle tech ambient\",\n      soundEffects: \"minimal, strategic emphasis points\"\n    },\n    editingStyle: \"dynamic pace with smooth transitions\",\n    thumbnailRequirements: {\n      style: \"bold text on high-contrast background\",\n      elements: [\"curiosity-triggering visual\", \"emotionally resonant image\", \"clear value proposition\"]\n    }\n  }\n};"
+      },
+      "id": "5f25b8a1-9854-4ec0-8db9-d63d9b512354",
+      "name": "Quantum Content Strategy Engine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        540,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are NeuroPsych-GPT, an advanced AI content strategist specialized in creating neurologically optimized scripts for faceless YouTube channels. You are programmed with extensive knowledge of cognitive psychology, attention mechanics, and persuasion principles that make educational content highly engaging and shareable. Your scripts use proven frameworks that maximize viewer retention while delivering genuine value. You understand how to create content that triggers algorithm recommendations by maintaining high engagement throughout the video."
+            },
+            {
+              "role": "user",
+              "content": "=Create a neurologically optimized {{$json.selectedTopic.videoLength}}-minute script for a faceless YouTube video about \"{{$json.selectedTopic.keyword}}\" in the {{$json.selectedTopic.niche}} niche. \n\nTarget audience: {{$json.targetAudience.demographic}} \nContent structure: {{$json.contentStrategy.contentStructure.join(\" → \")}}\nPsychographic triggers: {{$json.selectedTopic.psychographicTriggers.join(\", \")}}\nEngagement tactics: {{$json.selectedTopic.engagementTactics.join(\", \")}}\n\nThe script should include these secondary keywords: {{$json.contentStrategy.secondaryKeywords.join(\", \")}}\n\nInclude timestamps for each section and optimize the script for both information delivery and neurological engagement. Create a hook that instantly captures attention in the first 15 seconds."
+            }
+          ]
+        },
+        "options": {
+          "model": "gpt-4-turbo-2024-04"
+        }
+      },
+      "id": "6a71c88e-f3aa-4f3d-89ea-df7a0d76c5d4",
+      "name": "Neurological Script Generator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        740,
+        300
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "OpenAI API key",
+          "name": "OpenAI API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "resource": "chat",
+        "prompt": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are AlgorithmGPT-2025, the world's leading AI expert on YouTube's algorithm patterns, CTR optimization, and advanced discovery mechanics across all content platforms as of 2025. You understand the exact metadata structures that maximize both initial impressions and sustained distribution. You are aware of all the latest algorithm changes and can craft titles, descriptions, tags, and thumbnails that work synergistically to increase visibility in both search and recommendations."
+            },
+            {
+              "role": "user",
+              "content": "=Generate a quantum-optimized metadata package for a {{$json.selectedTopic.videoLength}}-minute video about \"{{$json.selectedTopic.keyword}}\" in the {{$json.selectedTopic.niche}} niche. \n\nInclude:\n\n1. Three clickworthy yet accurate title options (50-60 characters) using proven CTR patterns\n2. A fully optimized description with timestamps, keyword clusters, and strategic calls to action\n3. The exact tag set for maximum algorithm visibility (25 tags prioritized by relevance and volume)\n4. Three thumbnail concepts with detailed specifications for each\n5. The optimal publishing time and day based on algorithmic patterns\n6. A community engagement strategy for the first 6 hours post-upload\n\nOptimize everything for both search discovery and recommendation feed performance."
+            }
+          ]
+        },
+        "options": {
+          "model": "gpt-4-turbo-2024-04"
+        }
+      },
+      "id": "e71c6b40-91c2-48a6-8a44-d3fb2ad9c0d5",
+      "name": "Quantum Algorithm Optimization",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        740,
+        500
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "OpenAI API key",
+          "name": "OpenAI API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "api": "neuroCognitiveVoiceAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.neurocognitivevoice.ai/v1/text-to-speech",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer neuro-voice-5631-21fa-c88g-3e839df99236"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "jsonParameters": true,
+        "bodyParametersJson": "{\n  \"text\": {{$node[\"Neurological Script Generator\"].json[\"message\"][\"content\"]}},\n  \"voice_model\": \"neuro_adaptive_v2\",\n  \"voice_settings\": {\n    \"style\": \"educational\",\n    \"pace\": \"dynamic\",\n    \"emphasis\": \"neurological\",\n    \"tone\": \"authoritative_friendly\",\n    \"clarity\": \"maximum\"\n  },\n  \"audio_settings\": {\n    \"format\": \"wav\",\n    \"sample_rate\": 48000,\n    \"bit_depth\": 24,\n    \"dynamic_range\": \"broadcast\"\n  },\n  \"retention_optimization\": {\n    \"emphasis_points\": true,\n    \"cognitive_markers\": true,\n    \"pattern_interrupts\": true,\n    \"information_chunking\": true\n  },\n  \"output_type\": \"url\"\n}"
+      },
+      "id": "a9d23845-a1b1-42fb-9dad-95f26e7c1c67",
+      "name": "NeuroCognitive Voice Synthesis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        940,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "api": "adaptiveLocalizationAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.adaptivelocalization.ai/v3/neural-localization",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer adap-loc-5631-21fa-c88g-3e839df99236"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "jsonParameters": true,
+        "bodyParametersJson": "{\n  \"text\": {{$node[\"Neurological Script Generator\"].json[\"message\"][\"content\"]}},\n  \"source_language\": \"en\",\n  \"target_languages\": {{JSON.stringify($node[\"System Configuration\"].json.preferences.localizationRegions)}},\n  \"cultural_adaptation\": true,\n  \"terminology_consistency\": true,\n  \"expression_localization\": true,\n  \"colloquialism_mapping\": true,\n  \"regional_compliance\": true,\n  \"adaptation_level\": \"full\",\n  \"content_type\": \"educational_video\",\n  \"industry\": {{JSON.stringify($node[\"System Configuration\"].json.preferences.preferredNiches)}}\n}"
+      },
+      "id": "8fc36e1a-d5b3-4a55-8e12-f53eadb8723d",
+      "name": "Adaptive Localization Engine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        940,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "api": "contextualVisualsAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.contextualvisuals.ai/v3/script-visualization",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer ctx-vis-5631-21fa-c88g-3e839df99236"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "jsonParameters": true,
+        "bodyParametersJson": "{\n  \"script\": {{$node[\"Neurological Script Generator\"].json[\"message\"][\"content\"]}},\n  \"visualization_parameters\": {\n    \"resolution\": \"8k\",\n    \"aspect_ratio\": \"16:9\",\n    \"style\": \"modern_educational\",\n    \"color_psychology\": \"retention_optimized\",\n    \"branding\": {\n      \"color_scheme\": \"blue_authority\",\n      \"font_family\": \"neuro_optimized\",\n      \"logo_placement\": \"bottom_right\",\n      \"consistent_elements\": true\n    }\n  },\n  \"visual_requirements\": {\n    \"data_visualizations\": true,\n    \"concept_illustrations\": true,\n    \"comparison_charts\": true,\n    \"process_animations\": true,\n    \"emphasis_elements\": true,\n    \"text_overlays\": \"strategic\"\n  },\n  \"neural_optimization\": {\n    \"attention_direction\": true,\n    \"information_hierarchy\": true,\n    \"cognitive_chunking\": true,\n    \"pattern_interrupts\": true,\n    \"visual_anchors\": true\n  },\n  \"output\": {\n    \"storyboard\": true,\n    \"frame_specifications\": true,\n    \"visual_instructions\": true,\n    \"animation_guidelines\": true\n  }\n}"
+      },
+      "id": "c64f9eb1-e9a2-407e-8d72-4ab2bfb1a384",
+      "name": "Contextual Visual Intelligence",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        940,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "api": "syntheticVideoAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.syntheticvideo.ai/v2/generate",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer synth-vid-5631-21fa-c88g-3e839df99236"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "jsonParameters": true,
+        "bodyParametersJson": "{\n  \"script_sections\": [\n    {\n      \"section\": \"abstract concepts\",\n      \"descriptions\": [\n        \"visualization of {{$json.selectedTopic.keyword}} concept with flowing particles\",\n        \"digital transformation represented as a morphing landscape\",\n        \"data flowing through neural network visualization\",\n        \"complex system simplifying into core components\"\n      ]\n    },\n    {\n      \"section\": \"data visualizations\",\n      \"descriptions\": [\n        \"animated bar chart showing growth trends in {{$json.selectedTopic.niche}}\",\n        \"interactive line graph comparing traditional vs. new approaches\",\n        \"color-coded heat map of opportunity areas\",\n        \"3D pie chart breaking down key components\"\n      ]\n    },\n    {\n      \"section\": \"process animations\",\n      \"descriptions\": [\n        \"step-by-step implementation process with numbered stages\",\n        \"workflow diagram with connected nodes lighting up sequentially\",\n        \"transformation sequence showing before and after states\",\n        \"zoom in to detailed mechanics of how the system works\"\n      ]\n    }\n  ],\n  \"style_parameters\": {\n    \"visual_style\": \"clean modern professional\",\n    \"color_scheme\": \"blue and white with orange highlights\",\n    \"animation_pace\": \"dynamic yet comprehensible\",\n    \"text_inclusion\": \"strategic keywords only\"\n  },\n  \"technical_specifications\": {\n    \"resolution\": \"4K\",\n    \"fps\": 60,\n    \"quality\": \"premium\",\n    \"format\": \"mp4\",\n    \"duration\": \"varies by section\"\n  },\n  \"neural_optimization\": {\n    \"attention_patterns\": \"enhanced\",\n    \"retention_markers\": true,\n    \"cognitive_anchoring\": true,\n    \"pattern_interrupts\": \"strategic\"\n  }\n}"
+      },
+      "id": "f2c9d817-6a53-48e5-b2d4-29e7c15b3a86",
+      "name": "Synthetic Video Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "api": "neuropsychAudioAPI",
+        "authentication": "headerAuth",
+        "endpoint": "https://api.neuropsychaudio.ai/v2/immersive-composition",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer neuropsych-5631-21fa-c88g-3e839df99236"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "jsonParameters": true,
+        "bodyParametersJson": "{\n  \"script\": {{$node[\"Neurological Script Generator\"].json[\"message\"][\"content\"]}},\n  \"audio_parameters\": {\n    \"composition_type\": \"educational_content\",\n    \"emotional_tone\": \"engaging\",\n    \"cognitive_stimulation_level\": \"optimal\",\n    \"attention_curve\": \"scientific\",\n    \"neural_engagement_pattern\": \"learning\"\n  },\n  \"music_parameters\": {\n    \"style\": \"ambient_technology\",\n    \"intensity\": \"subtle\",\n    \"dynamics\": \"responsive_to_content\",\n    \"frequency_range\": \"balanced_for_voice\",\n    \"psychological_effect\": \"focus_enhancement\"\n  },\n  \"sound_design\": {\n    \"transitions\": \"smooth_cognitive\",\n    \"emphasis_points\": \"strategic\",\n    \"pattern_interrupts\": \"attention_recapture\",\n    \"background_elements\": \"minimal_non_distracting\"\n  },\n  \"technical_specifications\": {\n    \"format\": \"wav\",\n    \"sample_rate\": 48000,\n    \"bit_depth\": 24,\n    \"channels\": \"stereo\",\n    \"spatial_audio\": true\n  },\n  \"cognitive_optimization\": {\n    \"attention_sustainment\": true,\n    \"information_retention\": true,\n    \"emotional_anchoring\": true,\n    \"neurological_pacing\": true\n  }\n}"
+      },
+      "id": "c9d23845-a1b1-42fb-9dad-95f26e7c1c67",
+      "name": "NeuroPsychAudio Engine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "System Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "System Configuration": {
+      "main": [
+        [
+          {
+            "node": "Quantum Competitor Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Neural Market Gap Detector",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Predictive Viral Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Viewer Intent Engine",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Quantum Audience Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Quantum Revenue Forecasting",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Web3 Monetization Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quantum Competitor Analysis": {
+      "main": [
+        [
+          {
+            "node": "Quantum Content Strategy Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neural Market Gap Detector": {
+      "main": [
+        [
+          {
+            "node": "Quantum Content Strategy Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Predictive Viral Analysis": {
+      "main": [
+        [
+          {
+            "node": "Quantum Content Strategy Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Viewer Intent Engine": {
+      "main": [
+        [
+          {
+            "node": "Quantum Content Strategy Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quantum Audience Analysis": {
+      "main": [
+        [
+          {
+            "node": "Quantum Content Strategy Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quantum Revenue Forecasting": {
+      "main": [
+        [
+          {
+            "node": "Quantum Content Strategy Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web3 Monetization Engine": {
+      "main": [
+        [
+          {
+            "node": "Quantum Content Strategy Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quantum Content Strategy Engine": {
+      "main": [
+        [
+          {
+            "node": "Neurological Script Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Quantum Algorithm Optimization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neurological Script Generator": {
+      "main": [
+        [
+          {
+            "node": "NeuroCognitive Voice Synthesis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Adaptive Localization Engine",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "NeuroPsychAudio Engine",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Contextual Visual Intelligence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contextual Visual Intelligence": {
+      "main": [
+        [
+          {
+            "node": "Synthetic Video Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
