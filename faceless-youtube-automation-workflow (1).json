@@ -1,0 +1,707 @@
+{
+  "name": "Faceless YouTube Automation Suite",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyWeek",
+              "dayOfWeek": 1,
+              "hour": 9,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "apiKey": "{{$node[\"Store API Keys\"].json[\"googleTrendsApiKey\"]}}",
+        "endpoint": "https://google-keyword-insight1.p.rapidapi.com/globalkey/",
+        "parameters": {
+          "parameters": [
+            {
+              "name": "keyword",
+              "value": "Meditation Music,Sleep Music,Relaxation,Focus Music,Study Music"
+            },
+            {
+              "name": "lang",
+              "value": "en"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "name": "Trend Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Store all API keys in one place\nreturn {\n  soundFxApiKey: \"Bq1iVVLAKQJ5ZbBurzxZunLEcuwMSGTlLHHfx8pV\",\n  youtubeClientId: \"316043716074-3g8sotpencl9fobnamoek3k3a8bfk9em.apps.googleusercontent.com\",\n  youtubeSecretKey: \"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\",\n  elevenlabsApiKey: \"sk_567b67b0e1f4ed704e043598746dc5d4f0bc138873a4f29a\",\n  pexelsApiKey: \"o0TKkzFcJ9iumrZvn4AyxqAJdudIQzBmcH77TSIepNdJQWaRkpHFVxSb\",\n  googleTrendsApiKey: \"4bce493e76mshe116a601f32f509p187e24jsn1e0809dee1a3\",\n  openaiApiKey: \"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\",\n  youtubeDataApiKey: \"AIzaSyDKyJ6hoLMHqf1xD7PRsz9RvoOZ-U7HnMg\",\n  stabilityAiApiKey: \"sk-McktaBzoiGaR0NGGAvdOERKOSqzDH5npcvLoUYm5RDpNRDap\",\n  didApiKey: \"bWlja3k0dHR0QGdtYWlsLmNvbQ:rH2Ugxbmx5wklhh-fG_kb\",\n  pixabayApiKey: \"22882580-25e21c4c300192792dbe04b1d\"\n};"
+      },
+      "name": "Store API Keys",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        240,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "apiKey": "{{$node[\"Store API Keys\"].json[\"openaiApiKey\"]}}",
+        "model": "gpt-4o",
+        "prompt": "=Based on these trending topics from Google Trends, create 3 faceless YouTube video concepts:\n\n{{$json[\"data\"][\"body\"][\"data\"].join(\", \")}}\n\nFor each video concept, provide:\n1. An engaging title (include relevant keywords)\n2. A description that's SEO optimized\n3. A detailed script outline for a 30-60 minute meditation/relaxation/focus video\n4. Tags for YouTube (at least 10)\n5. Chapters/timestamps suggestions (at least 5)\n6. 3 TikTok short concepts (1-3 minutes) derived from the main video\n\nFormat your response as JSON with the following structure for each video:\n{\n  \"title\": \"\",\n  \"description\": \"\",\n  \"script\": \"\",\n  \"tags\": [\"\"],\n  \"chapters\": [\n    {\"title\": \"\", \"timestamp\": \"\"}\n  ],\n  \"tiktokConcepts\": [\n    {\"title\": \"\", \"description\": \"\", \"durationSeconds\": 0}\n  ]\n}",
+        "options": {}
+      },
+      "name": "Generate Video Concepts",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": true,
+              "value2": true
+            }
+          ],
+          "string": [
+            {
+              "value1": "={{$node[\"Generate Video Concepts\"].json[\"response\"]}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "IF Concepts Generated",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "apiKey": "{{$node[\"Store API Keys\"].json[\"openaiApiKey\"]}}",
+        "model": "gpt-4o",
+        "prompt": "=Generate a detailed, expanded script for a faceless YouTube video based on this concept:\n\nTitle: {{$json[\"title\"]}}\n\nExpand the following script outline into a full, well-structured script for a 30-60 minute meditation/relaxation video:\n\n{{$json[\"script\"]}}\n\nThe script should include:\n1. A compelling introduction (30-60 seconds)\n2. Clear segmentation that matches the chapters\n3. Smooth transitions between segments\n4. A calming, meditative tone appropriate for a faceless channel\n5. Guidance for viewers throughout the experience\n6. A gentle conclusion with a call to subscribe\n\nFormat as a complete script with clear section breaks that match the chapter timestamps.",
+        "options": {}
+      },
+      "name": "Create Detailed Script",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "authName": "xi-api-key",
+        "authValue": "{{$node[\"Store API Keys\"].json[\"elevenlabsApiKey\"]}}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $node[\"Create Detailed Script\"].json[\"response\"] }}"
+            },
+            {
+              "name": "model_id",
+              "value": "eleven_monolingual_v1"
+            },
+            {
+              "name": "voice_settings",
+              "value": "{\n  \"stability\": 0.75,\n  \"similarity_boost\": 0.75\n}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "name": "Generate Voice Narration",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1380,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "apiKey": "{{$node[\"Store API Keys\"].json[\"pexelsApiKey\"]}}",
+        "endpoint": "https://api.pexels.com/videos/search",
+        "parameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{$node[\"IF Concepts Generated\"].json[\"title\"].split(' ').slice(0, 3).join(' ')}}"
+            },
+            {
+              "name": "per_page",
+              "value": "15"
+            },
+            {
+              "name": "orientation",
+              "value": "landscape"
+            }
+          ]
+        },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "{{$node[\"Store API Keys\"].json[\"pexelsApiKey\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Fetch Video Assets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "apiKey": "{{$node[\"Store API Keys\"].json[\"pixabayApiKey\"]}}",
+        "endpoint": "https://pixabay.com/api/",
+        "parameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{\"meditation music,relaxation,ambient,calm\".split(\",\")[Math.floor(Math.random() * 4)]}}"
+            },
+            {
+              "name": "media_type",
+              "value": "audio"
+            },
+            {
+              "name": "per_page",
+              "value": "5"
+            }
+          ]
+        }
+      },
+      "name": "Fetch Background Music",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "command": "ffmpeg -i \"{{$node[\"Generate Voice Narration\"].binary.data.fileName}}\" -i \"{{$node[\"Download Background Music\"].binary.data.fileName}}\" -i \"{{$node[\"Download Video Assets\"].binary.data.fileName}}\" -filter_complex \"[1:a]volume=0.2[music];[0:a][music]amix=inputs=2:duration=longest[aout]\" -map 2:v -map \"[aout]\" -c:v libx264 -c:a aac -shortest -t 3600 \"{{$json[\"title\"]}}.mp4\""
+      },
+      "name": "Compose Full Video",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Download Video Assets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1380,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$node[\"Fetch Background Music\"].json[\"hits\"][0][\"audio_download_url\"]}}",
+        "options": {}
+      },
+      "name": "Download Background Music",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1380,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "apiKey": "{{$node[\"Store API Keys\"].json[\"stabilityAiApiKey\"]}}",
+        "model": "stable-diffusion-xl-1024-v1-0",
+        "promptText": "=Professional YouTube thumbnail for {{$json[\"title\"]}}, cinematic, photorealistic, peaceful scene, 16:9 ratio, high resolution, no text",
+        "additionalOptions": {}
+      },
+      "name": "Generate Thumbnail A",
+      "type": "n8n-nodes-base.stabilityAi",
+      "typeVersion": 1,
+      "position": [
+        1620,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "apiKey": "{{$node[\"Store API Keys\"].json[\"stabilityAiApiKey\"]}}",
+        "model": "stable-diffusion-xl-1024-v1-0",
+        "promptText": "=YouTube thumbnail design for {{$json[\"title\"]}}, vibrant colors, abstract, zen, meditation concept, digital art style, high contrast, 16:9 ratio",
+        "additionalOptions": {}
+      },
+      "name": "Generate Thumbnail B",
+      "type": "n8n-nodes-base.stabilityAi",
+      "typeVersion": 1,
+      "position": [
+        1620,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Process thumbnails for A/B testing\nconst data = items[0].json;\nconst thumbnailA = items[1].binary;\nconst thumbnailB = items[2].binary;\n\n// Prepare data for YouTube upload\nreturn [\n  {\n    json: {\n      ...data,\n      thumbnailA: thumbnailA,\n      thumbnailB: thumbnailB,\n      videoFile: items[3].binary,\n      uploadReady: true\n    }\n  }\n];"
+      },
+      "name": "Prepare Upload Package",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        2060,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{$json[\"title\"]}}",
+        "categoryId": "22",
+        "description": "={{$json[\"description\"]}}",
+        "privacyStatus": "public",
+        "tags": "={{$json[\"tags\"].join(\",\")}}",
+        "options": {
+          "notifySubscribers": true,
+          "scheduledPublishing": true,
+          "publishAt": "={{$jmespath($now, \"addDays(1) | formatDateTime('YYYY-MM-DD')\")}}"
+        }
+      },
+      "name": "Upload to YouTube",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 1,
+      "position": [
+        2280,
+        300
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "youtube-oauth-credentials",
+          "name": "YouTube OAuth2 API account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "ffmpeg -i \"{{$node[\"Compose Full Video\"].binary.data.fileName}}\" -ss 00:00:00 -t 00:01:30 -c:v libx264 -c:a aac -filter:v \"scale=1080:1920,setdar=9/16\" -y \"{{$json[\"tiktokConcepts\"][0][\"title\"]}}.mp4\""
+      },
+      "name": "Create TikTok Short",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2280,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.uploadReady }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Ready for Upload?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        2060,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "apiKey": "{{$node[\"Store API Keys\"].json[\"openaiApiKey\"]}}",
+        "model": "gpt-4o",
+        "prompt": "=Create an engaging comment for me to pin on my YouTube video: \"{{$json[\"title\]}}\"\n\nThe comment should:\n1. Thank viewers for watching\n2. Ask an engaging question related to the video topic\n3. Include a call to action to like, comment, and subscribe\n4. Be friendly and conversational\n5. Be under 200 characters\n\nAlso, generate 5 potential reply templates I can use to respond to common viewer comments. Each reply should be personalized yet generic enough to work for various comments.",
+        "options": {}
+      },
+      "name": "Generate Comment Strategy",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        2500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node creates a YouTube Analytics dashboard link and tracking summary\nconst videoId = $input.first().json.videoId || \"YOUR_VIDEO_ID\";\nconst videoTitle = $input.first().json.title;\n\nreturn {\n  json: {\n    videoId: videoId,\n    videoTitle: videoTitle,\n    youtubeStudioLink: `https://studio.youtube.com/video/${videoId}/analytics/tab-overview/period-default`,\n    analyticsSetup: true,\n    abTestingSchedule: `A/B Thumbnail test for \"${videoTitle}\" will run for 7 days`,\n    nextVideoScheduled: true,\n    optimizationReminder: \"Review analytics after 48 hours for initial performance\",\n    automationComplete: true\n  }\n};"
+      },
+      "name": "Setup Analytics & Tracking",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "=## YouTube Automation Complete!\n\n### Video Published\n**Title:** {{$node[\"Setup Analytics & Tracking\"].json[\"videoTitle\"]}}\n\n### Next Steps\n- {{$node[\"Setup Analytics & Tracking\"].json[\"abTestingSchedule\"]}}\n- {{$node[\"Setup Analytics & Tracking\"].json[\"optimizationReminder\"]}}\n\n### Analytics Dashboard\n[Open YouTube Studio]({{$node[\"Setup Analytics & Tracking\"].json[\"youtubeStudioLink\"]}})\n\n### Comment Strategy\nPin this comment:\n```\n{{$node[\"Generate Comment Strategy\"].json[\"response\"].split('\\n\\n')[0]}}\n```\n\n### TikTok Short Created\nReady for upload: {{$node[\"Create TikTok Short\"].json[\"fileName\"]}}\n\n✅ Automation workflow completed successfully!",
+        "height": 585,
+        "width": 885
+      },
+      "name": "Workflow Summary",
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        2940,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split the videos array from the AI response\nconst responseText = $input.first().json.response;\n\nlet videoData;\ntry {\n  // Parse the JSON response from OpenAI\n  videoData = JSON.parse(responseText);\n  \n  // If it's not an array but a single object, wrap it in an array\n  if (!Array.isArray(videoData)) {\n    videoData = [videoData];\n  }\n} catch (error) {\n  // If there's an error parsing JSON, try to extract JSON objects\n  const jsonPattern = /\\{([^{}]|\\{[^{}]*\\})*\\}/g;\n  const matches = responseText.match(jsonPattern);\n  \n  if (matches && matches.length > 0) {\n    videoData = matches.map(match => JSON.parse(match));\n  } else {\n    throw new Error('Could not parse video data from response');\n  }\n}\n\n// Return the first video concept to process\nreturn videoData.map(video => ({ json: video }));"
+      },
+      "name": "Process Video Concepts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Process a Pexels video response to get download URLs\nconst videos = $input.first().json.videos;\nconst videoUrls = [];\n\n// Get 5 random videos from results for variety\nconst selectedVideos = [];\nfor (let i = 0; i < Math.min(5, videos.length); i++) {\n  const randomIndex = Math.floor(Math.random() * videos.length);\n  if (!selectedVideos.includes(randomIndex)) {\n    selectedVideos.push(randomIndex);\n  }\n}\n\n// Get highest quality video file URL for each selected video\nselectedVideos.forEach(index => {\n  const video = videos[index];\n  const videoFile = video.video_files.reduce((prev, current) => {\n    return (prev.quality === 'hd' || prev.height > current.height) ? prev : current;\n  });\n  videoUrls.push(videoFile.link);\n});\n\n// Return with the first URL to download\nreturn [{\n  json: {\n    videoUrls: videoUrls,\n    downloadUrl: videoUrls[0]\n  }\n}];"
+      },
+      "name": "Extract Video URLs",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1260,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Trend Research",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Store API Keys",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trend Research": {
+      "main": [
+        [
+          {
+            "node": "Generate Video Concepts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Video Concepts": {
+      "main": [
+        [
+          {
+            "node": "IF Concepts Generated",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Process Video Concepts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Concepts Generated": {
+      "main": [
+        [
+          {
+            "node": "Create Detailed Script",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Video Assets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Background Music",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Detailed Script": {
+      "main": [
+        [
+          {
+            "node": "Generate Voice Narration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Voice Narration": {
+      "main": [
+        [
+          {
+            "node": "Compose Full Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Video Assets": {
+      "main": [
+        [
+          {
+            "node": "Extract Video URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Background Music": {
+      "main": [
+        [
+          {
+            "node": "Download Background Music",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video Assets": {
+      "main": [
+        [
+          {
+            "node": "Compose Full Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Background Music": {
+      "main": [
+        [
+          {
+            "node": "Compose Full Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Thumbnail A": {
+      "main": [
+        [
+          {
+            "node": "Prepare Upload Package",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Thumbnail B": {
+      "main": [
+        [
+          {
+            "node": "Prepare Upload Package",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Compose Full Video": {
+      "main": [
+        [
+          {
+            "node": "Generate Thumbnail A",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Thumbnail B",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Upload Package",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Prepare Upload Package": {
+      "main": [
+        [
+          {
+            "node": "Upload to YouTube",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ready for Upload?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to YouTube": {
+      "main": [
+        [
+          {
+            "node": "Generate Comment Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready for Upload?": {
+      "main": [
+        [
+          {
+            "node": "Create TikTok Short",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Comment Strategy": {
+      "main": [
+        [
+          {
+            "node": "Setup Analytics & Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Setup Analytics & Tracking": {
+      "main": [
+        [
+          {
+            "node": "Workflow Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Video Concepts": {
+      "main": [
+        [
+          {
+            "node": "IF Concepts Generated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Video URLs": {
+      "main": [
+        [
+          {
+            "node": "Download Video Assets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "pinData": {},
+  "versionId": "72b84ced-3f52-4bba-98c4-69ce41a8e5d7",
+  "triggerCount": 0,
+  "tags": []
+}
