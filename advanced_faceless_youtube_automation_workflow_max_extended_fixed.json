@@ -1,0 +1,584 @@
+{
+  "name": "Advanced Faceless YouTube Automation Workflow (Max Extended, Fixed)",
+  "nodes": [
+    {
+      "parameters": {
+        "interval": 1,
+        "unit": "days"
+      },
+      "id": "Trigger_Daily",
+      "name": "Trigger (Daily)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [100, 100]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "topic", "value": "Sustainable Living" }
+          ]
+        }
+      },
+      "id": "Pick_Topic_Set",
+      "name": "Pick Topic (Set)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [200, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://google-keyword-insight1.p.rapidapi.com/globalkey/?keyword={{$json[\"topic\"]}}&lang=en",
+        "method": "GET",
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "x-rapidapi-host", "value": "google-keyword-insight1.p.rapidapi.com" },
+            { "name": "x-rapidapi-key", "value": "4bce493e76mshe116a601f32f509p187e24jsn1e0809dee1a3" }
+          ]
+        }
+      },
+      "id": "Google_Trends_Research",
+      "name": "Google Trends Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [300, 100],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GoogleTrendsRapidAPI",
+          "name": "Google Trends RapidAPI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{$json[\"trending\"]}}", "operation": "isNotEmpty" }
+          ]
+        }
+      },
+      "id": "Validate_Topic_IF",
+      "name": "Validate Topic (IF)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [400, 100]
+    },
+    {
+      "parameters": {
+        "resource": "completion",
+        "model": "gpt-3.5-turbo",
+        "prompt": "Generate a 15+ minute YouTube video script for the topic: {{$json[\"topic\"]}}. Make it engaging, informative, and suitable for a faceless channel. Use these keywords: {{$json[\"trending_keywords\"]}}"
+      },
+      "id": "Script_Generation_OpenAI",
+      "name": "Script Generation (OpenAI)",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [500, 100],
+      "credentials": {
+        "openAiApi": {
+          "id": "OpenAI",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://translation.googleapis.com/language/translate/v2",
+        "method": "POST",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "q", "value": "={{$json[\"script\"]}}" },
+            { "name": "target", "value": "es" },
+            { "name": "key", "value": "AIzaSyCxrSQUSNZmEA_j64ByjG4AhoaPl0YIkJw" }
+          ]
+        }
+      },
+      "id": "Translate_Script_Google_Translate",
+      "name": "Translate Script (Google Translate)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [600, 60]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            { "value1": "={{$json[\"script\"] && $json[\"script\"].length}}", "operation": "larger", "value2": 2000 }
+          ]
+        }
+      },
+      "id": "Check_Script_Length_IF",
+      "name": "Check Script Length (IF)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [600, 100]
+    },
+    {
+      "parameters": {
+        "resource": "completion",
+        "model": "gpt-3.5-turbo",
+        "prompt": "Review the following YouTube script for clarity, engagement, and factual accuracy. Suggest improvements and highlight any issues or missing elements. Script: {{$json[\"script\"]}}"
+      },
+      "id": "Script_QA_OpenAI",
+      "name": "Script Quality Assurance (OpenAI)",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [700, 50],
+      "credentials": {
+        "openAiApi": {
+          "id": "OpenAI",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/voice_id/stream",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "text", "value": "={{$json[\"script\"]}}" }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "xi-api-key", "value": "sk_4333b7a0c7314af04a2358c3925917fcaa9806899c53be3f" }
+          ]
+        }
+      },
+      "id": "Voiceover_ElevenLabs",
+      "name": "Voiceover (ElevenLabs)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [800, 100],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ElevenLabs",
+          "name": "ElevenLabs"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "property": "={{$json[\"topic\"]}}",
+        "rules": [
+          { "value": "Sustainable Living", "type": "equal" }
+        ]
+      },
+      "id": "Get_Visuals_Switch",
+      "name": "Get Visuals (Switch)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/videos/search?query={{$json[\"topic\"]}}",
+        "method": "GET",
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "Authorization", "value": "JW4RxBYk3tLi3gpDHIKkD3fHoVcTLyTPsQau5BUphhu7WImqIRBn6oxO" }
+          ]
+        }
+      },
+      "id": "Download_Visuals_Pexels",
+      "name": "Download Visuals (Pexels)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1000, 100],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Pexels",
+          "name": "Pexels"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://pixabay.com/api/videos/?key=50158640-a630f2a25a757e119080c6fdf&q={{$json[\"topic\"]}}",
+        "method": "GET"
+      },
+      "id": "Download_Visuals_Pixabay",
+      "name": "Download Visuals (Pixabay)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1000, 200],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "Pixabay",
+          "name": "Pixabay"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.soundfx.com/search?q={{$json[\"topic\"]}}",
+        "method": "GET",
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "api-key", "value": "Bq1iVVLAKQJ5ZbBurzxZunLEcuwMSGTlLHHfx8pV" }
+          ]
+        }
+      },
+      "id": "Sound_FX",
+      "name": "Sound FX",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1200, 100],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SoundFX",
+          "name": "SoundFX"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.remove.bg/v1.0/removebg",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "image_url", "value": "={{$json[\"image_url\"]}}" }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "X-Api-Key", "value": "qS3JCD5EYc6yp9ZvjLieZ2SH" }
+          ]
+        }
+      },
+      "id": "Remove_BG_Thumbnail",
+      "name": "Remove BG for Thumbnail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1400, 100],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RemoveBG",
+          "name": "RemoveBG"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "completion",
+        "model": "gpt-3.5-turbo",
+        "prompt": "Write a catchy, high-CTR YouTube thumbnail caption for a video on {{$json[\"topic\"]}}"
+      },
+      "id": "Gen_Thumb_Caption_OpenAI",
+      "name": "Generate Thumbnail Caption (OpenAI)",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [1450, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "OpenAI",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "ffmpeg -f concat -safe 0 -i visuals.txt -i {{$json[\"voiceover\"]}} -i {{$json[\"soundfx\"]}} -vf \"movie={{$json[\"thumbnail\"]}} [watermark]; [in][watermark] overlay=10:10 [out]\" -c:v libx264 -t 00:15:10 -pix_fmt yuv420p output_video.mp4"
+      },
+      "id": "Video_Assembly_FFmpeg",
+      "name": "Video Assembly (FFmpeg)",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1600, 100]
+    },
+    {
+      "parameters": {
+        "resource": "completion",
+        "model": "gpt-3.5-turbo",
+        "prompt": "Generate a title, description, and tags for a YouTube video about {{$json[\"topic\"]}}. Return as JSON with fields: title, description, tags."
+      },
+      "id": "Gen_Video_Metadata_OpenAI",
+      "name": "Generate Video Metadata (OpenAI)",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [1650, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "OpenAI",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/upload/youtube/v3/videos?part=snippet,status&key=AIzaSyCxrSQUSNZmEA_j64ByjG4AhoaPl0YIkJw",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "snippet", "value": "={\"title\": \"{{$json[\"title\"]}}\", \"description\": \"{{$json[\"description\"]}}\", \"tags\": [{{$json[\"tags\"]}}], \"categoryId\": \"22\"}" },
+            { "name": "status", "value": "={\"privacyStatus\": \"public\"}" }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "Authorization", "value": "Bearer <OAuth2 Access Token>" }
+          ]
+        }
+      },
+      "id": "Upload_to_YouTube",
+      "name": "Upload to YouTube",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1800, 100],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "YouTubeDataAPIv3",
+          "name": "YouTube Data API v3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api-ssl.bitly.com/v4/shorten",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "long_url", "value": "={{$json[\"affiliate_link\"]}}" }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "Authorization", "value": "Bearer f9351d3fb8ba0048ab3cbff5f2249169c3edb136" }
+          ]
+        }
+      },
+      "id": "Bitly_Shorten_Affiliate",
+      "name": "Bitly Shorten Affiliate Links",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [2000, 100],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Bitly",
+          "name": "Bitly"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/videos?part=statistics&id={{$json[\"videoId\"]}}&key=AIzaSyCxrSQUSNZmEA_j64ByjG4AhoaPl0YIkJw",
+        "method": "GET"
+      },
+      "id": "Fetch_Analytics",
+      "name": "Fetch Analytics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [2200, 100],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "YouTubeDataAPIv3",
+          "name": "YouTube Data API v3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            { "value1": "={{$json[\"statistics\"][\"viewCount\"]}}", "operation": "larger", "value2": 1000 }
+          ]
+        }
+      },
+      "id": "Analyze_Analytics_IF",
+      "name": "Analyze Analytics (IF)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2300, 100]
+    },
+    {
+      "parameters": {
+        "resource": "completion",
+        "model": "gpt-3.5-turbo",
+        "prompt": "Write a pinned comment for a YouTube video that hit over 1,000 views. Include a soft CTA to subscribe and a mention of the affiliate link: {{$json[\"bitly_url\"]}}"
+      },
+      "id": "Gen_Comment_OpenAI",
+      "name": "Generate Comment (OpenAI)",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [2350, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "OpenAI",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api-inference.huggingface.co/models/distilbert-base-uncased-finetuned-sst-2-english",
+        "method": "POST",
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "Authorization", "value": "Bearer <YOUR_HUGGINGFACE_TOKEN>" }
+          ]
+        },
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "inputs", "value": "={{$json[\"commentText\"]}}" }
+          ]
+        }
+      },
+      "id": "Comment_Sentiment_HuggingFace",
+      "name": "Comment Sentiment (HuggingFace)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [2375, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HuggingFace",
+          "name": "HuggingFace"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&key=AIzaSyCxrSQUSNZmEA_j64ByjG4AhoaPl0YIkJw",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "snippet", "value": "={\"videoId\": \"{{$json[\"videoId\"]}}\", \"topLevelComment\": {\"snippet\": {\"textOriginal\": \"{{$json[\"commentText\"]}}\"}}}" }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "Authorization", "value": "Bearer <OAuth2 Access Token>" }
+          ]
+        }
+      },
+      "id": "Post_Comment",
+      "name": "Post Comment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [2400, 100],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "YouTubeDataAPIv3",
+          "name": "YouTube Data API v3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/comments/setModerationStatus?key=AIzaSyCxrSQUSNZmEA_j64ByjG4AhoaPl0YIkJw",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "id", "value": "={{$json[\"commentId\"]}}" },
+            { "name": "moderationStatus", "value": "published" }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "Authorization", "value": "Bearer <OAuth2 Access Token>" }
+          ]
+        }
+      },
+      "id": "Pin_Like_Comment",
+      "name": "Pin and Like Comment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [2600, 100],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "YouTubeDataAPIv3",
+          "name": "YouTube Data API v3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "completion",
+        "model": "gpt-3.5-turbo",
+        "prompt": "Write a YouTube Community post to celebrate that our latest video on {{$json[\"topic\"]}} hit over 1,000 views. Encourage viewers to engage and check out our channel."
+      },
+      "id": "Gen_Community_Post_OpenAI",
+      "name": "Generate Community Post (OpenAI)",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [2650, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "OpenAI",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/communityPosts?part=snippet&key=AIzaSyCxrSQUSNZmEA_j64ByjG4AhoaPl0YIkJw",
+        "method": "POST",
+        "bodyParametersUi": {
+          "parameter": [
+            { "name": "snippet", "value": "={\"channelId\": \"UCzEUCxpFRsTXxg81Hg1zkXA\", \"text\": \"{{$json[\"communityText\"]}}\"}" }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "Authorization", "value": "Bearer <OAuth2 Access Token>" }
+          ]
+        }
+      },
+      "id": "Community_Post",
+      "name": "Community Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [2800, 100],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "YouTubeDataAPIv3",
+          "name": "YouTube Data API v3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#automation-alerts",
+        "text": "Workflow error occurred: {{$json[\"error\"]}}"
+      },
+      "id": "Error_Notification_Slack",
+      "name": "Error Notification (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [3000, 100],
+      "credentials": {
+        "slackApi": {
+          "id": "Slack",
+          "name": "Slack"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Trigger (Daily)": { "main": [["Pick Topic (Set)"]] },
+    "Pick Topic (Set)": { "main": [["Google Trends Research"]] },
+    "Google Trends Research": { "main": [["Validate Topic (IF)"]] },
+    "Validate Topic (IF)": { "main": [["Script Generation (OpenAI)"]] },
+    "Script Generation (OpenAI)": { "main": [["Translate Script (Google Translate)", "Check Script Length (IF)"]] },
+    "Check Script Length (IF)": { "main": [["Voiceover (ElevenLabs)", "Script Quality Assurance (OpenAI)"]] },
+    "Voiceover (ElevenLabs)": { "main": [["Get Visuals (Switch)"]] },
+    "Get Visuals (Switch)": { "main": [["Download Visuals (Pexels)", "Download Visuals (Pixabay)"]] },
+    "Download Visuals (Pexels)": { "main": [["Sound FX"]] },
+    "Download Visuals (Pixabay)": { "main": [["Sound FX"]] },
+    "Sound FX": { "main": [["Remove BG for Thumbnail"]] },
+    "Remove BG for Thumbnail": { "main": [["Generate Thumbnail Caption (OpenAI)"]] },
+    "Generate Thumbnail Caption (OpenAI)": { "main": [["Video Assembly (FFmpeg)"]] },
+    "Video Assembly (FFmpeg)": { "main": [["Upload to YouTube", "Generate Video Metadata (OpenAI)"]] },
+    "Upload to YouTube": { "main": [["Bitly Shorten Affiliate Links", "Fetch Analytics"]] },
+    "Bitly Shorten Affiliate Links": { "main": [["Fetch Analytics"]] },
+    "Fetch Analytics": { "main": [["Analyze Analytics (IF)"]] },
+    "Analyze Analytics (IF)": { "main": [["Generate Comment (OpenAI)", "Generate Community Post (OpenAI)"]] },
+    "Generate Comment (OpenAI)": { "main": [["Comment Sentiment (HuggingFace)"]] },
+    "Comment Sentiment (HuggingFace)": { "main": [["Post Comment"]] },
+    "Post Comment": { "main": [["Pin and Like Comment"]] },
+    "Generate Community Post (OpenAI)": { "main": [["Community Post"]] }
+  }
+}
