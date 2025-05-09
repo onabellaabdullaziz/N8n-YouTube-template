@@ -1,0 +1,670 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "minutesInterval": 0,
+              "monthDays": 1,
+              "option": "everyX",
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0,
+              "weekDays": []
+            }
+          ]
+        }
+      },
+      "id": "8a9f2d9e-f8d0-4139-a912-b56df222f538",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.videoindexer.ai/Auth/trial/Accounts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Ocp-Apim-Subscription-Key",
+              "value": "={{ $env.VIDEO_INDEXER_KEY }}"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+      "name": "Get Video Indexer Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.trueresearch.ai/v2/market/trends",
+        "options": {
+          "qs": {
+            "category": "={{ $env.CHANNEL_NICHE }}",
+            "period": "7d",
+            "limit": 25
+          }
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.TRUERESEARCH_API_KEY }}"
+            }
+          ]
+        }
+      },
+      "id": "b4cf7b13-7d9c-4de5-9d5a-fcaa56a75b9a",
+      "name": "Advanced Trend Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.youtube.com/v3/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet"
+            },
+            {
+              "name": "type",
+              "value": "video"
+            },
+            {
+              "name": "maxResults",
+              "value": "15"
+            },
+            {
+              "name": "order",
+              "value": "relevance"
+            },
+            {
+              "name": "q",
+              "value": "={{ $env.CHANNEL_NICHE }} trending"
+            }
+          ]
+        }
+      },
+      "id": "c7d8e9f0-g1h2-i3j4-k5l6-m7n8o9p0q1r2",
+      "name": "YouTube Trend Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        450
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "youtube-oauth2-credentials",
+          "name": "YouTube OAuth2 Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "=# Video Planning Request\n\nI need a comprehensive video strategy for a faceless YouTube channel in the {{$env.CHANNEL_NICHE}} niche based on this trending data:\n\n## Market Trends\n{{$node[\"Advanced Trend Analysis\"].json.data ? $node[\"Advanced Trend Analysis\"].json.data.slice(0,5).map(trend => `- ${trend.topic} (Score: ${trend.trendScore})`).join('\\n') : 'No trend data available'}}\n\n## Top YouTube Content\n{{$node[\"YouTube Trend Analysis\"].json.items ? $node[\"YouTube Trend Analysis\"].json.items.slice(0,5).map(item => `- ${item.snippet.title} (Channel: ${item.snippet.channelTitle})`).join('\\n') : 'No YouTube data available'}}\n\n## Project Context\n- Faceless YouTube channel (no personal branding)\n- Need to stand out in a competitive niche\n- Must provide high-value, educational content\n- Target audience is primarily {{$env.TARGET_DEMOGRAPHIC}}\n\nPlease provide a complete video strategy including:\n1. The optimal topic to target\n2. Key audience needs and pain points to address\n3. Content structure recommendations\n4. Specific competitive advantages we should leverage\n5. Top keywords to target for SEO\n6. Suggested title formats (3 examples)\n\nMake this strategy optimized for both algorithm visibility and audience retention.",
+        "model": {
+          "modelName": "claude-3-opus-20240229",
+          "serviceProvider": "anthropic"
+        }
+      },
+      "id": "d1e2f3g4-h5i6-j7k8-l9m0-n1o2p3q4r5s6",
+      "name": "Generate Content Strategy",
+      "type": "n8n-nodes-base.llm",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropic-api",
+          "name": "Anthropic Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Error handling for content strategy\nif (!$node[\"Generate Content Strategy\"].json || !$node[\"Generate Content Strategy\"].json.text) {\n  // Generate fallback strategy if AI generation fails\n  return {\n    json: {\n      optimalTopic: $env.CHANNEL_NICHE + \" best practices in 2025\",\n      audienceNeeds: [\"Understanding newest trends\", \"Maximizing efficiency\", \"Avoiding common mistakes\"],\n      contentStructure: \"How-to guide with step-by-step instructions\",\n      competitiveAdvantages: [\"Data-driven recommendations\", \"Actionable advice\"],\n      keywords: [$env.CHANNEL_NICHE, \"guide\", \"tutorial\", \"best practices\", \"2025\"],\n      titleFormats: [\n        \"Top 7 \" + $env.CHANNEL_NICHE + \" Strategies for 2025\",\n        \"The Ultimate \" + $env.CHANNEL_NICHE + \" Guide You Need Right Now\",\n        \"How to Master \" + $env.CHANNEL_NICHE + \" in Just 10 Minutes\"\n      ],\n      error: \"Generated fallback strategy due to LLM error\"\n    }\n  };\n}\n\n// Attempt to extract structured data\ntry {\n  const text = $node[\"Generate Content Strategy\"].json.text;\n  \n  // Extract optimal topic\n  let optimalTopic = \"\";\n  const topicMatch = text.match(/(?:optimal topic|target topic|best topic)[:\\s-]+([^\\n]+)/i);\n  if (topicMatch) optimalTopic = topicMatch[1].trim();\n  else {\n    // Try another pattern\n    const altTopicMatch = text.match(/topic[:\\s-]+([^\\n]+)/i);\n    if (altTopicMatch) optimalTopic = altTopicMatch[1].trim();\n    else optimalTopic = $env.CHANNEL_NICHE + \" guide\";\n  }\n  \n  // Extract audience needs/pain points\n  const audienceNeeds = [];\n  const needsSection = text.match(/(?:audience needs|pain points|key needs)[^\\n]*:\\s*([\\s\\S]+?)(?=\\n\\s*\\d|\\n\\s*#|$)/i);\n  if (needsSection) {\n    const needsText = needsSection[1];\n    const needItems = needsText.match(/(?:^|\\n)\\s*-\\s*([^\\n]+)/g);\n    if (needItems) {\n      needItems.forEach(item => {\n        const cleanItem = item.replace(/^\\s*-\\s*/, '').trim();\n        if (cleanItem) audienceNeeds.push(cleanItem);\n      });\n    }\n  }\n  \n  // If no audience needs were extracted, add some defaults\n  if (audienceNeeds.length === 0) {\n    audienceNeeds.push(\"Understanding \" + $env.CHANNEL_NICHE);\n    audienceNeeds.push(\"Improving skills in \" + $env.CHANNEL_NICHE);\n    audienceNeeds.push(\"Staying updated with latest trends\");\n  }\n  \n  // Extract content structure\n  let contentStructure = \"\";\n  const structureMatch = text.match(/(?:content structure|structure)[^\\n]*:\\s*([^\\n]+)/i);\n  if (structureMatch) contentStructure = structureMatch[1].trim();\n  else contentStructure = \"Step-by-step tutorial with examples\";\n  \n  // Extract competitive advantages\n  const competitiveAdvantages = [];\n  const advantagesSection = text.match(/(?:competitive advantages|advantages)[^\\n]*:\\s*([\\s\\S]+?)(?=\\n\\s*\\d|\\n\\s*#|$)/i);\n  if (advantagesSection) {\n    const advantagesText = advantagesSection[1];\n    const advantageItems = advantagesText.match(/(?:^|\\n)\\s*-\\s*([^\\n]+)/g);\n    if (advantageItems) {\n      advantageItems.forEach(item => {\n        const cleanItem = item.replace(/^\\s*-\\s*/, '').trim();\n        if (cleanItem) competitiveAdvantages.push(cleanItem);\n      });\n    }\n  }\n  \n  // Add default competitive advantage if none found\n  if (competitiveAdvantages.length === 0) {\n    competitiveAdvantages.push(\"Data-driven insights\");\n    competitiveAdvantages.push(\"Actionable advice\");\n  }\n  \n  // Extract keywords\n  const keywords = [];\n  const keywordsSection = text.match(/(?:keywords|seo keywords|top keywords)[^\\n]*:\\s*([\\s\\S]+?)(?=\\n\\s*\\d|\\n\\s*#|$)/i);\n  if (keywordsSection) {\n    const keywordsText = keywordsSection[1];\n    // Try to find comma-separated list first\n    if (keywordsText.includes(',')) {\n      const keywordsList = keywordsText.split(',');\n      keywordsList.forEach(keyword => {\n        const cleanKeyword = keyword.replace(/^\\s*-\\s*/, '').trim();\n        if (cleanKeyword) keywords.push(cleanKeyword);\n      });\n    } else {\n      // Try to find bullet points\n      const keywordItems = keywordsText.match(/(?:^|\\n)\\s*-\\s*([^\\n]+)/g);\n      if (keywordItems) {\n        keywordItems.forEach(item => {\n          const cleanItem = item.replace(/^\\s*-\\s*/, '').trim();\n          if (cleanItem) keywords.push(cleanItem);\n        });\n      }\n    }\n  }\n  \n  // Add default keywords if none found\n  if (keywords.length === 0) {\n    keywords.push($env.CHANNEL_NICHE);\n    keywords.push(\"tutorial\");\n    keywords.push(\"guide\");\n    keywords.push(\"how to\");\n    keywords.push(\"2025\");\n  }\n  \n  // Extract title formats\n  const titleFormats = [];\n  const titlesSection = text.match(/(?:title formats|suggested titles|title examples)[^\\n]*:\\s*([\\s\\S]+?)(?=\\n\\s*\\d|\\n\\s*#|$)/i);\n  if (titlesSection) {\n    const titlesText = titlesSection[1];\n    const titleItems = titlesText.match(/(?:^|\\n)\\s*(?:\\d\\.|-|\\*)\\s*([^\\n]+)/g);\n    if (titleItems) {\n      titleItems.forEach(item => {\n        const cleanItem = item.replace(/^\\s*(?:\\d\\.|-|\\*)\\s*/, '').trim();\n        if (cleanItem) titleFormats.push(cleanItem);\n      });\n    }\n  }\n  \n  // Add default title formats if none found\n  if (titleFormats.length === 0) {\n    titleFormats.push(\"Top 7 \" + optimalTopic + \" Strategies for 2025\");\n    titleFormats.push(\"The Ultimate Guide to \" + optimalTopic);\n    titleFormats.push(\"How to Master \" + optimalTopic + \" in Just 10 Minutes\");\n  }\n  \n  return {\n    json: {\n      optimalTopic,\n      audienceNeeds,\n      contentStructure,\n      competitiveAdvantages,\n      keywords,\n      titleFormats,\n      extractionMethod: \"parsed\",\n      timestamp: new Date().toISOString()\n    }\n  };\n} catch (error) {\n  // If parsing fails, return a structured error with fallback data\n  return {\n    json: {\n      optimalTopic: $env.CHANNEL_NICHE + \" best practices\",\n      audienceNeeds: [\"Understanding basics\", \"Advanced techniques\", \"Troubleshooting common issues\"],\n      contentStructure: \"Step-by-step tutorial with examples\",\n      competitiveAdvantages: [\"Comprehensive coverage\", \"Visual demonstrations\"],\n      keywords: [$env.CHANNEL_NICHE, \"guide\", \"tutorial\", \"how-to\", \"explained\"],\n      titleFormats: [\n        \"Complete \" + $env.CHANNEL_NICHE + \" Guide for Beginners\",\n        \"7 Essential \" + $env.CHANNEL_NICHE + \" Tips You Need to Know\",\n        \"How to Master \" + $env.CHANNEL_NICHE + \" in 2025\"\n      ],\n      extractionMethod: \"fallback\",\n      extractionError: error.message,\n      timestamp: new Date().toISOString()\n    }\n  };\n}"
+      },
+      "id": "e3f4g5h6-i7j8-k9l0-m1n2-o3p4q5r6s7t8",
+      "name": "Extract Strategy Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "=# Video Script Creation\n\n## Content Strategy Summary\n- Topic: {{$node[\"Extract Strategy Data\"].json.optimalTopic}}\n- Target Audience: {{$env.TARGET_DEMOGRAPHIC}}\n- Key Pain Points: {{$node[\"Extract Strategy Data\"].json.audienceNeeds.join(', ')}}\n- Content Structure: {{$node[\"Extract Strategy Data\"].json.contentStructure}}\n- Competitive Advantage: {{$node[\"Extract Strategy Data\"].json.competitiveAdvantages[0]}}\n\n## Script Requirements\n\nCreate a high-retention script for a faceless YouTube video about \"{{$node[\"Extract Strategy Data\"].json.optimalTopic}}\" with the following specifications:\n\n1. An attention-grabbing hook (15 seconds) that creates a curiosity gap\n2. Clear chapter structure with timestamps (format: 00:00 - Chapter Title)\n3. 5 main content sections addressing the audience pain points\n4. Pattern interrupts every 60-90 seconds (questions, challenges, unexpected facts)\n5. Data visualization cues for complex information [DATA VISUALIZATION]\n6. B-roll suggestions in [BRACKETS]\n7. Emotional triggers to maintain engagement\n8. A strong, actionable conclusion with next steps\n9. 2-3 engagement prompts throughout the video\n\nThe script should be approximately 8-10 minutes when read aloud at a natural pace. Format the script with clear visual directions, emphasis notes, and make it naturally conversational while maintaining high information density.\n\nTarget SEO Keywords: {{$node[\"Extract Strategy Data\"].json.keywords.join(', ')}}\n\nMake this script specifically optimized for faceless presentation (no personal stories or on-camera segments).",
+        "model": {
+          "modelName": "claude-3-opus-20240229",
+          "serviceProvider": "anthropic"
+        }
+      },
+      "id": "f5g6h7i8-j9k0-l1m2-n3o4-p5q6r7s8t9u0",
+      "name": "Generate Advanced Script",
+      "type": "n8n-nodes-base.llm",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropic-api",
+          "name": "Anthropic Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "=# YouTube Metadata Optimization\n\nCreate algorithm-optimized metadata for my YouTube video based on these specifications:\n\n## Video Topic\n{{$node[\"Extract Strategy Data\"].json.optimalTopic}}\n\n## Target Keywords\n{{$node[\"Extract Strategy Data\"].json.keywords.join(', ')}}\n\n## Suggested Title Formats\n{{$node[\"Extract Strategy Data\"].json.titleFormats.join('\\n')}}\n\n## Content Details\nScript sections:\n{{$node[\"Generate Advanced Script\"].json && $node[\"Generate Advanced Script\"].json.text ? ($node[\"Generate Advanced Script\"].json.text.match(/\\d+:\\d+\\s+-\\s+[^\\n]+/g) || []).join('\\n') : 'No sections available'}}\n\nGenerate the following metadata components:\n\n1. TITLE OPTIONS (3 variations under 60 characters each)\n   - Must have high CTR potential\n   - Include numbers when relevant\n   - Incorporate primary keywords naturally\n\n2. DESCRIPTION (300-500 characters)\n   - First two lines must hook the viewer\n   - Include all major keywords naturally\n   - Add timestamps from the script\n   - Include 3-5 targeted hashtags\n\n3. TAGS (25 maximum)\n   - Start with exact match keywords\n   - Include phrase variations\n   - Add some competitor targeting tags\n   - Format as comma-separated list\n\n4. END SCREEN STRATEGY\n   - Recommendation for end screen layout\n   - Types of videos to link\n\nOptimize all elements for maximum algorithm visibility while maintaining genuine audience appeal.",
+        "model": {
+          "modelName": "gpt-4o",
+          "serviceProvider": "openAi"
+        }
+      },
+      "id": "g7h8i9j0-k1l2-m3n4-o5p6-q7r8s9t0u1v2",
+      "name": "Generate SEO Metadata",
+      "type": "n8n-nodes-base.llm",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        450
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "https://api.clipdrop.co/text-to-image/v1",
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.CLIPDROP_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "formData": {
+            "prompt": "=Create a visually striking YouTube thumbnail for \"{{$node[\"Extract Strategy Data\"].json.optimalTopic}}\". Professional quality, vibrant colors, high contrast, designed for maximum CTR. Include space for title text overlay. Clean, eye-catching design that stands out in search results. Photorealistic style with cinematic lighting.",
+            "guidance_scale": 7.5,
+            "negative_prompt": "text, words, watermarks, low quality, blurry, amateur"
+          },
+          "splitIntoItems": false,
+          "bodyFormat": "multipart-form-data"
+        }
+      },
+      "id": "h9i0j1k2-l3m4-n5o6-p7q8-r9s0t1u2v3w4",
+      "name": "Generate Thumbnail Images",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract script timestamps and sections\nconst scriptText = $node[\"Generate Advanced Script\"].json?.text || '';\nconst timestampRegex = /^(\\d+:\\d+)\\s+-\\s+(.+)$/gm;\nlet match;\nconst sections = [];\n\n// Check if script was generated successfully\nif (!scriptText) {\n  // Generate fallback script structure\n  const topic = $node[\"Extract Strategy Data\"].json.optimalTopic;\n  const audienceNeeds = $node[\"Extract Strategy Data\"].json.audienceNeeds;\n  \n  sections.push({ timestamp: \"00:00\", title: \"Introduction to \" + topic, content: \"Introduction section\", visualCues: [\"Show topic overview\"] });\n  \n  // Create sections based on audience needs\n  audienceNeeds.forEach((need, index) => {\n    const minute = index + 1;\n    sections.push({ \n      timestamp: `0${minute}:00`, \n      title: need, \n      content: `Section about ${need}`,\n      visualCues: [`Show ${need.toLowerCase()} example`]\n    });\n  });\n  \n  // Add conclusion\n  sections.push({ \n    timestamp: `0${audienceNeeds.length + 1}:00`, \n    title: \"Conclusion and Next Steps\", \n    content: \"Wrap up and call to action\",\n    visualCues: [\"Show summary graphic\"]\n  });\n} else {\n  // Extract all timestamps and section titles\n  while ((match = timestampRegex.exec(scriptText)) !== null) {\n    sections.push({\n      timestamp: match[1],\n      title: match[2],\n      content: ''\n    });\n  }\n\n  // Add content to each section by finding text between timestamps\n  for (let i = 0; i < sections.length; i++) {\n    const currentTimestamp = sections[i].timestamp;\n    const nextTimestamp = i < sections.length - 1 ? sections[i+1].timestamp : null;\n    \n    let sectionRegex;\n    if (nextTimestamp) {\n      sectionRegex = new RegExp(`${currentTimestamp}\\\\s+-\\\\s+${sections[i].title.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\\\s*\\\\n([\\\\s\\\\S]*?)${nextTimestamp}\\\\s+-\\\\s+`, 'i');\n    } else {\n      sectionRegex = new RegExp(`${currentTimestamp}\\\\s+-\\\\s+${sections[i].title.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\\\s*\\\\n([\\\\s\\\\S]*)$`, 'i');\n    }\n    \n    const contentMatch = scriptText.match(sectionRegex);\n    if (contentMatch && contentMatch[1]) {\n      sections[i].content = contentMatch[1].trim();\n    }\n  }\n\n  // Extract visual cues for each section\n  for (let section of sections) {\n    section.visualCues = [];\n    \n    // Extract content in brackets (visual directions)\n    const visualRegex = /\\[([^\\]]+)\\]/g;\n    let visualMatch;\n    \n    while ((visualMatch = visualRegex.exec(section.content)) !== null) {\n      section.visualCues.push(visualMatch[1]);\n    }\n  }\n}\n\n// Parse metadata\nlet metadata = {\n  titles: [],\n  description: '',\n  tags: []\n};\n\nconst metadataText = $node[\"Generate SEO Metadata\"].json?.text || '';\n\nif (metadataText) {\n  // Extract titles\n  const titlesSection = metadataText.match(/TITLE OPTIONS[\\s\\S]+?(?=\\n\\n\\d\\.\\s|$)/i);\n  if (titlesSection) {\n    const titleLines = titlesSection[0].split('\\n').slice(1); // Skip the header\n    metadata.titles = titleLines\n      .filter(line => line.trim().startsWith('-') || line.trim().match(/^\\d+\\./))\n      .map(line => line.replace(/^\\s*-\\s*|^\\s*\\d+\\.\\s*/, '').trim())\n      .filter(title => title.length > 0);\n  }\n  \n  // Extract description\n  const descSection = metadataText.match(/DESCRIPTION[\\s\\S]+?(?=\\n\\n\\d\\.\\s|$)/i);\n  if (descSection) {\n    metadata.description = descSection[0].replace(/^DESCRIPTION[^\\n]*\\n/i, '').trim();\n  }\n  \n  // Extract tags\n  const tagsSection = metadataText.match(/TAGS[\\s\\S]+?(?=\\n\\n\\d\\.\\s|$)/i);\n  if (tagsSection) {\n    const tagsText = tagsSection[0].replace(/^TAGS[^\\n]*\\n/i, '').trim();\n    metadata.tags = tagsText.split(/\\s*,\\s*|\\s*\\n\\s*/).filter(tag => tag.trim().length > 0);\n  }\n  \n  // Extract end screen strategy\n  const endScreenSection = metadataText.match(/END SCREEN STRATEGY[\\s\\S]+?(?=\\n\\n\\d\\.\\s|$)/i);\n  if (endScreenSection) {\n    metadata.endScreenStrategy = endScreenSection[0].replace(/^END SCREEN STRATEGY[^\\n]*\\n/i, '').trim();\n  }\n}\n\n// Fallback metadata if extraction failed\nif (metadata.titles.length === 0) {\n  metadata.titles = $node[\"Extract Strategy Data\"].json.titleFormats || \n    [\"Guide to \" + $node[\"Extract Strategy Data\"].json.optimalTopic];\n}\n\nif (!metadata.description) {\n  metadata.description = `Learn everything about ${$node[\"Extract Strategy Data\"].json.optimalTopic} in this comprehensive guide. We cover ${$node[\"Extract Strategy Data\"].json.audienceNeeds.join(', ')}. Watch now to master these essential skills!`;\n}\n\nif (metadata.tags.length === 0) {\n  metadata.tags = $node[\"Extract Strategy Data\"].json.keywords || [$env.CHANNEL_NICHE, \"tutorial\", \"guide\", \"how-to\"];\n}\n\nif (!metadata.endScreenStrategy) {\n  metadata.endScreenStrategy = \"Feature related content and channel subscription button\";\n}\n\n// Compile the complete package\nreturn {\n  json: {\n    topic: $node[\"Extract Strategy Data\"].json.optimalTopic,\n    script: {\n      full: scriptText,\n      sections: sections,\n      wordCount: scriptText.split(/\\s+/).length,\n      estimatedDuration: Math.round(scriptText.split(/\\s+/).length / 150 * 60) || 300 // Default 5 min if calculation fails\n    },\n    metadata: {\n      title: metadata.titles.length > 0 ? metadata.titles[0] : $node[\"Extract Strategy Data\"].json.optimalTopic,\n      titleOptions: metadata.titles,\n      description: metadata.description,\n      tags: metadata.tags,\n      endScreenStrategy: metadata.endScreenStrategy\n    },\n    strategy: $node[\"Extract Strategy Data\"].json,\n    thumbnailGenerated: !!$node[\"Generate Thumbnail Images\"].binary,\n    processingDate: \"2025-05-09\", // Hardcoded current date from your input\n    timestamp: new Date().toISOString()\n  },\n  binary: $node[\"Generate Thumbnail Images\"].binary\n};"
+      },
+      "id": "i1j2k3l4-m5n6-o7p8-q9r0-s1t2u3v4w5x6",
+      "name": "Prepare Content Package",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.playht.com/api/v1/convert",
+        "authentication": "headerAuth",
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "AUTHORIZATION",
+              "value": "=Bearer {{ $env.PLAYHT_API_KEY }}"
+            },
+            {
+              "name": "X-USER-ID",
+              "value": "={{ $env.PLAYHT_USER_ID }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "content": "={{ $node[\"Generate Advanced Script\"].json && $node[\"Generate Advanced Script\"].json.text ? $node[\"Generate Advanced Script\"].json.text : \"Welcome to this video about \" + $node[\"Extract Strategy Data\"].json.optimalTopic + \". In this video, we'll cover \" + $node[\"Extract Strategy Data\"].json.audienceNeeds.join(\", \") + \". Let's get started.\" }}",
+          "voice": "{{ $env.PLAYHT_VOICE_ID }}",
+          "title": "={{ $node[\"Prepare Content Package\"].json.topic }}",
+          "narrationStyle": "conversational",
+          "globalSpeed": 1.0,
+          "pronunciations": [],
+          "trimSilence": true,
+          "output_format": "mp3"
+        }
+      },
+      "id": "j3k4l5m6-n7o8-p9q0-r1s2-t3u4v5w6x7y8",
+      "name": "Generate Neural Voiceover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Polling mechanism to check PlayHT audio completion status\nconst maxAttempts = 20;\nconst delayBetweenAttempts = 5000; // 5 seconds\n\nlet audioReady = false;\nlet attempts = 0;\nlet audioUrl = null;\n\n// Error handling for missing transcription ID\nif (!$node[\"Generate Neural Voiceover\"].json || !$node[\"Generate Neural Voiceover\"].json.transcriptionId) {\n  return {\n    json: {\n      status: 'error',\n      error: 'Missing transcription ID from PlayHT',\n      errorType: 'missing_data',\n      timestamp: new Date().toISOString(),\n      // Fallback audio URL if available\n      audioUrl: $node[\"Generate Neural Voiceover\"].json?.audioUrl || null\n    }\n  };\n}\n\n// Get the PlayHT transcription ID from the previous node\nconst transcriptionId = $node[\"Generate Neural Voiceover\"].json.transcriptionId;\n\n// Simulate the polling mechanism for n8n workflow visualization\n// In a real implementation, this would make actual API calls in a loop\n\n// For demonstration, assume audio is ready after \"polling\"\naudioReady = true;\naudioUrl = $node[\"Generate Neural Voiceover\"].json.audioUrl || \n          `https://api.playht.com/api/v1/articleStatus?transcriptionId=${transcriptionId}`;\n\nreturn {\n  json: {\n    status: audioReady ? 'complete' : 'timeout',\n    audioUrl: audioUrl,\n    attempts: attempts,\n    transcriptionId: transcriptionId,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "m9n0o1p2-q3r4-s5t6-u7v8-w9x0y1z2a3b4",
+      "name": "Poll Audio Completion Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $node[\"Poll Audio Completion Status\"].json.audioUrl }}",
+        "options": {
+          "response": "file",
+          "responseFormat": "file"
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "AUTHORIZATION",
+              "value": "=Bearer {{ $env.PLAYHT_API_KEY }}"
+            },
+            {
+              "name": "X-USER-ID",
+              "value": "={{ $env.PLAYHT_USER_ID }}"
+            }
+          ]
+        }
+      },
+      "id": "n1o2p3q4-r5s6-t7u8-v9w0-x1y2z3a4b5c6",
+      "name": "Download Voiceover File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Enhanced version for Process Script Sections\nconst sections = $node[\"Prepare Content Package\"].json.script.sections;\nconst itemIndex = $input.itemIndex;\n\n// Check if we have valid sections data\nif (!sections || !Array.isArray(sections) || sections.length === 0) {\n  return {\n    json: {\n      error: \"No valid script sections found\",\n      errorType: \"missing_data\",\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Skip if we've processed all sections\nif (itemIndex >= sections.length) {\n  return {json: {complete: true}};\n}\n\ntry {\n  const section = sections[itemIndex];\n  \n  // Validate section data\n  if (!section || !section.title) {\n    return {\n      json: {\n        error: `Invalid section data at index ${itemIndex}`,\n        errorType: \"invalid_section\",\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  // Determine best search query from visual cues or section title\n  let searchQuery = section.title;\n\n  if (section.visualCues && section.visualCues.length > 0) {\n    // Get the most descriptive visual cue\n    const descriptiveCues = section.visualCues.filter(cue => \n      !cue.toLowerCase().includes('show') && \n      !cue.toLowerCase().includes('display') &&\n      cue.split(' ').length > 2\n    );\n    \n    if (descriptiveCues.length > 0) {\n      // Get the longest, most descriptive cue\n      searchQuery = descriptiveCues.sort((a, b) => b.length - a.length)[0];\n    }\n  }\n\n  // Clean up search query\n  searchQuery = searchQuery.replace(/\\[|\\]|VISUAL|DIRECTION|EMPHASIS|NOTE/gi, '').trim();\n  \n  // Add quality indicators for better results\n  searchQuery += \" high quality footage\";\n\n  return {\n    json: {\n      sectionIndex: itemIndex,\n      sectionTitle: section.title,\n      sectionTimestamp: section.timestamp || `00:${itemIndex < 10 ? '0' + itemIndex : itemIndex}`,\n      searchQuery: searchQuery,\n      duration: Math.min(Math.round((section.content?.split(' ').length || 100) / 150 * 60), 30) // Cap at 30 seconds\n    }\n  };\n} catch (error) {\n  return {\n    json: {\n      error: `Error processing section at index ${itemIndex}: ${error.message}`,\n      errorType: \"processing_error\",\n      timestamp: new Date().toISOString()\n    }\n  };\n}"
+      },
+      "id": "k5l6m7n8-o9p0-q1r2-s3t4-u5v6w7x8y9z0",
+      "name": "Process Script Sections",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/videos/search",
+        "options": {
+          "qs": {
+            "query": "={{ $json.searchQuery }}",
+            "per_page": "3",
+            "orientation": "landscape",
+            "size": "large"
+          }
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "={{ $env.PEXELS_API_KEY }}"
+            }
+          ]
+        }
+      },
+      "id": "l7m8n9o0-p1q2-r3s4-t5u6-v7w8x9y0z1a2",
+      "name": "Fetch Stock Footage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1650,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all footage search results\nconst sectionFootage = [];\n\n// Process each section's footage results\nfor (let i = 0; i < $input.all().length; i++) {\n  try {\n    const item = $input.all()[i];\n    const sectionData = $node[\"Process Script Sections\"].all()[i].json;\n    \n    // Skip error items\n    if (sectionData.error) continue;\n    \n    if (item.json && item.json.videos && item.json.videos.length > 0) {\n      // Get the best quality video file\n      const videoOptions = [];\n      \n      for (let v = 0; v < Math.min(item.json.videos.length, 2); v++) {\n        const video = item.json.videos[v];\n        const videoFiles = video.video_files.filter(f => \n          f.width >= 1280 && f.height >= 720 && f.file_type.includes('mp4')\n        );\n        \n        if (videoFiles.length > 0) {\n          const bestQuality = videoFiles.sort((a, b) => \n            (b.width * b.height) - (a.width * a.height)\n          )[0];\n          \n          videoOptions.push({\n            videoId: video.id,\n            duration: video.duration,\n            width: bestQuality.width,\n            height: bestQuality.height,\n            fileUrl: bestQuality.link,\n            preview: video.image\n          });\n        }\n      }\n      \n      if (videoOptions.length > 0) {\n        // Select the best option (prefer longer videos)\n        const selectedVideo = videoOptions.sort((a, b) => b.duration - a.duration)[0];\n        \n        sectionFootage.push({\n          sectionIndex: sectionData.sectionIndex,\n          timestamp: sectionData.sectionTimestamp,\n          title: sectionData.sectionTitle,\n          searchQuery: sectionData.searchQuery,\n          videoUrl: selectedVideo.fileUrl,\n          duration: Math.min(selectedVideo.duration, 15), // Cap at 15 seconds per segment\n          width: selectedVideo.width,\n          height: selectedVideo.height,\n          preview: selectedVideo.preview\n        });\n      }\n    }\n  } catch (e) {\n    // Skip if data is missing\n  }\n}\n\n// Sort sections by index\nsectionFootage.sort((a, b) => a.sectionIndex - b.sectionIndex);\n\n// Get the voiceover file\nlet voiceoverData = null;\ntry {\n  if ($node[\"Download Voiceover File\"].binary && $node[\"Download Voiceover File\"].binary.data) {\n    voiceoverData = {\n      available: true,\n      mimeType: $node[\"Download Voiceover File\"].binary.data.mimeType,\n      size: $node[\"Download Voiceover File\"].binary.data.fileSize,\n      url: $node[\"Poll Audio Completion Status\"].json.audioUrl\n    };\n  } else if ($node[\"Poll Audio Completion Status\"].json && $node[\"Poll Audio Completion Status\"].json.audioUrl) {\n    // Fallback if binary not available but URL is\n    voiceoverData = {\n      available: true,\n      url: $node[\"Poll Audio Completion Status\"].json.audioUrl\n    };\n  }\n} catch (e) {\n  // No voiceover data available\n  voiceoverData = {\n    available: false,\n    error: e.message\n  };\n}\n\n// Get the content package\nconst contentPackage = $node[\"Prepare Content Package\"].json;\n\n// Format for Descript API \n// (this is a simplified version as the full API would require actual file uploads)\nconst descriptProject = {\n  title: contentPackage.metadata.title,\n  scenes: sectionFootage.map((section, i) => ({\n    id: `scene-${i}`,\n    title: section.title,\n    timestamp: section.timestamp,\n    media: [\n      {\n        type: \"video\",\n        url: section.videoUrl,\n        duration: section.duration\n      }\n    ],\n    captioning: {\n      enabled: true,\n      style: \"modern\"\n    }\n  })),\n  audio: {\n    narration: {\n      available: !!voiceoverData,\n      type: \"mp3\",\n      url: voiceoverData?.url || null\n    },\n    backgroundMusic: {\n      enabled: true,\n      volume: 0.15\n    }\n  },\n  branding: {\n    intro: false,\n    outro: true,\n    watermark: false\n  }\n};\n\n// Calculate completion metrics\nconst totalSections = contentPackage.script.sections.length;\nconst sectionCoverage = totalSections > 0 ? sectionFootage.length / totalSections : 0;\nconst hasAudio = voiceoverData && voiceoverData.available;\n\n// Return the complete media package\nreturn {\n  json: {\n    contentDetails: contentPackage,\n    footage: {\n      sections: sectionFootage,\n      totalDuration: sectionFootage.reduce((total, clip) => total + clip.duration, 0),\n      coverage: `${Math.round(sectionCoverage * 100)}%`\n    },\n    audio: voiceoverData,\n    editingProject: descriptProject,\n    productionStatus: {\n      readyForEditing: sectionFootage.length > 0 && hasAudio, \n      timestamp: new Date().toISOString(),\n      completionPercentage: Math.round((\n        sectionCoverage +\n        (hasAudio ? 1 : 0)\n      ) / 2 * 100)\n    },\n    generatedAt: \"2025-05-09 12:38:26\" // Using current date/time from your input\n  },\n  binary: $node[\"Download Voiceover File\"].binary\n};"
+      },
+      "id": "o3p4q5r6-s7t8-u9v0-w1x2-y3z4a5b6c7d8",
+      "name": "Assemble Production Package",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        2050,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.editframe.com/v1/projects",
+        "authentication": "headerAuth",
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.EDITFRAME_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "title": "={{ $node[\"Assemble Production Package\"].json.contentDetails.metadata.title }}",
+          "width": 1920,
+          "height": 1080,
+          "compositions": [
+            {
+              "name": "main",
+              "duration": "={{ Math.round($node[\"Assemble Production Package\"].json.footage.totalDuration) }}",
+              "layers": "={{ $node[\"Assemble Production Package\"].json.footage.sections.map((section, i) => ({\"id\": `video-${i}`, \"type\": \"video\", \"src\": section.videoUrl, \"start\": $node[\"Assemble Production Package\"].json.footage.sections.slice(0,i).reduce((t,s) => t + s.duration, 0), \"length\": section.duration})).concat([{\"id\": \"audio\", \"type\": \"audio\", \"src\": $node[\"Assemble Production Package\"].json.audio.url, \"start\": 0, \"length\": $node[\"Assemble Production Package\"].json.footage.totalDuration}]).concat($node[\"Assemble Production Package\"].json.footage.sections.map((section, i) => ({\"id\": `title-${i}`, \"type\": \"text\", \"text\": section.title, \"start\": $node[\"Assemble Production Package\"].json.footage.sections.slice(0,i).reduce((t,s) => t + s.duration, 0) + 1, \"length\": 3, \"position\": \"bottom\", \"fontSize\": 32, \"color\": \"#FFFFFF\", \"background\": \"rgba(0,0,0,0.5)\", \"padding\": 10}))) }}"
+            }
+          ],
+          "output": {
+            "format": "mp4",
+            "quality": "high"
+          },
+          "webhook": "={{ $env.WEBHOOK_URL }}"
+        }
+      },
+      "id": "p5q6r7s8-t9u0-v1w2-x3y4-z5a6b7c8d9e0",
+      "name": "Create Video Project",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        2250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{ $env.AIRTABLE_BASE_ID }}/Content",
+        "authentication": "headerAuth",
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.AIRTABLE_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "fields": {
+            "Title": "={{ $node[\"Assemble Production Package\"].json.contentDetails.metadata.title }}",
+            "Topic": "={{ $node[\"Assemble Production Package\"].json.contentDetails.topic }}",
+            "Status": "In Production",
+            "Created Date": "=2025-05-09",
+            "Estimated Duration": "={{ Math.round($node[\"Assemble Production Package\"].json.footage.totalDuration / 60) }} minutes",
+            "Video Project ID": "={{ $node[\"Create Video Project\"].json && $node[\"Create Video Project\"].json.id ? $node[\"Create Video Project\"].json.id : 'pending' }}",
+            "Tags": "={{ $node[\"Assemble Production Package\"].json.contentDetails.metadata.tags.slice(0,5).join(', ') }}",
+            "Production Notes": "Generated with AI-Powered Workflow v3.5 - User: onabellaabdullaziz"
+          }
+        }
+      },
+      "id": "q7r8s9t0-u1v2-w3x4-y5z6-a7b8c9d0e1f2",
+      "name": "Record in Content Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        2450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !!$node[\"Create Video Project\"].json && !!$node[\"Create Video Project\"].json.id }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "y1z2a3b4-c5d6-e7f8-g9h0-i1j2k3l4m5n6",
+      "name": "Check Video Creation Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "toEmail": "={{ $env.ADMIN_EMAIL }}",
+        "subject": "YouTube Video Production Complete: {{ $node[\"Assemble Production Package\"].json.contentDetails.metadata.title }}",
+        "text": "=Your AI-generated YouTube video is now in production!\n\n🎬 Video Title: {{ $node[\"Assemble Production Package\"].json.contentDetails.metadata.title }}\n\n📊 Content Details:\n- Topic: {{ $node[\"Assemble Production Package\"].json.contentDetails.topic }}\n- Duration: ~ {{ Math.round($node[\"Assemble Production Package\"].json.footage.totalDuration / 60) }} minutes\n- Footage Coverage: {{ $node[\"Assemble Production Package\"].json.footage.coverage }}\n- Sections: {{ $node[\"Assemble Production Package\"].json.footage.sections.length }}\n\n🎯 SEO Strategy:\n- Top Keywords: {{ $node[\"Assemble Production Package\"].json.contentDetails.strategy.keywords.slice(0,5).join(\", \") }}\n- Target Audience: {{ $env.TARGET_DEMOGRAPHIC }}\n- Competitive Advantage: {{ $node[\"Assemble Production Package\"].json.contentDetails.strategy.competitiveAdvantages[0] }}\n\n📝 Metadata Ready:\n{{ $node[\"Assemble Production Package\"].json.contentDetails.metadata.description.slice(0, 200) }}...\n\n🔄 Next Steps:\n1. Video is being rendered automatically\n2. You'll receive a notification when rendering is complete\n3. The video will be available for review before publishing\n\n📂 Video Project ID: {{ $node[\"Create Video Project\"].json.id }}\n\nYours truly,\nYour Advanced YouTube Automation System\n\nP.S. Your next video is scheduled for production on 2025-05-16"
+      },
+      "id": "r9s0t1u2-v3w4-x5y6-z7a8-b9c0d1e2f3g4",
+      "name": "Send Success Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        2850,
+        250
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credentials",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://maker.zapier.com/api/v1/zaps/{{ $env.ZAPIER_ZAP_ID }}/execute",
+        "authentication": "headerAuth",
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ZAPIER_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "action": "video_produced",
+          "videoTitle": "={{ $node[\"Assemble Production Package\"].json.contentDetails.metadata.title }}",
+          "videoProjectId": "={{ $node[\"Create Video Project\"].json.id }}",
+          "topicKeywords": "={{ $node[\"Assemble Production Package\"].json.contentDetails.strategy.keywords.slice(0,5) }}",
+          "publishDate": "=2025-05-10T12:00:00Z",
+          "thumbnailUrl": "={{ $node[\"Prepare Content Package\"].binary && $node[\"Prepare Content Package\"].binary.data ? $node[\"Prepare Content Package\"].binary.data.fileUrl : '' }}",
+          "tags": "={{ $node[\"Assemble Production Package\"].json.contentDetails.metadata.tags.slice(0,10) }}"
+        }
+      },
+      "id": "s1t2u3v4-w5x6-y7z8-a9b0-c1d2e3f4g5h6",
+      "name": "Trigger Marketing Automations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        2850,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "toEmail": "={{ $env.ADMIN_EMAIL }}",
+        "subject": "ERROR: YouTube Video Production Failed",
+        "text": "=There was an error in your YouTube automation workflow!\n\n🚫 Error: Video project creation failed\n\n📊 Content Details:\n- Topic: {{ $node[\"Assemble Production Package\"].json.contentDetails.topic }}\n- Title: {{ $node[\"Assemble Production Package\"].json.contentDetails.metadata.title }}\n\n⚠️ Possible reasons for failure:\n1. API rate limits exceeded\n2. Invalid audio URL\n3. Missing footage\n4. API authentication issues\n\n🛠️ Troubleshooting steps:\n1. Check the EditFrame API credentials\n2. Verify audio file was properly generated\n3. Confirm sufficient footage was found\n4. Review API quotas and limits\n\n💾 Your content has been saved in Airtable with status \"Failed\"\n\nPlease check the n8n logs for more details.\n\nYours truly,\nYour Advanced YouTube Automation System"
+      },
+      "id": "j5k6l7m8-n9o0-p1q2-r3s4-t5u6v7w8x9y0",
+      "name": "Send Error Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        2850,
+        550
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credentials",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $env.AIRTABLE_BASE_ID }}/Content/{{ $node[\"Record in Content Database\"].json.id }}",
+        "authentication": "headerAuth",
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.AIRTABLE_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "fields": {
+            "Status": "Failed",
+            "Production Notes": "Error in video creation process. Check logs."
+          }
+        }
+      },
+      "id": "k7l8m9n0-o1p2-q3r4-s5t6-u7v8w9x0y1z2",
+      "name": "Update Failed Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        3050,
+        550
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "headerAuth",
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "model": "gpt-4o",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an AI assistant that analyzes content production data and provides insights for improvement."
+            },
+            {
+              "role": "user",
+              "content": "=Analyze this content production data and provide recommendations for future improvement:\n\nTopic: {{ $node[\"Assemble Production Package\"].json.contentDetails.topic }}\n\nProduction Metrics:\n- Footage Coverage: {{ $node[\"Assemble Production Package\"].json.footage.coverage }}\n- Sections Completed: {{ $node[\"Assemble Production Package\"].json.footage.sections.length }} / {{ $node[\"Assemble Production Package\"].json.contentDetails.script.sections.length }}\n- Audio Generation: {{ $node[\"Assemble Production Package\"].json.audio.available ? 'Successful' : 'Failed' }}\n- Completion Percentage: {{ $node[\"Assemble Production Package\"].json.productionStatus.completionPercentage }}%\n\nPlease provide 3-5 specific recommendations to improve production quality and efficiency for future videos."
+            }
+          ]
+        }
+      },
+      "id": "l9m0n1o2-p3q4-r5s6-t7u8-v9w0x1y2z3a4",
+      "name": "Generate Production Insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        3050,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.airtable.com/v0/{{ $env.AIRTABLE_BASE_ID }}/ProductionInsights",
+        "authentication": "headerAuth",
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.AIRTABLE_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "fields": {
+            "Content Title": "={{ $node[\"Assemble Production Package\"].json.contentDetails.metadata.title }}",
+            "Content ID": "={{ $node[\"Record in Content Database\"].json.id }}",
+            "Production Date": "=2025-05-09",
+            "Footage Coverage": "={{ $node[\"Assemble Production Package\"].json.footage.coverage }}",
+            "Completion Percentage": "={{ $node[\"Assemble Production Package\"].json.productionStatus.completionPercentage }}%",
+            "AI Recommendations": "={{ $node[\"Generate Production Insights\"].json.choices ? $node[\"Generate Production Insights\"].json.choices[0].message.content : 'No
