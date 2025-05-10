@@ -1,0 +1,674 @@
+{
+  "name": "YouTube Faceless Automation Professional",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "month": []
+            }
+          ]
+        }
+      },
+      "id": "6d66f7cb-533f-4bfe-9d8c-92240a78868a",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "openai_api_key": "your-openai-api-key",
+          "elevenlabs_api_key": "your-elevenlabs-api-key",
+          "pexels_api_key": "your-pexels-api-key",
+          "make_webhook_url": "your-make-webhook-url",
+          "youtube_niche": "Personal Finance",
+          "replicate_api_key": "your-replicate-api-key",
+          "stability_api_key": "your-stability-api-key",
+          "use_stable_audio": true,
+          "last_updated": "2025-05-10 09:07:16",
+          "updated_by": "onabellaabdullaziz",
+          "serper_api_key": "your-serper-api-key",
+          "googlesheets_id": "your-google-sheet-id",
+          "youtube_channel_id": "your-youtube-channel-id"
+        }
+      },
+      "id": "f24a0b1a-7890-4567-b123-456789abcdef",
+      "name": "Professional Credentials",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        100,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://google.serper.dev/search",
+        "options": {
+          "method": "POST",
+          "body": {
+            "q": "{{$node[\"Professional Credentials\"].json[\"youtube_niche\"]}} trending topics 2025",
+            "gl": "us",
+            "hl": "en",
+            "num": 10
+          },
+          "headers": {
+            "X-API-KEY": "{{$node[\"Professional Credentials\"].json[\"serper_api_key\"]}}",
+            "Content-Type": "application/json"
+          }
+        }
+      },
+      "id": "trend_analyzer_id",
+      "name": "Trend Analyzer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        300,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract trending topics from Serper results\nconst results = $input.item.json.organic || [];\nconst trendingTopics = [];\n\n// Extract titles and snippets from search results\nfor (const result of results) {\n  if (result.title && result.snippet) {\n    trendingTopics.push({\n      title: result.title,\n      description: result.snippet,\n      source: result.link\n    });\n  }\n}\n\n// Create a consolidated list of trend keywords\nconst trendKeywords = new Set();\nfor (const topic of trendingTopics) {\n  // Extract potential keywords from titles\n  const words = topic.title.split(' ');\n  for (const word of words) {\n    // Filter out common words and keep only substantial keywords\n    if (word.length > 4 && !['about', 'these', 'those', 'their', 'there'].includes(word.toLowerCase())) {\n      trendKeywords.add(word);\n    }\n  }\n}\n\nreturn [{\n  json: {\n    trendingTopics,\n    trendKeywords: Array.from(trendKeywords),\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "process_trends_id",
+      "name": "Process Trends",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        500,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://youtube.googleapis.com/youtube/v3/search",
+        "options": {
+          "method": "GET",
+          "qs": {
+            "part": "snippet",
+            "q": "{{$node[\"Professional Credentials\"].json[\"youtube_niche\"]}}",
+            "type": "video",
+            "relevanceLanguage": "en",
+            "maxResults": "10",
+            "key": "{{$node[\"Professional Credentials\"].json[\"youtube_api_key\"]}}"
+          }
+        }
+      },
+      "id": "competitor_research_id",
+      "name": "Competitor Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        300,
+        600
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "// Process competitor videos to extract insights\nlet videos = [];\n\ntry {\n  if ($input.item.json.items && Array.isArray($input.item.json.items)) {\n    videos = $input.item.json.items;\n  }\n} catch (error) {\n  // If API call failed, return empty analysis\n  return [{\n    json: {\n      competitorInsights: [],\n      titlePatterns: [],\n      success: false\n    }\n  }];\n}\n\n// Extract insights\nconst competitorInsights = [];\nconst titles = [];\n\nfor (const video of videos) {\n  if (video.snippet) {\n    competitorInsights.push({\n      title: video.snippet.title,\n      description: video.snippet.description,\n      publishedAt: video.snippet.publishedAt,\n      channelTitle: video.snippet.channelTitle,\n      videoId: video.id.videoId\n    });\n    \n    titles.push(video.snippet.title);\n  }\n}\n\n// Analyze title patterns\nconst titlePatterns = [];\nconst patternDetectors = [\n  { pattern: /How to|How I|How We/, type: 'How-to' },\n  { pattern: /\\d+\\s(?:Ways|Tips|Tricks|Hacks|Steps|Secrets)/, type: 'List' },\n  { pattern: /Ultimate|Best|Complete|Perfect/, type: 'Superlative' },\n  { pattern: /\\?/, type: 'Question' },\n  { pattern: /vs\\.?|versus/, type: 'Comparison' }\n];\n\nfor (const detector of patternDetectors) {\n  const matches = titles.filter(title => detector.pattern.test(title));\n  if (matches.length > 0) {\n    titlePatterns.push({\n      type: detector.type,\n      count: matches.length,\n      examples: matches.slice(0, 2)\n    });\n  }\n}\n\n// Sort patterns by popularity\ntitlePatterns.sort((a, b) => b.count - a.count);\n\nreturn [{\n  json: {\n    competitorInsights,\n    titlePatterns,\n    success: true\n  }\n}];"
+      },
+      "id": "analyze_competitors_id",
+      "name": "Analyze Competitors",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        500,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "prompt",
+        "model": "gpt-3.5-turbo",
+        "promptMessage": "You are a YouTube content strategist specialized in {{$node[\"Professional Credentials\"].json[\"youtube_niche\"]}}. Generate 5 high-performing video ideas based on this research:\n\nTRENDING TOPICS:\n{{$node[\"Process Trends\"].json[\"trendingTopics\"].slice(0,3).map(t => `- ${t.title}`).join('\\n')}}\n\nTRENDING KEYWORDS:\n{{$node[\"Process Trends\"].json[\"trendKeywords\"].slice(0,10).join(', ')}}\n\nSUCCESSFUL TITLE PATTERNS:\n{{$node[\"Analyze Competitors\"].json[\"titlePatterns\"].map(p => `- ${p.type}: ${p.examples[0]}`).join('\\n')}}\n\nCreate 5 video ideas with these components:\n1. Use successful title patterns from competitor research\n2. Incorporate trending keywords\n3. Focus on topics with high search interest\n4. Ensure the idea works for faceless video format\n\nFor each idea provide:\n- Title (compelling, under 60 characters)\n- Description (2-3 sentences)\n- 5 relevant tags\n- 4-5 key points to cover\n- Ideal video length (in minutes)\n- Thumbnail concept description\n\nFormat the output as JSON with fields: title, description, tags (array), keypoints (array), ideal_length, thumbnail_concept",
+        "options": {
+          "temperature": 0.8,
+          "maxTokens": 1500
+        },
+        "authentication": "serviceApiKey",
+        "apiKey": "{{$node[\"Professional Credentials\"].json[\"openai_api_key\"]}}"
+      },
+      "id": "strategic_content_generator_id",
+      "name": "Strategic Content Generator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse the GPT response to get video ideas\nconst responseText = $input.item.json.text || $input.item.json.response;\nlet videoIdeas;\n\ntry {\n  // Try to parse if already in JSON format\n  videoIdeas = JSON.parse(responseText);\n} catch (error) {\n  // If not in JSON format, try to extract and parse\n  const jsonMatch = responseText.match(/\\[\\s*\\{.*\\}\\s*\\]/s);\n  if (jsonMatch) {\n    try {\n      videoIdeas = JSON.parse(jsonMatch[0]);\n    } catch (e) {\n      throw new Error('Failed to parse video ideas from GPT response');\n    }\n  } else {\n    throw new Error('Could not find valid JSON in GPT response');\n  }\n}\n\n// Additional analysis on the ideas\nfunction scoreIdea(idea) {\n  let score = 0;\n  \n  // Score based on title length (optimal 40-60 chars)\n  const titleLength = idea.title.length;\n  if (titleLength >= 40 && titleLength <= 60) score += 10;\n  else if (titleLength > 30) score += 5;\n  \n  // Score based on having numbers in title\n  if (/\\d+/.test(idea.title)) score += 5;\n  \n  // Score based on question in title\n  if (idea.title.includes('?')) score += 5;\n  \n  // Score based on keypoints count\n  score += Math.min(idea.keypoints.length, 5) * 2;\n  \n  // Score based on ideal length (preferred 6-10 minutes)\n  const length = parseFloat(idea.ideal_length) || 5;\n  if (length >= 6 && length <= 10) score += 10;\n  else if (length >= 4 && length <= 15) score += 5;\n  \n  return score;\n}\n\n// Score and sort ideas\nif (Array.isArray(videoIdeas)) {\n  videoIdeas.forEach(idea => {\n    idea.score = scoreIdea(idea);\n  });\n  \n  // Sort by score descending\n  videoIdeas.sort((a, b) => b.score - a.score);\n}\n\n// Return just the best idea for this workflow run\nreturn [{ json: Array.isArray(videoIdeas) ? videoIdeas[0] : videoIdeas }];"
+      },
+      "id": "process_enhanced_idea_id",
+      "name": "Process Enhanced Idea",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "prompt",
+        "model": "gpt-3.5-turbo",
+        "promptMessage": "Create a highly engaging YouTube script using the AIDA formula (Attention, Interest, Desire, Action) for a faceless channel. The script should be structured with timestamps and emotionally compelling transitions.\n\nTITLE: {{$node[\"Process Enhanced Idea\"].json[\"title\"]}}\n\nIDEAL LENGTH: {{$node[\"Process Enhanced Idea\"].json[\"ideal_length\"]}} minutes\n\nHOOK (0:00-0:15):\nStart with a powerful question or statistic that immediately grabs attention. Make viewers feel they must keep watching.\n\nINTRO (0:15-0:45):\nIntroduce the topic while building interest. Mention 3 specific benefits viewers will gain. Include a curiosity gap that keeps them watching.\n\nMAIN CONTENT (0:45-{{Math.floor(($node[\"Process Enhanced Idea\"].json[\"ideal_length\"]*60-90)/60)}}:00):\nDivide into sections with timestamps for these key points: {{$json[\"keypoints\"].join(', ')}}\n\nFor each point:\n- Start with a compelling claim\n- Support with evidence/examples\n- Include a relatable story or metaphor\n- End with practical application\n\nInclude pattern interrupts every 60 seconds (visual cue suggestions, tone change, quick questions, or simple animations)\n\nCONCLUSION ({{Math.floor(($node[\"Process Enhanced Idea\"].json[\"ideal_length\"]*60-90)/60)}}:00-{{Math.floor(($node[\"Process Enhanced Idea\"].json[\"ideal_length\"]*60-30)/60)}}:30):\nSummarize key takeaways, emphasize the transformation viewers can experience.\n\nCALL TO ACTION ({{Math.floor(($node[\"Process Enhanced Idea\"].json[\"ideal_length\"]*60-30)/60)}}:30-{{$node[\"Process Enhanced Idea\"].json[\"ideal_length\"]}}):\nCreate urgency for subscribing and sharing. Tease upcoming content. End with a memorable tagline.\n\nFormat the script for easy reading with clear headings, timestamps, and [VISUAL CUE] suggestions. Write approximately {{$node[\"Process Enhanced Idea\"].json[\"ideal_length\"]*175}} words, use conversational language, and emotional triggers to boost retention.",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 3000
+        },
+        "authentication": "serviceApiKey",
+        "apiKey": "{{$node[\"Professional Credentials\"].json[\"openai_api_key\"]}}"
+      },
+      "id": "optimized_script_generator_id",
+      "name": "Optimized Script Generator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.replicate.com/v1/predictions",
+        "options": {
+          "method": "POST",
+          "body": {
+            "version": "b76242b40d67c76ab6742e987628a2a9ac019e11d18ad853b55e0a71168325c7",
+            "input": {
+              "text": "{{$node[\"Optimized Script Generator\"].json[\"text\"]}}",
+              "speaker": "v2/en_speaker_6",
+              "text_temp": 0.7,
+              "waveform_temp": 0.7
+            }
+          },
+          "headers": {
+            "Authorization": "Token {{$node[\"Professional Credentials\"].json[\"replicate_api_key\"]}}",
+            "Content-Type": "application/json"
+          }
+        }
+      },
+      "id": "bark_audio_generation_id",
+      "name": "Generate Audio with Bark",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM",
+        "options": {
+          "method": "POST",
+          "body": {
+            "text": "{{$node[\"Optimized Script Generator\"].json[\"text\"]}}",
+            "model_id": "eleven_monolingual_v1",
+            "voice_settings": {
+              "stability": 0.5,
+              "similarity_boost": 0.75
+            }
+          },
+          "headers": {
+            "xi-api-key": "{{$node[\"Professional Credentials\"].json[\"elevenlabs_api_key\"]}}",
+            "Content-Type": "application/json"
+          }
+        },
+        "responseFormat": "file"
+      },
+      "id": "elevenlabs_backup_id",
+      "name": "Elevenlabs Backup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        400
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "// Audio selection and processing\nlet finalAudio;\nlet audioSource;\n\n// Check if Bark audio was generated successfully\nif ($node[\"Generate Audio with Bark\"].json.output && typeof $node[\"Generate Audio with Bark\"].json.output === 'string') {\n  finalAudio = $node[\"Generate Audio with Bark\"].json.output;\n  audioSource = 'bark';\n} else if ($binary[\"Elevenlabs Backup\"] && $binary[\"Elevenlabs Backup\"].data) {\n  // Use ElevenLabs as backup\n  finalAudio = $binary[\"Elevenlabs Backup\"].url;\n  audioSource = 'elevenlabs';\n} else {\n  // If both fail, we'll need to note the failure\n  finalAudio = null;\n  audioSource = 'failed';\n}\n\nreturn [{\n  json: {\n    audioUrl: finalAudio,\n    audioSource: audioSource,\n    timestamp: new Date().toISOString(),\n    processedBy: \"AudioProcessor-v2.5\"\n  }\n}];"
+      },
+      "id": "audio_processor_id",
+      "name": "Audio Processor",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image",
+        "options": {
+          "method": "POST",
+          "body": {
+            "text_prompts": [
+              {
+                "text": "Professional YouTube thumbnail for video titled \"{{$node[\"Process Enhanced Idea\"].json[\"title\"]}}\". Following this concept: {{$node[\"Process Enhanced Idea\"].json[\"thumbnail_concept\"]}}. Eye-catching, vibrant colors, includes large text overlay. High quality, photorealistic, digital art style."
+              }
+            ],
+            "cfg_scale": 7,
+            "height": 1024,
+            "width": 1792,
+            "samples": 2,
+            "steps": 30
+          },
+          "headers": {
+            "Authorization": "Bearer {{$node[\"Professional Credentials\"].json[\"stability_api_key\"]}}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          "encoding": "json",
+          "responseFormat": "json"
+        }
+      },
+      "id": "thumbnail_generator_id",
+      "name": "Enhanced Thumbnail Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/videos/search",
+        "options": {
+          "method": "GET",
+          "qs": {
+            "query": "{{$node[\"Process Enhanced Idea\"].json[\"title\"]}}",
+            "per_page": "15",
+            "orientation": "landscape"
+          },
+          "headers": {
+            "Authorization": "{{$node[\"Professional Credentials\"].json[\"pexels_api_key\"]}}"
+          }
+        }
+      },
+      "id": "pexels_video_id",
+      "name": "Enhanced Video Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// B-roll smart categorization and selection\nconst videos = $input.item.json.videos || [];\nconst keypoints = $node[\"Process Enhanced Idea\"].json.keypoints || [];\nconst title = $node[\"Process Enhanced Idea\"].json.title || '';\n\n// Extract keywords from title and keypoints\nfunction extractKeywords(text) {\n  return text.toLowerCase()\n    .replace(/[^\\w\\s]/g, '')\n    .split(/\\s+/)\n    .filter(word => word.length > 3);\n}\n\nconst titleKeywords = extractKeywords(title);\nconst keypointKeywords = keypoints.flatMap(kp => extractKeywords(kp));\nconst allKeywords = [...new Set([...titleKeywords, ...keypointKeywords])];\n\n// Score videos based on relevance to each keypoint\nfunction scoreVideoForKeypoint(video, keypoint) {\n  const keypointWords = extractKeywords(keypoint);\n  let score = 0;\n  \n  // Check video title/description against keypoint words\n  for (const word of keypointWords) {\n    if (video.url.toLowerCase().includes(word)) score += 3;\n    if ((video.description || '').toLowerCase().includes(word)) score += 2;\n  }\n  \n  return score;\n}\n\n// Process and categorize videos\nconst processedVideos = [];\nconst sectionVideos = {};\n\n// Initialize sections for each keypoint\nkeypoints.forEach((kp, index) => {\n  sectionVideos[`section_${index + 1}`] = [];\n});\n\n// Process each video from Pexels\nfor (const video of videos) {\n  // Get highest quality video file\n  const videoFiles = video.video_files || [];\n  if (videoFiles.length === 0) continue;\n  \n  // Sort by quality (height) descending\n  videoFiles.sort((a, b) => b.height - a.height);\n  const bestQualityFile = videoFiles[0];\n  \n  const processedVideo = {\n    url: bestQualityFile.link,\n    id: video.id,\n    duration: video.duration,\n    width: bestQualityFile.width,\n    height: bestQualityFile.height,\n    description: video.url // Use the URL as description since it contains keywords\n  };\n  \n  processedVideos.push(processedVideo);\n  \n  // Assign to the most relevant section\n  let bestSection = 'intro';\n  let bestScore = 0;\n  \n  keypoints.forEach((kp, index) => {\n    const score = scoreVideoForKeypoint(processedVideo, kp);\n    if (score > bestScore) {\n      bestScore = score;\n      bestSection = `section_${index + 1}`;\n    }\n  });\n  \n  // Add to appropriate section\n  if (bestSection in sectionVideos) {\n    sectionVideos[bestSection].push(processedVideo);\n  } else {\n    // Create section if it doesn't exist\n    sectionVideos[bestSection] = [processedVideo];\n  }\n}\n\n// Add general videos to sections that need more\nconst MIN_VIDEOS_PER_SECTION = 3;\nconst generalVideos = processedVideos.filter(v => !Object.values(sectionVideos).flat().includes(v));\n\nlet gIndex = 0;\nfor (const section in sectionVideos) {\n  while (sectionVideos[section].length < MIN_VIDEOS_PER_SECTION && gIndex < generalVideos.length) {\n    sectionVideos[section].push(generalVideos[gIndex]);\n    gIndex++;\n  }\n}\n\n// Final output\nreturn [{\n  json: {\n    allVideos: processedVideos,\n    sectionVideos: sectionVideos,\n    totalFound: processedVideos.length,\n    sectionsWithContent: Object.keys(sectionVideos).length\n  }\n}];"
+      },
+      "id": "smart_broll_categorization_id",
+      "name": "Smart B-Roll Categorization",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "options": {
+          "method": "POST",
+          "formData": {
+            "file": "={{$binary[\"Elevenlabs Backup\"].data}}",
+            "model": "whisper-1",
+            "response_format": "srt"
+          },
+          "headers": {
+            "Authorization": "Bearer {{$node[\"Professional Credentials\"].json[\"openai_api_key\"]}}"
+          },
+          "responseFormat": "text"
+        }
+      },
+      "id": "caption_generator_id",
+      "name": "Caption Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        200
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "prompt",
+        "model": "gpt-3.5-turbo",
+        "promptMessage": "Create a comprehensive YouTube video promotion strategy for this content:\n\nTitle: {{$node[\"Process Enhanced Idea\"].json[\"title\"]}}\nDescription: {{$node[\"Process Enhanced Idea\"].json[\"description\"]}}\nKey Points: {{$node[\"Process Enhanced Idea\"].json[\"keypoints\"].join(', ')}}\n\nProvide the following:\n\n1. YOUTUBE SEO:\n   - Optimized title (under 60 characters, include keywords)\n   - Optimized description with hook, timestamps, CTA, relevant links (at least 200 words)\n   - 10 tags ranked by relevance (include exact and broad match)\n\n2. FIRST COMMENT STRATEGY:\n   - A compelling first comment to pin (include timestamps, summary, question)\n\n3. SHORTS STRATEGY:\n   - 3 concepts for YouTube Shorts derived from this main video\n   - Each with hook, description, and focus point (30-60 seconds)\n\n4. BEST POSTING SCHEDULE:\n   - Optimal day and time to post based on {{$node[\"Professional Credentials\"].json[\"youtube_niche\"]}} niche\n   - Follow-up shorts release timeline\n\n5. THUMBNAIL COPY:\n   - 2-3 text options for the thumbnail (4-5 words maximum, high-impact)\n\nOutput in JSON format with these sections clearly labeled.",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 2000
+        },
+        "authentication": "serviceApiKey",
+        "apiKey": "{{$node[\"Professional Credentials\"].json[\"openai_api_key\"]}}"
+      },
+      "id": "promotion_strategy_id",
+      "name": "Promotion Strategy Generator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Master output preparation\n// This combines all the generated assets and strategies into one comprehensive output\n\n// Get video idea basics\nconst videoIdea = $node[\"Process Enhanced Idea\"].json;\n\n// Get audio URL\nlet audioData = $node[\"Audio Processor\"].json;\n\n// Get thumbnails\nlet thumbnails = [];\ntry {\n  if ($node[\"Enhanced Thumbnail Generator\"].json.artifacts && \n      Array.isArray($node[\"Enhanced Thumbnail Generator\"].json.artifacts)) {\n    thumbnails = $node[\"Enhanced Thumbnail Generator\"].json.artifacts.map(art => ({\n      base64: art.base64,\n      seed: art.seed,\n      finishReason: art.finish_reason\n    }));\n  }\n} catch (e) {\n  // Handle thumbnail generation failure\n  thumbnails = [];\n}\n\n// Get B-roll videos\nconst bRollData = $node[\"Smart B-Roll Categorization\"].json;\n\n// Get captions\nlet captions = \"\";\ntry {\n  captions = $node[\"Caption Generator\"].json;\n  if (typeof captions !== 'string') {\n    captions = JSON.stringify(captions);\n  }\n} catch (e) {\n  captions = \"Caption generation failed\";\n}\n\n// Get promotion strategy\nlet promotionStrategy = {};\ntry {\n  const strategyText = $node[\"Promotion Strategy Generator\"].json.text;\n  // Try to extract JSON\n  const jsonMatch = strategyText.match(/\\{[\\s\\S]*\\}/m);\n  if (jsonMatch) {\n    promotionStrategy = JSON.parse(jsonMatch[0]);\n  } else {\n    // Parse text if not in JSON format\n    promotionStrategy = {\n      rawText: strategyText\n    };\n  }\n} catch (e) {\n  promotionStrategy = {\n    error: \"Failed to parse promotion strategy\",\n    rawText: $node[\"Promotion Strategy Generator\"].json.text\n  };\n}\n\n// Get trend and competitor data for analytics\nconst trendData = $node[\"Process Trends\"].json;\nconst competitorData = $node[\"Analyze Competitors\"].json;\n\n// Compile final output\nconst finalOutput = {\n  // Basic video information\n  video: {\n    title: promotionStrategy.YOUTUBE_SEO?.optimized_title || videoIdea.title,\n    description: promotionStrategy.YOUTUBE_SEO?.optimized_description || videoIdea.description,\n    tags: promotionStrategy.YOUTUBE_SEO?.tags || videoIdea.tags,\n    keypoints: videoIdea.keypoints,\n    idealLength: videoIdea.ideal_length\n  },\n  \n  // Generated assets\n  assets: {\n    script: $node[\"Optimized Script Generator\"].json.text,\n    audio: {\n      url: audioData.audioUrl,\n      source: audioData.audioSource,\n      processedAt: audioData.timestamp\n    },\n    thumbnails: thumbnails,\n    thumbnailCopy: promotionStrategy.THUMBNAIL_COPY || [],\n    bRoll: {\n      allVideos: bRollData.allVideos,\n      sectionVideos: bRollData.sectionVideos,\n      totalCount: bRollData.totalFound\n    },\n    captions: captions\n  },\n  \n  // Promotion strategy\n  promotion: {\n    youtubeComment: promotionStrategy.FIRST_COMMENT_STRATEGY || \n      \"Thanks for watching! Drop your questions below and I'll respond to each one.\",\n    shorts: promotionStrategy.SHORTS_STRATEGY || [],\n    postingSchedule: promotionStrategy.BEST_POSTING_SCHEDULE || {\n      day: \"Thursday\",\n      time: \"3:00 PM EST\"\n    }\n  },\n  \n  // Analytics data\n  analytics: {\n    trendingTopics: trendData.trendingTopics.slice(0, 3),\n    trendKeywords: trendData.trendKeywords.slice(0, 10),\n    competitorInsights: {\n      titlePatterns: competitorData.titlePatterns || [],\n      topCompetitors: (competitorData.competitorInsights || []).slice(0, 3)\n        .map(c => ({ title: c.title, channel: c.channelTitle }))\n    }\n  },\n  \n  // Metadata\n  metadata: {\n    generatedAt: new Date().toISOString(),\n    contentScore: videoIdea.score || 0,\n    version: \"ProAI-v3.2\",\n    createdBy: \"onabellaabdullaziz\"\n  }\n};\n\nreturn [{ json: finalOutput }];"
+      },
+      "id": "master_output_id",
+      "name": "Master Output Processor",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "{{$node[\"Professional Credentials\"].json[\"make_webhook_url\"]}}",
+        "options": {
+          "bodyContentType": "json",
+          "body": "={{$node[\"Master Output Processor\"].json}}"
+        }
+      },
+      "id": "make_webhook_id",
+      "name": "Send to Make.com",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "operation": "appendData",
+        "spreadsheetId": "={{$node[\"Professional Credentials\"].json[\"googlesheets_id\"]}}",
+        "range": "A:G",
+        "options": {
+          "valueInputMode": "RAW"
+        },
+        "data": {
+          "values": [
+            [
+              "={{$node[\"Master Output Processor\"].json[\"metadata\"][\"generatedAt\"]}}",
+              "={{$node[\"Master Output Processor\"].json[\"video\"][\"title\"]}}",
+              "={{$node[\"Master Output Processor\"].json[\"metadata\"][\"contentScore\"]}}",
+              "={{$node[\"Master Output Processor\"].json[\"assets\"][\"thumbnails\"].length}}",
+              "={{$node[\"Master Output Processor\"].json[\"assets\"][\"bRoll\"][\"totalCount\"]}}",
+              "={{$node[\"Master Output Processor\"].json[\"analytics\"][\"trendKeywords\"].join(\", \")}}",
+              "=pending"
+            ]
+          ]
+        }
+      },
+      "id": "analytics_tracker_id",
+      "name": "Analytics Tracker",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        500
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google_sheets_credentials_id",
+          "name": "Google Sheets account"
+        }
+      },
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Professional Credentials",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Trend Analyzer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Competitor Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trend Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Process Trends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Trends": {
+      "main": [
+        [
+          {
+            "node": "Strategic Content Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Competitor Research": {
+      "main": [
+        [
+          {
+            "node": "Analyze Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Competitors": {
+      "main": [
+        [
+          {
+            "node": "Strategic Content Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Strategic Content Generator": {
+      "main": [
+        [
+          {
+            "node": "Process Enhanced Idea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Enhanced Idea": {
+      "main": [
+        [
+          {
+            "node": "Optimized Script Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Enhanced Thumbnail Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Enhanced Video Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Promotion Strategy Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Optimized Script Generator": {
+      "main": [
+        [
+          {
+            "node": "Generate Audio with Bark",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Elevenlabs Backup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Audio with Bark": {
+      "main": [
+        [
+          {
+            "node": "Audio Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Elevenlabs Backup": {
+      "main": [
+        [
+          {
+            "node": "Audio Processor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Caption Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio Processor": {
+      "main": [
+        [
+          {
+            "node": "Master Output Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Thumbnail Generator": {
+      "main": [
+        [
+          {
+            "node": "Master Output Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Video Search": {
+      "main": [
+        [
+          {
+            "node": "Smart B-Roll Categorization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart B-Roll Categorization": {
+      "main": [
+        [
+          {
+            "node": "Master Output Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Caption Generator": {
+      "main": [
+        [
+          {
+            "node": "Master Output Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Promotion Strategy Generator": {
+      "main": [
+        [
+          {
+            "node": "Master Output Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Master Output Processor": {
+      "main": [
+        [
+          {
+            "node": "Send to Make.com",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Analytics Tracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
