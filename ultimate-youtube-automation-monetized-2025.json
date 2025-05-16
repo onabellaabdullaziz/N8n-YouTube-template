@@ -1,0 +1,1163 @@
+{
+  "name": "Ultimate YouTube Automation Suite with Monetization - 2025 Edition",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "minutesInterval": 0,
+              "hoursInterval": 0,
+              "daysInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "c5e9fa3e-8b94-41d8-a265-ecdcd6255d17",
+      "name": "Main Workflow Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "channel",
+        "operation": "get",
+        "channelId": "={{ $json.channel_id || \"UCxxxxxxxxxxxxxxxxxxxxxxx\" }}",
+        "options": {}
+      },
+      "id": "df21a35c-9b73-4f2a-ba65-4f2e019ac4e6",
+      "name": "Get YouTube Channel",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 2,
+      "position": [400, 200],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "1",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "analyticsReport",
+        "dimensions": ["video"],
+        "metrics": [
+          "views",
+          "estimatedMinutesWatched",
+          "subscribersGained",
+          "likes",
+          "comments",
+          "shares"
+        ],
+        "sort": [
+          {
+            "field": "views",
+            "order": "descending"
+          }
+        ],
+        "filters": "video!=null",
+        "startDate": "={{ $today.subtract(30, \"days\").format(\"YYYY-MM-DD\") }}",
+        "endDate": "={{ $today.format(\"YYYY-MM-DD\") }}",
+        "maxResults": 50,
+        "options": {}
+      },
+      "id": "6a8f15c3-d2b7-4e5a-9f63-87d291a5b6e0",
+      "name": "YouTube Analytics",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 2,
+      "position": [400, 400],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "1",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.exploding-topics.com/v1/trends",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $credentials.explodingTopicsApi }}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "categories",
+              "value": "tech,business,entertainment"
+            },
+            {
+              "name": "status",
+              "value": "exploding"
+            },
+            {
+              "name": "date_range",
+              "value": "3m"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1b3d5f7h-9j2l-4n6p-8r0t-2v4x6z8b0d2f",
+      "name": "Get Trending Topics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        400,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.tuberanker.com/v1/competitors",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.tubeRankerApi }}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel_id",
+              "value": "={{ $node[\"Get YouTube Channel\"].json.id }}"
+            },
+            {
+              "name": "metric",
+              "value": "relevance"
+            },
+            {
+              "name": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3e5g7i9k-1m3o-5q7s-9u1w-3y5a7c9e1g3i",
+      "name": "Competitor Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        600,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "resource": "chat",
+        "operation": "completion",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert YouTube channel strategist and content analyst. Provide in-depth, data-driven content recommendations based on channel performance, competitor analysis, and trending topics. Format your response as valid JSON."
+            },
+            {
+              "role": "user",
+              "content": "=Analyze this YouTube channel and competitor data to identify the best content opportunities:\n\nChannel information: {{ JSON.stringify($node[\"Get YouTube Channel\"].json) }}\n\nChannel analytics: {{ JSON.stringify($node[\"YouTube Analytics\"].json) }}\n\nTrending topics: {{ JSON.stringify($node[\"Get Trending Topics\"].json) }}\n\nCompetitor analysis: {{ JSON.stringify($node[\"Competitor Analysis\"].json) }}\n\nIdentify 5 trending topics in this channel's niche with opportunity scores. Calculate opportunity based on view potential, competition level, and relevance to the channel.\n\nProvide an in-depth content strategy analysis with specific recommendations for topics, formats, and hooks.\n\nReturn a JSON object with these fields:\n- trending_topics: Array of topic objects with title, view_estimate, competition_level, relevance_score, keywords\n- opportunity_scores: Calculated scores for each topic\n- content_strategy: Analysis and recommendations based on channel performance\n- best_topic: The single best topic to pursue\n- predicted_performance: Estimated views, engagement rate, and subscriber growth\n- channel_growth_recommendations: Specific actions to grow the channel\n\nMake all suggestions data-driven and specific to this channel's performance. Format the response as valid JSON."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 4000,
+          "responseFormat": {
+            "type": "json_object"
+          }
+        }
+      },
+      "id": "5h7j9l1n-3p5r-7t9v-1x3z-5b7d9f1h3j5l",
+      "name": "OpenAI Content Strategy",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        800,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract OpenAI's response\nconst contentStrategy = $input.item.json || {};\n\n// Ensure we have a valid best topic\nconst selectedTopic = contentStrategy.best_topic || (contentStrategy.trending_topics ? contentStrategy.trending_topics[0] : {});\n\n// Create content brief\nconst contentBrief = {\n  selected_topic: selectedTopic || {\n    title: \"Latest Trends in Content Creation 2025\",\n    keywords: [\"content creation\", \"youtube\", \"trends\", \"2025\", \"AI\"]\n  },\n  alternative_topics: contentStrategy.trending_topics || [],\n  content_strategy: contentStrategy.content_strategy || {},\n  opportunity_scores: contentStrategy.opportunity_scores || {},\n  predicted_performance: contentStrategy.predicted_performance || {\n    estimated_views: 15000,\n    engagement_rate: \"8.5%\",\n    subscriber_growth: 450\n  },\n  recommended_keywords: selectedTopic?.keywords || [\"content creation\", \"youtube\", \"trends\", \"2025\", \"AI\"],\n  hook_recommendation: `Start with a surprising statistic or controversial statement about ${selectedTopic?.title || \"content creation trends\"}`,\n  structure_recommendation: [\n    \"Introduction & Hook (0:00)\",\n    \"Background/Context (1:30)\",\n    \"Main Points (3-5) (2:45)\",\n    \"Examples or Case Studies (5:00)\",\n    \"Practical Application (6:30)\",\n    \"Conclusion & CTA (7:45)\"\n  ],\n  channel_growth_recommendations: contentStrategy.channel_growth_recommendations || [],\n  timestamp: \"2025-05-16 22:30:19\",\n  user: \"onabellaabdullaziz\"\n};\n\nreturn {json: contentBrief};"
+      },
+      "id": "7j9l1n3p-5r7t-9v1x-3z5b-7d9f1h3j5l7n",
+      "name": "Process Strategy Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "resource": "chat",
+        "operation": "completion",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert YouTube script writer who has created scripts for channels with millions of subscribers. Create highly engaging, professional scripts that follow best practices for audience retention. The script should include precise timecodes, clear section breaks, B-roll suggestions, and optimized pacing."
+            },
+            {
+              "role": "user",
+              "content": "=Create a professional YouTube script about {{ $json.selected_topic.title }}. Target length: 8 minutes.\n\nInclude these sections with timestamps:\n{{ $json.structure_recommendation.join(\"\n\") }}\n\nFocus on these keywords: {{ $json.recommended_keywords.join(\", \") }}\n\nHook recommendation: {{ $json.hook_recommendation }}\n\nMake the script highly engaging with clear timestamps for each section. Include notes for B-roll footage or visual elements where appropriate marked as [VISUAL: description]. End with a strong call-to-action.\n\nThe script should be production-ready and optimized for both audience retention and algorithm performance. Include an intro teaser highlighting the most valuable insight from the video."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 4000
+        }
+      },
+      "id": "9l1n3p5r-7t9v-1x3z-5b7d-9f1h3j5l7n9p",
+      "name": "OpenAI Script Generation",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node initializes the monetization workflow by passing necessary data\n// from the main content creation workflow\n\n// Get channel data and content strategy\nconst channelData = $node[\"Get YouTube Channel\"].json || {};\nconst contentStrategy = $node[\"Process Strategy Analysis\"].json || {};\nconst generatedScript = $node[\"OpenAI Script Generation\"].json.content || \"\";\n\n// Prepare the data needed for monetization analysis\nconst monetizationInput = {\n  // Core channel data\n  channel_id: channelData.id || \"UCxxxxxxxxxxxxxxxxxxxxxxx\",\n  channel_name: channelData.snippet?.title || \"Your Channel\",\n  subscriber_count: channelData.statistics?.subscriberCount || 0,\n  view_count: channelData.statistics?.viewCount || 0,\n  \n  // Content info\n  content_topic: contentStrategy.selected_topic?.title || \"\",\n  content_keywords: contentStrategy.recommended_keywords || [],\n  content_script: generatedScript,\n  \n  // Performance predictions\n  estimated_views: contentStrategy.predicted_performance?.estimated_views || 10000,\n  estimated_engagement: contentStrategy.predicted_performance?.engagement_rate || \"7.5%\",\n  \n  // Integration metadata\n  workflow_source: \"main_workflow\",\n  integration_timestamp: \"2025-05-16 22:30:19\",\n  user: \"onabellaabdullaziz\"\n};\n\nreturn {json: monetizationInput};"
+      },
+      "id": "b1d3f5h7-j9l1-n3p5-r7t9-v1x3z5b7d9f1",
+      "name": "Initialize Monetization Integration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/ErXwobaYiN019PkySvjV",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "xi-api-key",
+              "value": "={{ $credentials.elevenLabsApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $node[\"Script Integration\"].json.enhanced_script || $node[\"OpenAI Script Generation\"].json.content }}"
+            },
+            {
+              "name": "model_id",
+              "value": "eleven_turbo_v2"
+            },
+            {
+              "name": "voice_settings",
+              "value": "{ \"stability\": 0.8, \"similarity_boost\": 0.85, \"style\": 0.6, \"use_speaker_boost\": true }"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "file"
+          }
+        }
+      },
+      "id": "1n3p5r7t-9v1x-3z5b-7d9f-1h3j5l7n9p1r",
+      "name": "ElevenLabs Voice Synthesis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1800,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stability.ai/v2/video/generation",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.stabilityAiApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ \"Professional cinematic video footage for YouTube about \" + $node[\"Process Strategy Analysis\"].json.selected_topic.title + \". High quality, educational style visuals related to: \" + $node[\"Process Strategy Analysis\"].json.recommended_keywords.join(\", \") }}"
+            },
+            {
+              "name": "segments",
+              "value": 8
+            },
+            {
+              "name": "resolution",
+              "value": "1080p"
+            },
+            {
+              "name": "duration_seconds",
+              "value": 8
+            },
+            {
+              "name": "style_preset",
+              "value": "cinematic"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3p5r7t9v-1x3z-5b7d-9f1h-3j5l7n9p1r3t",
+      "name": "StabilityAI Video Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1800,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.midjourney.com/v2/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.midjourneyApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ \"Stunning YouTube thumbnail for a video about \" + $node[\"Process Strategy Analysis\"].json.selected_topic.title + \". Ultra photorealistic, highly engaging, professional lighting, bold text space, vibrant colors, clickable design with high production value. Front-facing subject with emotional expression. Includes subtle visual cues to the subject matter.\" }}"
+            },
+            {
+              "name": "width",
+              "value": 1280
+            },
+            {
+              "name": "height",
+              "value": 720
+            },
+            {
+              "name": "variations",
+              "value": 4
+            },
+            {
+              "name": "style",
+              "value": "hyper-realistic"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5r7t9v1x-3z5b-7d9f-1h3j-5l7n9p1r3t5v",
+      "name": "Midjourney Thumbnail Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1800,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.together.ai/v1/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.togetherAiApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "mistralai/mixtral-8x22b-instruct-v0.1"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ \"Create optimized YouTube metadata (title, description, and tags) for a video about \" + $node[\"Process Strategy Analysis\"].json.selected_topic.title + \".\\n\\nTarget keywords: \" + $node[\"Process Strategy Analysis\"].json.recommended_keywords.join(\", \") + \"\\n\\nScript content: \" + ($node[\"Script Integration\"].json.enhanced_script || $node[\"OpenAI Script Generation\"].json.content) + \"\\n\\nCreate a compelling title under 60 characters, a detailed description with timestamps extracted from the script, and 15-20 relevant tags. Format the response as a valid JSON object with these fields:\\n- title: The video title\\n- description: Full video description including timestamps and calls to action\\n- tags: Array of relevant tags\\n\\nMake sure the title has high CTR potential, the description includes all necessary SEO elements, and the tags cover both broad and specific search terms.\" }}"
+            },
+            {
+              "name": "max_tokens",
+              "value": 2000
+            },
+            {
+              "name": "temperature",
+              "value": 0.7
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7t9v1x3z-5b7d-9f1h-3j5l-7n9p1r3t5v7x",
+      "name": "Mixtral SEO Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1800,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// This is a special integration node that combines the standard workflow output \n// with the monetization enhancements\n\n// Get data from various sources\nconst scriptResponse = $node[\"OpenAI Script Generation\"].json.content || \"\";\nconst voiceData = $node[\"ElevenLabs Voice Synthesis\"].binary;\nconst videoData = $node[\"StabilityAI Video Generation\"].json;\nconst thumbnailData = $node[\"Midjourney Thumbnail Generation\"].json;\n\n// Check if we received monetization enhancements\nlet monetizationEnhancements = {};\nlet enhancedScript = scriptResponse;\nlet enhancedDescription = \"\";\nlet monetizationEnabled = false;\n\ntry {\n  monetizationEnhancements = $node[\"Monetization Integration\"].json || {};\n  enhancedScript = monetizationEnhancements.enhanced_script || scriptResponse;\n  enhancedDescription = monetizationEnhancements.enhanced_description || \"\";\n  monetizationEnabled = true;\n} catch (e) {\n  console.log('No monetization enhancements available:', e.message);\n  monetizationEnabled = false;\n}\n\n// Extract SEO data\nlet seoData = {};\ntry {\n  // Try to parse SEO JSON from Mixtral response\n  const seoResponse = $node[\"Mixtral SEO Generation\"].json.choices[0]?.text || \"\";\n  const jsonMatch = seoResponse.match(/\\{[\\s\\S]*\\}/m);\n  if (jsonMatch) {\n    seoData = JSON.parse(jsonMatch[0]);\n  }\n} catch (e) {\n  console.log('Error parsing SEO JSON:', e);\n  // Fallback if parsing fails\n  seoData = {\n    title: \"The Ultimate Guide to \" + $node[\"Process Strategy Analysis\"].json.selected_topic.title,\n    description: \"In this video, we explore everything you need to know about \" + $node[\"Process Strategy Analysis\"].json.selected_topic.title + \".\\n\\n\" + \n              \"TIMESTAMPS:\\n\" + $node[\"Process Strategy Analysis\"].json.structure_recommendation.join(\"\\n\"),\n    tags: $node[\"Process Strategy Analysis\"].json.recommended_keywords\n  };\n}\n\n// If we have a monetization-enhanced description, use it instead of the SEO one\nconst finalDescription = monetizationEnabled && enhancedDescription \n  ? enhancedDescription \n  : seoData.description;\n\n// Extract video segments\nconst videoSegments = videoData.segments || videoData.results || [];\n\n// Extract thumbnail URLs\nconst thumbnailUrls = thumbnailData.images || thumbnailData.results || [];\n\n// Create video assembly package with monetization enhancements if available\nconst videoPackage = {\n  script: enhancedScript, // Use monetization-enhanced script if available\n  audio: {\n    voice_track: voiceData,\n    format: \"mp3\"\n  },\n  visuals: {\n    video_segments: videoSegments,\n    resolution: \"1080p\"\n  },\n  metadata: {\n    title: seoData.title || \"\",\n    description: finalDescription,\n    tags: seoData.tags || [],\n    thumbnail_url: thumbnailUrls[0]?.url || \"\",\n    thumbnail_options: thumbnailUrls.map(t => t.url || \"\")\n  },\n  assembly_params: {\n    resolution: \"1080p\",\n    fps: 30,\n    include_intro: true,\n    include_outro: true,\n    transitions: \"smooth-cinematic\",\n    text_animations: true,\n    color_grading: \"professional\"\n  },\n  content_strategy: {\n    topic: $node[\"Process Strategy Analysis\"].json.selected_topic,\n    predicted_performance: $node[\"Process Strategy Analysis\"].json.predicted_performance,\n    recommended_keywords: $node[\"Process Strategy Analysis\"].json.recommended_keywords\n  },\n  // Add monetization config if available\n  monetization: monetizationEnabled ? {\n    enabled: true,\n    ad_config: monetizationEnhancements.ad_config || {},\n    sponsorship_disclosure: monetizationEnhancements.sponsorship_disclosure || \"\",\n    affiliate_products: monetizationEnhancements.affiliate_products || [],\n    merchandise: monetizationEnhancements.merchandise || [],\n    revenue_projection: monetizationEnhancements.revenue_projection || 0,\n    video_settings: monetizationEnhancements.video_settings || {}\n  } : {\n    enabled: false\n  },\n  timestamp: \"2025-05-16 22:30:19\",\n  user: \"onabellaabdullaziz\"\n};\n\nreturn {json: videoPackage};"
+      },
+      "id": "9v1x3z5b-7d9f-1h3j-5l7n-9p1r3t5v7x9z",
+      "name": "Prepare Advanced Video Assembly",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.runway.com/v2/video/assemble",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.runwayApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "audio_track",
+              "value": "={{ $json.audio.voice_track.url || $json.audio.voice_track.data }}"
+            },
+            {
+              "name": "video_segments",
+              "value": "={{ $json.visuals.video_segments }}"
+            },
+            {
+              "name": "text_overlay_script",
+              "value": "={{ $json.script }}"
+            },
+            {
+              "name": "resolution",
+              "value": "1080p"
+            },
+            {
+              "name": "fps",
+              "value": 30
+            },
+            {
+              "name": "transitions",
+              "value": "smooth-cinematic"
+            },
+            {
+              "name": "color_grading",
+              "value": "professional"
+            },
+            {
+              "name": "include_intro",
+              "value": true
+            },
+            {
+              "name": "include_outro",
+              "value": true
+            },
+            {
+              "name": "text_animations",
+              "value": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1x3z5b7d-9f1h-3j5l-7n9p-1r3t5v7x9z1b",
+      "name": "Runway Advanced Video Assembly",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        2200,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.title }}",
+        "description": "={{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.description }}",
+        "categoryId": "22",
+        "tags": "={{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.tags.join(\",\") }}",
+        "privacyStatus": "private",
+        "notifySubscribers": false,
+        "options": {
+          "localVideo": false,
+          "scheduledPublishing": {
+            "publishAt": "={{ $now.plusDays(1).format() }}"
+          }
+        }
+      },
+      "id": "3z5b7d9f-1h3j-5l7n-9p1r-3t5v7x9z1b3d",
+      "name": "Upload to YouTube",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 2,
+      "position": [2400, 400],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "1",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "resource": "chat",
+        "operation": "completion",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a social media marketing expert who crafts highly engaging, platform-optimized content. Create content that follows the latest best practices for each platform, with appropriate tone, length, and formatting. Return only valid JSON with the requested fields."
+            },
+            {
+              "role": "user",
+              "content": "=Generate social media posts for these platforms: Twitter, Instagram, LinkedIn, TikTok, and Facebook.\n\nThese posts should promote the following YouTube video:\n\nTitle: {{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.title }}\nDescription: {{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.description }}\nTags: {{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.tags.join(\", \") }}\nVideo URL: https://youtu.be/{{ $node[\"Upload to YouTube\"].json.id }}\n\nCreate platform-specific content that follows best practices for each platform. Include appropriate hashtags and hooks to maximize engagement.\n\nReturn your response as a JSON object with these fields:\n- twitter_posts: Array with 3 Twitter posts including hashtags\n- instagram_caption: Instagram post caption with hashtags\n- linkedin_post: Professional LinkedIn post\n- tiktok_script: Brief script for TikTok promo\n- facebook_post: Engaging Facebook post"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 2000,
+          "responseFormat": {
+            "type": "json_object"
+          }
+        }
+      },
+      "id": "5b7d9f1h-3j5l-7n9p-1r3t-5v7x9z1b3d5f",
+      "name": "OpenAI Social Media Content",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        2600,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract OpenAI's response for social media content\nconst socialMediaContent = $input.item.json || {};\n\n// Get video data\nconst videoId = $node[\"Upload to YouTube\"].json.id;\nconst videoUrl = `https://youtu.be/${videoId}`;\nconst videoTitle = $node[\"Prepare Advanced Video Assembly\"].json.metadata.title;\nconst thumbnailUrl = $node[\"Prepare Advanced Video Assembly\"].json.metadata.thumbnail_url;\n\n// Prepare content for Buffer\nconst bufferPosts = [];\n\n// Twitter posts\nif (socialMediaContent.twitter_posts && Array.isArray(socialMediaContent.twitter_posts)) {\n  socialMediaContent.twitter_posts.forEach((post, index) => {\n    bufferPosts.push({\n      platform: \"twitter\",\n      profile_id: \"twitter_profile_id\",  // Will be replaced with actual profile ID\n      text: post.includes(videoUrl) ? post : `${post}\\n\\n${videoUrl}`,\n      scheduled_at: new Date(Date.now() + (3600000 * (index + 1))).toISOString(),\n      media: { thumbnail_url: thumbnailUrl }\n    });\n  });\n}\n\n// Instagram post\nbufferPosts.push({\n  platform: \"instagram\",\n  profile_id: \"instagram_profile_id\",  // Will be replaced with actual profile ID\n  text: socialMediaContent.instagram_caption || \"\",\n  scheduled_at: new Date(Date.now() + 7200000).toISOString(), // 2 hours after\n  media: { thumbnail_url: thumbnailUrl }\n});\n\n// LinkedIn post\nbufferPosts.push({\n  platform: \"linkedin\",\n  profile_id: \"linkedin_profile_id\",  // Will be replaced with actual profile ID\n  text: socialMediaContent.linkedin_post || \"\",\n  scheduled_at: new Date(Date.now() + 10800000).toISOString(), // 3 hours after\n  media: { thumbnail_url: thumbnailUrl }\n});\n\n// Facebook post\nbufferPosts.push({\n  platform: \"facebook\",\n  profile_id: \"facebook_profile_id\",  // Will be replaced with actual profile ID\n  text: socialMediaContent.facebook_post || \"\",\n  scheduled_at: new Date(Date.now() + 14400000).toISOString(), // 4 hours after\n  media: { thumbnail_url: thumbnailUrl }\n});\n\n// TikTok plans will be handled separately in TikTok automation node\n\nreturn {\n  json: {\n    buffer_posts: bufferPosts,\n    social_media_content: socialMediaContent,\n    video_id: videoId,\n    video_url: videoUrl,\n    video_title: videoTitle,\n    thumbnail_url: thumbnailUrl\n  }\n};"
+      },
+      "id": "7d9f1h3j-5l7n-9p1r-3t5v-7x9z1b3d5f7h",
+      "name": "Prepare Social Distribution",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.buffer.com/1/updates/create.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.bufferApiToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "profile_ids[]",
+              "value": "={{ $json.profile_id }}"
+            },
+            {
+              "name": "scheduled_at",
+              "value": "={{ $json.scheduled_at }}"
+            },
+            {
+              "name": "media[photo]",
+              "value": "={{ $json.media.thumbnail_url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9f1h3j5l-7n9p-1r3t-5v7x-9z1b3d5f7h9j",
+      "name": "Buffer Distribution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        3000,
+        400
+      ],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tiktok.com/creator/v1/video/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.tiktokApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "video_url",
+              "value": "={{ $node[\"Runway Advanced Video Assembly\"].json.short_clip_url || $node[\"Runway Advanced Video Assembly\"].json.preview_url }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $node[\"Prepare Social Distribution\"].json.social_media_content.tiktok_script }}"
+            },
+            {
+              "name": "tags",
+              "value": "={{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.tags.slice(0, 5).join(\",\") }}"
+            },
+            {
+              "name": "schedule_time",
+              "value": "={{ $now.plusHours(5).unix() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1h3j5l7n-9p1r-3t5v-7x9z-1b3d5f7h9j1l",
+      "name": "TikTok Distribution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        3000,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubspot.com/crm/v3/objects/contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.hubspotApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "filterGroups",
+              "value": "[{\"filters\":[{\"propertyName\":\"hs_email_optout\",\"operator\":\"EQ\",\"value\":\"false\"},{\"propertyName\":\"youtube_subscriber\",\"operator\":\"EQ\",\"value\":\"true\"}]}]"
+            },
+            {
+              "name": "properties",
+              "value": "[\"email\", \"firstname\"]"
+            },
+            {
+              "name": "limit",
+              "value": 100
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3j5l7n9p-1r3t-5v7x-9z1b-3d5f7h9j1l3n",
+      "name": "Get Subscriber Email List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        2600,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sendgrid.com/v3/mail/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.sendgridApi }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "personalizations",
+              "value": "=[{\"to\":[{\"email\":\"onabellaabdullaziz@example.com\"}],\"subject\":\"New Video Published: \" + $node[\"Prepare Advanced Video Assembly\"].json.metadata.title }]"
+            },
+            {
+              "name": "from",
+              "value": "{\"email\":\"notifications@yourdomain.com\",\"name\":\"YouTube Automation\"}"
+            },
+            {
+              "name": "content",
+              "value": "=[{\"type\":\"text/html\",\"value\":\"<html><body><h1>New Video Successfully Published!</h1><p>Your video <strong>\" + $node[\"Prepare Advanced Video Assembly\"].json.metadata.title + \"</strong> has been uploaded to YouTube and scheduled for publication.</p><p><strong>Video ID:</strong> \" + $node[\"Upload to YouTube\"].json.id + \"</p><p><strong>Publish Date:</strong> \" + $now.plusDays(1).format(\"YYYY-MM-DD HH:mm:ss\") + \" UTC</p><p><strong>Predicted Performance:</strong><br>Estimated Views: \" + $node[\"Prepare Advanced Video Assembly\"].json.content_strategy.predicted_performance.estimated_views + \"<br>Engagement Rate: \" + $node[\"Prepare Advanced Video Assembly\"].json.content_strategy.predicted_performance.engagement_rate + \"<br>Estimated Subscriber Growth: \" + $node[\"Prepare Advanced Video Assembly\"].json.content_strategy.predicted_performance.subscriber_growth + \"</p>\" + ($node[\"Prepare Advanced Video Assembly\"].json.monetization?.enabled ? \"<p><strong>Revenue Projection:</strong> $\" + $node[\"Prepare Advanced Video Assembly\"].json.monetization.revenue_projection + \"</p>\" : \"\") + \"<p>Social media distribution has been scheduled across multiple platforms.</p><p>Please review the video in YouTube Studio before its scheduled publication.</p><p>-- Your YouTube Automation System</p></body></html>\"}]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5l7n9p1r-3t5v-7x9z-1b3d-5f7h9j1l3n5p",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        3200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sendgrid.com/v3/mail/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.sendgridApi }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "personalizations",
+              "value": "={{ $json.recipients.map(recipient => ({\"to\":[{\"email\":recipient.email}], \"substitutions\":{\"{{firstName}}\":recipient.firstname || \"Subscriber\"}, \"subject\":\"New Video: \" + $node[\"Prepare Advanced Video Assembly\"].json.metadata.title})) }}"
+            },
+            {
+              "name": "from",
+              "value": "{\"email\":\"content@yourdomain.com\",\"name\":\"Your Channel Name\"}"
+            },
+            {
+              "name": "template_id",
+              "value": "d-f3e6d9988df949988d9988df9499988d"
+            },
+            {
+              "name": "dynamic_template_data",
+              "value": "={\"video_title\":$node[\"Prepare Advanced Video Assembly\"].json.metadata.title,\"video_url\":\"https://youtu.be/\" + $node[\"Upload to YouTube\"].json.id,\"video_thumbnail\":$node[\"Prepare Advanced Video Assembly\"].json.metadata.thumbnail_url,\"video_description\":$node[\"Prepare Advanced Video Assembly\"].json.metadata.description.substring(0, 150) + \"...\"}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7n9p1r3t-5v7x-9z1b-3d5f-7h9j1l3n5p7r",
+      "name": "Send Subscriber Notifications",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        3200,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Track performance metrics\n\n// Get the relevant data from previous nodes\nconst videoId = $node[\"Upload to YouTube\"].json.id;\nconst videoTitle = $node[\"Prepare Advanced Video Assembly\"].json.metadata.title;\nconst publishDate = $now.plusDays(1).format(\"YYYY-MM-DD HH:mm:ss\");\nconst predictedPerformance = $node[\"Prepare Advanced Video Assembly\"].json.content_strategy.predicted_performance;\n\n// Check if monetization is enabled and get revenue projection\nlet monetizationEnabled = false;\nlet revenueProjection = 0;\ntry {\n  monetizationEnabled = $node[\"Prepare Advanced Video Assembly\"].json.monetization?.enabled || false;\n  revenueProjection = $node[\"Prepare Advanced Video Assembly\"].json.monetization?.revenue_projection || 0;\n} catch (e) {\n  console.log('No monetization data available:', e.message);\n}\n\n// Create a performance tracking record\nconst performanceTracking = {\n  video_id: videoId,\n  title: videoTitle,\n  publish_date: publishDate,\n  performance_goals: {\n    estimated_views: predictedPerformance.estimated_views,\n    engagement_rate: predictedPerformance.engagement_rate,\n    subscriber_growth: predictedPerformance.subscriber_growth\n  },\n  notification_thresholds: {\n    views_milestones: [1000, 5000, 10000, 50000, 100000],\n    engagement_alert: 0.15,\n    viral_potential: 5.0\n  },\n  distribution_platforms: [\n    \"youtube\", \n    \"twitter\", \n    \"instagram\", \n    \"linkedin\", \n    \"facebook\", \n    \"tiktok\"\n  ],\n  revenue: {\n    monetization_enabled: monetizationEnabled,\n    projected_revenue: revenueProjection,\n    revenue_streams: monetizationEnabled ? [\n      \"adsense\",\n      \"sponsorship\", \n      \"affiliate\", \n      \"merchandise\",\n      \"membership\"\n    ] : [\"adsense\"]\n  },\n  tracking_status: \"initialized\",\n  timestamp: \"2025-05-16 22:30:19\",\n  user: \"onabellaabdullaziz\"\n};\n\n// We'll use this data later for internal tracking\nreturn {\n  json: performanceTracking\n};"
+      },
+      "id": "9p1r3t5v-7x9z-1b3d-5f7h-9j1l3n5p7r9t",
+      "name": "Setup Performance Tracking",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        3400,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "minutesInterval": 0,
+              "hoursInterval": 12,
+              "daysInterval": 0
+            }
+          ]
+        }
+      },
+      "id": "a1c5e7g9-2b4d-6f8h-0j2l-4n6p8r0t2v4x",
+      "name": "Monetization Workflow Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "channel",
+        "operation": "get",
+        "channelId": "={{ $json.channel_id || \"UCxxxxxxxxxxxxxxxxxxxxxxx\" }}",
+        "options": {}
+      },
+      "id": "c5e7g9i1-k3m5-o7q9-s1u3-w5y7a9c1e3g5",
+      "name": "Get YouTube Channel Data",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 2,
+      "position": [400, 1100],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "1",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "video",
+        "operation": "getAll",
+        "maxResults": 25,
+        "filters": {
+          "forMine": true
+        },
+        "limit": 50,
+        "options": {}
+      },
+      "id": "e7g9i1k3-m5o7-q9s1-u3w5-y7a9c1e3g5i7",
+      "name": "Get Recent Videos",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 2,
+      "position": [400, 1300],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "1",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://youtubemonetization.googleapis.com/v1/channels/mine/revenue",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "startDate",
+              "value": "={{ $today.subtract(30, \"days\").format(\"YYYY-MM-DD\") }}"
+            },
+            {
+              "name": "endDate",
+              "value": "={{ $today.format(\"YYYY-MM-DD\") }}"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2",
+        "options": {}
+      },
+      "id": "g9i1k3m5-o7q9-s1u3-w5y7-a9c1e3g5i7k9",
+      "name": "Get AdSense Revenue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        400,
+        1500
+      ],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "1",
+          "name": "YouTube OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.gumroad.com/v2/products",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.gumroadApi }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "i1k3m5o7-q9s1-u3w5-y7a9-c1e3g5i7k9m1",
+      "name": "Get Digital Products",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        600,
+        1100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.patreon.com/oauth2/v2/campaigns",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "include",
+              "value": "tiers,benefits"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "k3m5o7q9-s1u3-w5y7-a9c1-e3g5i7k9m1o3",
+      "name": "Get Membership Tiers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        600,
+        1300
+      ],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "2",
+          "name": "Patreon OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.impact.com/Mediapartners/Campaigns",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.impactApi }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "m5o7q9s1-u3w5-y7a9-c1e3-g5i7k9m1o3q5",
+      "name": "Get Affiliate Programs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        600,
+        1500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.getsponsy.com/v1/sponsorships/opportunities",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $credentials.sponsyApi }}"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel_id",
+              "value": "={{ $node[\"Get YouTube Channel Data\"].json.id }}"
+            },
+            {
+              "name": "min_rate",
+              "value": 500
+            },
+            {
+              "name": "status",
+              "value": "active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "o7q9s1u3-w5y7-a9c1-e3g5-i7k9m1o3q5s7",
+      "name": "Get Sponsorship Opportunities",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        600,
+        1700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.shopify.com/admin/api/2025-01/products.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Shopify-Access-Token",
+              "value": "={{ $credentials.shopifyAccessToken }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "q9s1u3w5-y7a9-c1e3-g5i7-k9m1o3q5s7u9",
+      "name": "Get Merchandise Products",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        600,
+        1900
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "resource": "chat",
+        "operation": "completion",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an AI expert in YouTube monetization and revenue optimization. Analyze channel data, video content, and available monetization streams to provide strategic recommendations that maximize revenue while maintaining content quality and audience trust. Deliver your analysis in a structured JSON format."
+            },
+            {
+              "role": "user",
+              "content": "=Analyze this YouTube channel data and monetization opportunities:\n\nChannel information: {{ JSON.stringify($node[\"Get YouTube Channel Data\"].json) }}\n\nRecent videos: {{ JSON.stringify($node[\"Get Recent Videos\"].json) }}\n\nAdSense revenue: {{ JSON.stringify($node[\"Get AdSense Revenue\"].json) }}\n\nDigital products: {{ JSON.stringify($node[\"Get Digital Products\"].json) }}\n\nMembership tiers: {{ JSON.stringify($node[\"Get Membership Tiers\"].json) }}\n\nAffiliate programs: {{ JSON.stringify($node[\"Get Affiliate Programs\"].json) }}\n\nSponsorship opportunities: {{ JSON.stringify($node[\"Get Sponsorship Opportunities\"].json) }}\n\nMerchandise products: {{ JSON.stringify($node[\"Get Merchandise Products\"].json) }}\n\nBased on this data, create a comprehensive monetization strategy that maximizes revenue across multiple streams.\n\nReturn a JSON object with these fields:\n- revenue_analysis: Analysis of current monetization performance\n- adsense_optimization: Recommendations for optimizing ad placements and revenue\n- sponsorship_strategy: Potential sponsors that align with channel content and audience\n- affiliate_recommendations: Products and programs that would convert well with this audience\n- membership_enhancements: Ways to improve membership offerings and conversion\n- merchandise_opportunities: Product ideas and promotion strategies\n- revenue_forecast: Projected revenue growth across all streams\n- prioritized_actions: Ranked list of highest-impact monetization actions to take immediately\n\nMake all recommendations specific to this channel's performance and audience demographics."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 4000,
+          "responseFormat": {
+            "type": "json_object"
+          }
+        }
+      },
+      "id": "s1u3w5y7-a9c1-e3g5-i7k9-m1o3q5s7u9w1",
+      "name": "Generate Monetization Strategy",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the AI-generated monetization strategy\nconst monetizationStrategy = $input.item.json || {};\n\n// Get channel and video data for reference\nconst channelData = $node[\"Get YouTube Channel Data\"].json || {};\nconst recentVideos = $node[\"Get Recent Videos\"].json.items || [];\n\n// Get tomorrow's schedule publish date \nlet scheduledPublishDate = $now.plusDays(1).format();\n\n// Extract AdSense data\nconst adSenseData = $node[\"Get AdSense Revenue\"].json || {};\n\n// Get sponsorship opportunities\nconst sponsorships = $node[\"Get Sponsorship Opportunities\"].json.opportunities || [];\n\n// Get affiliate programs\nconst affiliatePrograms = $node[\"Get Affiliate Programs\"].json.campaigns || [];\n\n// Get merchandise data\nconst merchandise = $node[\"Get Merchandise Products\"].json.products || [];\n\n// Get membership tiers\nconst membershipTiers = $node[\"Get Membership Tiers\"].json.data || [];\n
