@@ -1,0 +1,910 @@
+{
+  "name": "AI Assistant Pro - YouTube Automation Suite 2025",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "minutesInterval": 0,
+              "hoursInterval": 0,
+              "daysInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "c5e9fa3e-8b94-41d8-a265-ecdcd6255d17",
+      "name": "Main Workflow Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/youtube/v3/channels",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet,contentDetails,statistics"
+            },
+            {
+              "name": "id",
+              "value": "UCmV6IUNtSmJ9f-FAsGaNITw"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "df21a35c-9b73-4f2a-ba65-4f2e019ac4e6",
+      "name": "Get YouTube Channel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [400, 200],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "1",
+          "name": "YouTube OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://youtubeanalytics.googleapis.com/v2/reports",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "dimensions",
+              "value": "video"
+            },
+            {
+              "name": "metrics",
+              "value": "views,estimatedMinutesWatched,subscribersGained,likes,comments,shares"
+            },
+            {
+              "name": "sort",
+              "value": "-views"
+            },
+            {
+              "name": "filters",
+              "value": "video!=null"
+            },
+            {
+              "name": "startDate",
+              "value": "={{ $today.subtract(30, \"days\").format(\"YYYY-MM-DD\") }}"
+            },
+            {
+              "name": "endDate",
+              "value": "={{ $today.format(\"YYYY-MM-DD\") }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "50"
+            },
+            {
+              "name": "ids",
+              "value": "channel==MINE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6a8f15c3-d2b7-4e5a-9f63-87d291a5b6e0",
+      "name": "YouTube Analytics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [400, 400],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "1",
+          "name": "YouTube OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.exploding-topics.com/v1/trends",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $credentials.explodingTopicsApi }}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "categories",
+              "value": "tech,productivity,software"
+            },
+            {
+              "name": "status",
+              "value": "exploding"
+            },
+            {
+              "name": "date_range",
+              "value": "3m"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1b3d5f7h-9j2l-4n6p-8r0t-2v4x6z8b0d2f",
+      "name": "Get Trending Topics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [400, 600]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.tuberanker.com/v1/competitors",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.tubeRankerApi }}"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "channel_id",
+              "value": "UCmV6IUNtSmJ9f-FAsGaNITw"
+            },
+            {
+              "name": "metric",
+              "value": "relevance"
+            },
+            {
+              "name": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3e5g7i9k-1m3o-5q7s-9u1w-3y5a7c9e1g3i",
+      "name": "Competitor Analysis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [600, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Error handling function to check if previous node executed successfully\nfunction checkNodeSuccess(nodeName, expectedProperties = []) {\n  try {\n    const nodeData = $node[nodeName];\n    \n    if (!nodeData || !nodeData.json) {\n      return {\n        success: false,\n        message: `Node \"${nodeName}\" did not return any data`\n      };\n    }\n    \n    // Special handling for YouTube API responses that come in items array\n    if (nodeName === \"Get YouTube Channel\") {\n      if (!nodeData.json.items || !nodeData.json.items.length) {\n        return {\n          success: false,\n          message: `Node \"${nodeName}\" did not return any channel items`\n        };\n      }\n      \n      // Check expected properties in the first item\n      for (const prop of expectedProperties) {\n        if (nodeData.json.items[0][prop] === undefined) {\n          return {\n            success: false,\n            message: `Node \"${nodeName}\" is missing expected property \"${prop}\" in channel data`\n          };\n        }\n      }\n      \n      return {\n        success: true,\n        data: nodeData.json.items[0]\n      };\n    }\n    \n    // Regular property checks for other nodes\n    for (const prop of expectedProperties) {\n      if (nodeData.json[prop] === undefined) {\n        return {\n          success: false,\n          message: `Node \"${nodeName}\" is missing expected property \"${prop}\"`\n        };\n      }\n    }\n    \n    return {\n      success: true,\n      data: nodeData.json\n    };\n  } catch (error) {\n    return {\n      success: false,\n      message: `Error processing ${nodeName}: ${error.message}`\n    };\n  }\n}\n\n// Check channel data (uses items array from YouTube API)\nconst channelCheck = checkNodeSuccess(\"Get YouTube Channel\", [\"id\", \"snippet\", \"statistics\"]);\nif (!channelCheck.success) {\n  return {\n    error: true,\n    message: channelCheck.message,\n    stage: \"channel_data\",\n    continue_workflow: false\n  };\n}\n\n// Check YouTube Analytics\nconst analyticsCheck = checkNodeSuccess(\"YouTube Analytics\", [\"rows\"]);\nif (!analyticsCheck.success) {\n  return {\n    error: true,\n    message: analyticsCheck.message,\n    stage: \"analytics_data\",\n    continue_workflow: false\n  };\n}\n\n// Check trending topics\nconst trendingCheck = checkNodeSuccess(\"Get Trending Topics\");\nif (!trendingCheck.success) {\n  // Not critical, we can continue without it\n  console.log(\"Warning: \" + trendingCheck.message);\n}\n\n// Process all inputs for content analysis\n// Extract channel data from items array (YouTube API format)\nconst channelData = $node[\"Get YouTube Channel\"].json.items[0];\n\n// Channel niche information\nconst channelNiche = {\n  primary: \"AI Productivity Tools\",\n  subNiches: [\n    \"AI writing assistants\", \n    \"voice automation\", \n    \"smart scheduling\", \n    \"AI research tools\", \n    \"generative AI workflows\"\n  ]\n};\n\nreturn {\n  channel: channelData,\n  analytics: $node[\"YouTube Analytics\"].json,\n  trending_topics: $node[\"Get Trending Topics\"].json || { topics: [] },\n  competitors: $node[\"Competitor Analysis\"].json || { competitors: [] },\n  niche: channelNiche,\n  channel_id: \"UCmV6IUNtSmJ9f-FAsGaNITw\",\n  channel_name: \"AI Assistant Pro\",\n  timestamp: \"2025-05-17 13:52:34\",\n  username: \"onabellaabdullaziz\",\n  continue_workflow: true\n};"
+      },
+      "id": "b5c7e9g1-i3k5-m7o9-q1s3-u5w7y9a1c3e5",
+      "name": "Validate Input Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [600, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.continue_workflow }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "d7f9h1j3-l5n7-p9r1-t3v5-x7z9b1d3f5h7",
+      "name": "Continue Workflow?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "resource": "chat",
+        "operation": "completion",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert YouTube strategist specializing in AI productivity tools content. Focus on creating strategies for a channel covering AI writing assistants, voice automation, smart scheduling, AI research tools, and generative AI workflows. Provide in-depth, data-driven content recommendations formatted as a structured JSON object with: best_topic (object with title, keywords), structure_recommendations (array of sections with timestamps), monetization_opportunities (array of approaches), and channel_growth_strategy (string with specific advice)."
+            },
+            {
+              "role": "user",
+              "content": "=Analyze this YouTube channel and competitor data to identify the best content opportunities for 'AI Assistant Pro' (channel ID: UCmV6IUNtSmJ9f-FAsGaNITw), focusing on AI productivity tools niche:\n\nChannel information: {{ JSON.stringify($json.channel) }}\n\nAnalytics data: {{ JSON.stringify($json.analytics) }}\n\nTrending topics: {{ JSON.stringify($json.trending_topics) }}\n\nCompetitor analysis: {{ JSON.stringify($json.competitors) }}\n\nChannel niche: {{ JSON.stringify($json.niche) }}\n\nProvide recommendations for AI productivity content focusing on one of these sub-niches: AI writing assistants, voice automation, smart scheduling, AI research tools, or generative AI workflows. Include specific structure recommendations and monetization opportunities relevant to AI tools."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 4000,
+          "responseFormat": {
+            "type": "json_object"
+          }
+        }
+      },
+      "id": "5h7j9l1n-3p5r-7t9v-1x3z-5b7d9f1h3j5l",
+      "name": "OpenAI Content Strategy",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract OpenAI's response\nconst contentStrategy = $inputs.item.json || {};\n\n// Ensure we have a valid best topic\nconst selectedTopic = contentStrategy.best_topic || (contentStrategy.recommendations && contentStrategy.recommendations[0]) || {\n  title: \"Top AI Writing Assistants for Content Creators in 2025\",\n  keywords: [\"AI writing assistants\", \"content creation\", \"AI productivity\", \"AI tools 2025\", \"writing automation\"]\n};\n\n// Prepare output\nreturn {\n  selected_topic: selectedTopic,\n  structure_recommendations: contentStrategy.structure_recommendations || [],\n  monetization_opportunities: contentStrategy.monetization_opportunities || [],\n  channel_growth_strategy: contentStrategy.channel_growth_strategy || \"Focus on AI tool comparisons and tutorials for the AI productivity niche\",\n  channel_niche: {\n    primary: \"AI Productivity Tools\",\n    subNiches: [\n      \"AI writing assistants\", \n      \"voice automation\", \n      \"smart scheduling\", \n      \"AI research tools\", \n      \"generative AI workflows\"\n    ]\n  }\n};"
+      },
+      "id": "7j9l1n3p-5r7t-9v1x-3z5b-7d9f1h3j5l7n",
+      "name": "Process Strategy Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1200, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "resource": "chat",
+        "operation": "completion",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert script writer for AI productivity tool tutorials and reviews. Create highly engaging, professional scripts that follow best practices for viewer retention and engagement. Structure your script with clear sections, timestamps, hooks, and calls to action. Focus on creating content for the AI Assistant Pro YouTube channel."
+            },
+            {
+              "role": "user",
+              "content": "=Create a professional YouTube script about {{ $json.selected_topic.title }} for the AI Assistant Pro channel. Target length: 8 minutes.\n\nInclude these sections with timestamps:\n{{ $json.structure_recommendations.map(section => section.title + ' - ' + section.timestamp).join('\\n') || 'Introduction - 0:00\\nOverview of AI Tools - 1:30\\nDetailed Features - 3:00\\nPractical Demonstration - 5:00\\nConclusion - 7:00' }}\n\nIncorporate these keywords naturally: {{ $json.selected_topic.keywords.join(', ') }}\n\nChannel niche: AI Productivity Tools (AI writing assistants, voice automation, smart scheduling, AI research tools, generative AI workflows)\n\nChannel growth strategy to consider: {{ $json.channel_growth_strategy }}\n\nWrite a complete, ready-to-record script with engaging hooks, clear explanations, examples, and a strong call to action."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 4000
+        }
+      },
+      "id": "9l1n3p5r-7t9v-1x3z-5b7d-9f1h3j5l7n9p",
+      "name": "OpenAI Script Generation",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node initializes the monetization workflow by passing necessary data\n// from the main content creation workflow\n\n// Get channel data and content strategy\nconst channelData = $node[\"Get YouTube Channel\"].json.items[0] || {};\nconst contentStrategy = $node[\"Process Strategy Analysis\"].json || {};\nconst scriptContent = $node[\"OpenAI Script Generation\"].json || {};\n\n// Determine channel monetization eligibility based on subscriber count\nconst subscriberCount = parseInt(channelData.statistics?.subscriberCount || 0);\nconst isMonetizable = subscriberCount >= 1000;\n\n// Get potential monetization approaches from content strategy\nconst monetizationOpportunities = contentStrategy.monetization_opportunities || [];\n\n// Prepare AI tool sponsor data\nconst sponsorInfo = {\n  name: \"Jasper AI\",\n  message: \"They provide the best AI writing assistant for content creators like you. Use code 'AIASSISTANTPRO' for 20% off your first three months at jasper.ai.\",\n  required_mention_length_seconds: 30,\n  payment_per_view: 0.018,\n  website: \"https://jasper.ai\"\n};\n\n// Prepare sample affiliate products relevant to AI productivity tools\nconst affiliateLinks = [\n  {\n    name: \"TextCortex AI Writing Suite\",\n    description: \"The AI writing assistant I use for script development\",\n    url: \"https://example.com/textcortex-affiliate\",\n    commission_rate: 0.15\n  },\n  {\n    name: \"Otter.ai Premium\",\n    description: \"Premium voice transcription tool for content creators\",\n    url: \"https://example.com/otter-affiliate\",\n    commission_rate: 0.12\n  },\n  {\n    name: \"Motion Advanced AI Scheduler\",\n    description: \"The smart scheduling tool that saves me 10+ hours weekly\",\n    url: \"https://example.com/motion-affiliate\",\n    commission_rate: 0.18\n  }\n];\n\n// Digital product recommendations for AI productivity niche\nconst productRecommendations = [\n  {\n    name: \"AI Productivity Masterclass\",\n    description: \"My comprehensive course on boosting productivity with AI tools\",\n    price: 197,\n    url: \"https://aiassistantpro.com/masterclass\"\n  },\n  {\n    name: \"AI Assistant Pro Templates Pack\",\n    description: \"50 premium templates for leading AI assistants\",\n    price: 47,\n    url: \"https://aiassistantpro.com/templates\"\n  }\n];\n\n// Current date for tracking\nconst currentDate = \"2025-05-17 13:52:34\";\nconst currentUser = \"onabellaabdullaziz\";\n\nreturn {\n  channel_id: \"UCmV6IUNtSmJ9f-FAsGaNITw\",\n  channel_name: \"AI Assistant Pro\",\n  subscriber_count: subscriberCount,\n  view_count: channelData.statistics?.viewCount || 0,\n  is_monetizable: isMonetizable,\n  content_topic: contentStrategy.selected_topic?.title || \"\",\n  content_keywords: contentStrategy.selected_topic?.keywords || [],\n  niche: \"AI Productivity Tools\",\n  sub_niches: [\"AI writing assistants\", \"voice automation\", \"smart scheduling\", \"AI research tools\", \"generative AI workflows\"],\n  monetization_opportunities: monetizationOpportunities,\n  sponsor_info: isMonetizable ? sponsorInfo : null,\n  affiliate_links: affiliateLinks,\n  product_recommendations: productRecommendations,\n  script_summary: scriptContent.content ? scriptContent.content.substring(0, 100) + \"...\" : \"\",\n  date_created: currentDate,\n  created_by: currentUser\n};"
+      },
+      "id": "b1d3f5h7-j9l1-n3p5-r7t9-v1x3z5b7d9f1",
+      "name": "Initialize Monetization Integration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1600, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine the script with monetization elements\nconst originalScript = $node[\"OpenAI Script Generation\"].json.content || \"\";\nconst monetizationData = $node[\"Initialize Monetization Integration\"].json || {};\n\n// Extract sponsor info if available\nconst sponsorInfo = monetizationData.sponsor_info || {};\nconst affiliateLinks = monetizationData.affiliate_links || [];\nconst productRecommendations = monetizationData.product_recommendations || [];\n\n// Create enhanced script with monetization elements naturally integrated\nlet enhancedScript = originalScript;\n\n// Add sponsor mention if available\nif (sponsorInfo.name) {\n  const sponsorSegment = `\\n\\n[SPONSOR SEGMENT - 01:45]\\nBefore we continue this AI productivity tutorial, I'd like to thank ${sponsorInfo.name} for sponsoring this video. ${sponsorInfo.message || \"They offer great AI tools that align perfectly with this content.\"}\\n`;\n  \n  // Insert sponsor segment at approximately 1/3 into the script\n  const lines = enhancedScript.split('\\n');\n  const insertPosition = Math.floor(lines.length / 3);\n  lines.splice(insertPosition, 0, sponsorSegment);\n  enhancedScript = lines.join('\\n');\n}\n\n// Add affiliate links in relevant sections\nif (affiliateLinks.length > 0) {\n  enhancedScript += \"\\n\\n[AI TOOLS MENTIONED]\\n\";\n  affiliateLinks.forEach(link => {\n    enhancedScript += `- ${link.name}: ${link.description || \"Check out this AI productivity tool\"} (link in description)\\n`;\n  });\n}\n\n// Add product promotion if available\nif (productRecommendations.length > 0) {\n  const product = productRecommendations[0];\n  const productSegment = `\\n\\n[RESOURCE PROMOTION - 06:30]\\nIf you want to master these AI productivity techniques faster, check out my ${product.name}. ${product.description}. You can find the link in the description below.\\n`;\n  \n  // Add near the end of the video\n  const lines = enhancedScript.split('\\n');\n  const insertPosition = Math.floor(lines.length * 0.8);\n  lines.splice(insertPosition, 0, productSegment);\n  enhancedScript = lines.join('\\n');\n}\n\nreturn {\n  original_script: originalScript,\n  enhanced_script: enhancedScript,\n  monetization_elements: {\n    sponsor: sponsorInfo,\n    affiliates: affiliateLinks,\n    products: productRecommendations\n  },\n  channel_info: {\n    name: \"AI Assistant Pro\",\n    niche: \"AI Productivity Tools\",\n    id: \"UCmV6IUNtSmJ9f-FAsGaNITw\"\n  }\n};"
+      },
+      "id": "e3g5i7k9-m1o3-q5s7-u9w1-y3a5c7e9g1i3",
+      "name": "Script Integration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1800, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/ErXwobaYiN019PkySvjV",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "xi-api-key",
+              "value": "={{ $credentials.elevenLabsApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.enhanced_script }}"
+            },
+            {
+              "name": "model_id",
+              "value": "eleven_turbo_v2"
+            },
+            {
+              "name": "voice_settings",
+              "value": "{ \"stability\": 0.8, \"similarity_boost\": 0.85, \"style\": 0.6, \"use_speaker_boost\": true }"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "file"
+          }
+        }
+      },
+      "id": "1n3p5r7t-9v1x-3z5b-7d9f-1h3j5l7n9p1r",
+      "name": "ElevenLabs Voice Synthesis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2000, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stability.ai/v2/video/generation",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.stabilityAiApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ \"Professional cinematic video footage for YouTube about \" + $node[\"Process Strategy Analysis\"].json.selected_topic.title + \". High quality, educational style visuals about AI productivity tools and software interfaces.\" }}"
+            },
+            {
+              "name": "segments",
+              "value": 8
+            },
+            {
+              "name": "resolution",
+              "value": "1080p"
+            },
+            {
+              "name": "duration_seconds",
+              "value": 8
+            },
+            {
+              "name": "style_preset",
+              "value": "cinematic"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3p5r7t9v-1x3z-5b7d-9f1h-3j5l7n9p1r3t",
+      "name": "StabilityAI Video Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2000, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.midjourney.com/v2/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.midjourneyApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ \"Stunning YouTube thumbnail for an AI Productivity channel video about \" + $node[\"Process Strategy Analysis\"].json.selected_topic.title + \". Ultra photorealistic, highly engaging, professional quality, bright colors, attention-grabbing design showing futuristic AI interfaces, clean graphics, and productivity tools. Include text: 'AI Assistant Pro'\" }}"
+            },
+            {
+              "name": "width",
+              "value": 1280
+            },
+            {
+              "name": "height",
+              "value": 720
+            },
+            {
+              "name": "variations",
+              "value": 4
+            },
+            {
+              "name": "style",
+              "value": "hyper-realistic"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5r7t9v1x-3z5b-7d9f-1h3j-5l7n9p1r3t5v",
+      "name": "Midjourney Thumbnail Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2000, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.together.ai/v1/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.togetherAiApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "mistralai/mixtral-8x22b-instruct-v0.1"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ \"Create optimized YouTube metadata for an AI productivity channel called 'AI Assistant Pro' covering a video about \" + $node[\"Process Strategy Analysis\"].json.selected_topic.title + \".\\n\\nThe channel focuses on these niches: AI writing assistants, voice automation, smart scheduling, AI research tools, generative AI workflows.\\n\\nTarget keywords: \" + $node[\"Process Strategy Analysis\"].json.selected_topic.keywords.join(\", \") + \"\\n\\nFormat your response as a JSON object with these fields: title, description, tags (array of string tags), chapters (array of objects with title and timestamp fields).\" }}"
+            },
+            {
+              "name": "max_tokens",
+              "value": 2000
+            },
+            {
+              "name": "temperature",
+              "value": 0.7
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7t9v1x3z-5b7d-9f1h-3j5l-7n9p1r3t5v7x",
+      "name": "Mixtral SEO Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2000, 800]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all elements for video assembly\n\n// Format current date for the metadata\nconst currentDate = \"2025-05-17 13:52:34\";\nconst username = \"onabellaabdullaziz\";\nconst channelName = \"AI Assistant Pro\";\nconst channelId = \"UCmV6IUNtSmJ9f-FAsGaNITw\";\n\n// Get data from various nodes\nconst scriptData = $node[\"Script Integration\"].json || {};\nconst voiceData = $node[\"ElevenLabs Voice Synthesis\"].binary || {};\nconst videoData = $node[\"StabilityAI Video Generation\"].json || {};\nconst thumbnailData = $node[\"Midjourney Thumbnail Generation\"].json || {};\nconst seoData = $node[\"Mixtral SEO Generation\"].json || {};\n\n// Extract voice track binary data or URL\nlet voiceTrack = { data: null, url: null };\nif (voiceData.data) {\n  voiceTrack.data = voiceData.data;\n} else if (voiceData.url) {\n  voiceTrack.url = voiceData.url;\n}\n\n// Extract generated video segments\nlet videoSegments = [];\nif (videoData.segments) {\n  videoSegments = videoData.segments;\n} else if (videoData.video_url) {\n  videoSegments = [{ url: videoData.video_url }];\n} else {\n  // Fallback - this would normally come from the API response\n  videoSegments = [{ placeholder: true, duration: 8 }];\n}\n\n// Parse SEO metadata\nlet metadata = {};\ntry {\n  // If the response is already a JSON object\n  if (typeof seoData === \"object\" && seoData.title) {\n    metadata = seoData;\n  }\n  // If the response is a string that needs parsing\n  else if (seoData.text || seoData.content) {\n    const jsonText = seoData.text || seoData.content;\n    metadata = JSON.parse(jsonText);\n  }\n  // Fallback if we couldn't parse the SEO data\n  else {\n    const topic = $node[\"Process Strategy Analysis\"].json.selected_topic.title;\n    const keywords = $node[\"Process Strategy Analysis\"].json.selected_topic.keywords;\n    \n    metadata = {\n      title: `${topic} | AI Assistant Pro Tutorial 2025`,\n      description: `In this comprehensive tutorial from AI Assistant Pro, we explore everything you need to know about ${topic}. Learn expert strategies, tips, and techniques that will transform your AI productivity workflow.\\n\\nTimestamps:\\n0:00 Introduction\\n1:30 Overview of AI Tools\\n3:00 Detailed Features\\n5:00 Practical Demonstration\\n7:00 Conclusion\\n\\nKeywords: ${keywords.join(\", \")}\\n\\nCheck out our AI Productivity Masterclass: https://aiassistantpro.com/masterclass`,\n      tags: [...keywords, \"AI tutorial\", \"AI productivity\", \"AI Assistant Pro\", \"productivity tools\", \"AI workflow\"],\n      chapters: [\n        { title: \"Introduction\", timestamp: \"0:00\" },\n        { title: \"Overview of AI Tools\", timestamp: \"1:30\" },\n        { title: \"Detailed Features\", timestamp: \"3:00\" },\n        { title: \"Practical Demonstration\", timestamp: \"5:00\" },\n        { title: \"Conclusion\", timestamp: \"7:00\" }\n      ]\n    };\n  }\n} catch (error) {\n  // Fallback metadata if parsing fails\n  const topic = $node[\"Process Strategy Analysis\"].json.selected_topic.title;\n  metadata = {\n    title: `${topic} | AI Assistant Pro`,\n    description: `A comprehensive tutorial about ${topic} from AI Assistant Pro.`,\n    tags: $node[\"Process Strategy Analysis\"].json.selected_topic.keywords || [],\n    chapters: []\n  };\n}\n\n// Add branding to title and description if not already present\nif (!metadata.title.includes(\"AI Assistant Pro\")) {\n  metadata.title += \" | AI Assistant Pro\";\n}\n\n// Make sure affiliate links and product recommendations are in description\nconst monetizationData = scriptData.monetization_elements || {};\nlet affiliateSection = \"\\n\\nTools Mentioned:\\n\";\nif (monetizationData.affiliates && monetizationData.affiliates.length > 0) {\n  monetizationData.affiliates.forEach(link => {\n    affiliateSection += `- ${link.name}: ${link.url}\\n`;\n  });\n}\n\nlet productSection = \"\\n\\nResources:\\n\";\nif (monetizationData.products && monetizationData.products.length > 0) {\n  monetizationData.products.forEach(product => {\n    productSection += `- ${product.name}: ${product.url}\\n`;\n  });\n}\n\n// Append to description if not already included\nif (!metadata.description.includes(\"Tools Mentioned\")) {\n  metadata.description += affiliateSection;\n}\n\nif (!metadata.description.includes(\"Resources\")) {\n  metadata.description += productSection;\n}\n\n// Organize all data for the video assembly\nreturn {\n  audio: {\n    voice_track: voiceTrack\n  },\n  visuals: {\n    video_segments: videoSegments,\n    thumbnail: thumbnailData.images ? thumbnailData.images[0] : null\n  },\n  script: scriptData.enhanced_script || scriptData.original_script,\n  metadata: metadata,\n  monetization: scriptData.monetization_elements,\n  channel_info: {\n    id: channelId,\n    name: channelName,\n    niche: \"AI Productivity Tools\",\n    sub_niches: [\"AI writing assistants\", \"voice automation\", \"smart scheduling\", \"AI research tools\", \"generative AI workflows\"]\n  },\n  creation_info: {\n    date: currentDate,\n    creator: username\n  }\n};"
+      },
+      "id": "9v1x3z5b-7d9f-1h3j-5l7n-9p1r3t5v7x9z",
+      "name": "Prepare Advanced Video Assembly",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [2200, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.runway.com/v2/video/assemble",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.runwayApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "audio_track",
+              "value": "={{ $json.audio.voice_track.url || $json.audio.voice_track.data }}"
+            },
+            {
+              "name": "video_segments",
+              "value": "={{ $json.visuals.video_segments }}"
+            },
+            {
+              "name": "text_overlay_script",
+              "value": "={{ $json.script }}"
+            },
+            {
+              "name": "resolution",
+              "value": "1080p"
+            },
+            {
+              "name": "fps",
+              "value": 30
+            },
+            {
+              "name": "transitions",
+              "value": "smooth-cinematic"
+            },
+            {
+              "name": "color_grading",
+              "value": "professional"
+            },
+            {
+              "name": "include_intro",
+              "value": true
+            },
+            {
+              "name": "include_outro",
+              "value": true
+            },
+            {
+              "name": "text_animations",
+              "value": true
+            },
+            {
+              "name": "branding",
+              "value": "{\"channel_name\":\"AI Assistant Pro\",\"logo_url\":\"https://example.com/logo.png\",\"colors\":{\"primary\":\"#3498db\",\"secondary\":\"#2ecc71\"}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1x3z5b7d-9f1h-3j5l-7n9p-1r3t5v7x9z1b",
+      "name": "Runway Advanced Video Assembly",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2400, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/youtube/v3/videos",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet,status"
+            },
+            {
+              "name": "uploadType",
+              "value": "resumable"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Upload-Content-Type",
+              "value": "video/mp4"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "snippet",
+              "value": "={\"title\": \"{{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.title }}\", \"description\": \"{{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.description }}\", \"tags\": {{ JSON.stringify($node[\"Prepare Advanced Video Assembly\"].json.metadata.tags) }}, \"categoryId\": \"28\"}"
+            },
+            {
+              "name": "status",
+              "value": "{\"privacyStatus\": \"private\", \"publishAt\": \"{{ $now.plusDays(1).format() }}\"}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3z5b7d9f-1h3j-5l7n-9p1r-3t5v7x9z1b3d",
+      "name": "Upload to YouTube",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2600, 400],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "1",
+          "name": "YouTube OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "resource": "chat",
+        "operation": "completion",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a social media marketing expert who specializes in AI and technology content. Create content that follows the latest best practices for each platform, with appropriate hashtags, formatting, and call-to-actions for maximum engagement."
+            },
+            {
+              "role": "user",
+              "content": "=Generate social media posts for these platforms: Twitter, Instagram, LinkedIn, TikTok, and Facebook.\n\nThese posts should promote a new YouTube video for the channel 'AI Assistant Pro' about:\n\nTitle: {{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.title }}\nDescription: {{ $node[\"Prepare Advanced Video Assembly\"].json.metadata.description.substring(0, 200) }}...\nTopic: {{ $node[\"Process Strategy Analysis\"].json.selected_topic.title }}\nKeywords: {{ $node[\"Process Strategy Analysis\"].json.selected_topic.keywords.join(\", \") }}\nNiche: AI Productivity Tools\n\nInclude appropriate AI and productivity-focused hashtags, emojis, and calls-to-action for each platform. Format your response as a JSON object with keys for each platform."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 2000,
+          "responseFormat": {
+            "type": "json_object"
+          }
+        }
+      },
+      "id": "5b7d9f1h-3j5l-7n9p-1r3t-5v7x9z1b3d5f",
+      "name": "OpenAI Social Media Content",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [2800, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract OpenAI's response for social media content\nconst socialMediaContent = $inputs.item.json || {};\n\n// Get video data from the upload response\n// Note: With HTTP request node for YouTube upload, we need to extract the video ID differently\nlet videoId = \"\";\ntry {\n  // Try to get video ID from the upload response\n  const uploadResponse = $node[\"Upload to YouTube\"].json;\n  if (uploadResponse && uploadResponse.id) {\n    videoId = uploadResponse.id;\n  } else if (uploadResponse && uploadResponse.headers && uploadResponse.headers.Location) {\n    // Sometimes the ID is in the Location header (for resumable uploads)\n    const locationUrl = uploadResponse.headers.Location;\n    const idMatch = locationUrl.match(/[?&]id=([^&]+)/);\n    if (idMatch && idMatch[1]) {\n      videoId = idMatch[1];\n    }\n  } else {\n    // Fallback ID for testing\n    videoId = \"dQw4w9WgXcQ\";\n  }\n} catch (error) {\n  // If any error occurs, use a fallback ID\n  videoId = \"dQw4w9WgXcQ\";\n  console.log(\"Error extracting video ID: \" + error.message);\n}\n\nconst videoUrl = `https://youtu.be/${videoId}`;\nconst videoTitle = $node[\"Prepare Advanced Video Assembly\"].json.metadata.title || \"\";\nconst thumbnailUrl = $node[\"Prepare Advanced Video Assembly\"].json.visuals.thumbnail?.url || \"\";\nconst channelName = \"AI Assistant Pro\";\n\n// Create social media distribution schedule\nconst now = new Date(\"2025-05-17 13:52:34\");\nconst tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);\nconst twoDaysLater = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);\nconst threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);\nconst fourDaysLater = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);\nconst fiveDaysLater = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);\n\n// Create an array of posts for Buffer\nconst socialPosts = [\n  {\n    platform: \"twitter\",\n    profile_id: \"profile123twitter\",\n    text: socialMediaContent.twitter || `🚀 Just published a new #AI productivity tutorial on ${videoTitle}! Boost your workflow with these cutting-edge tools. Check it out: ${videoUrl} #AIproductivity #AItools`,\n    scheduled_at: tomorrow.toISOString(),\n    media: { thumbnail_url: thumbnailUrl }\n  },\n  {\n    platform: \"instagram\",\n    profile_id: \"profile123instagram\",\n    text: socialMediaContent.instagram || `🤖 New AI tutorial alert! 🎬\\n\\nI just shared my complete guide to ${videoTitle.split(\"|\")[0]}\\n\\nLearn how to 10x your productivity with these game-changing AI tools!\\n\\nLink in bio to the full video 🔗 @AIAssistantPro\\n\\n#AItools #Productivity #ContentCreation #AIWorkflow #TechTutorial`,\n    scheduled_at: twoDaysLater.toISOString(),\n    media: { thumbnail_url: thumbnailUrl }\n  },\n  {\n    platform: \"linkedin\",\n    profile_id: \"profile123linkedin\",\n    text: socialMediaContent.linkedin || `📊 AI Productivity Breakthrough: ${videoTitle}\\n\\nI'm excited to share my latest AI Assistant Pro tutorial, where I break down the key features of leading AI productivity tools and provide actionable implementation strategies.\\n\\nIn this comprehensive guide, you'll learn:\\n- How to automate repetitive tasks with AI\\n- Proven workflows to save 10+ hours weekly\\n- Advanced productivity techniques for professionals\\n\\n${videoUrl}\\n\\n#AIProductivity #ProductivityTools #WorkSmarter #AITechnology`,\n    scheduled_at: threeDaysLater.toISOString(),\n    media: { thumbnail_url: thumbnailUrl }\n  },\n  {\n    platform: \"facebook\",\n    profile_id: \"profile123facebook\",\n    text: socialMediaContent.facebook || `AI PRODUCTIVITY TUTORIAL: ${videoTitle}\\n\\nJust uploaded a complete walkthrough on how to use the latest AI tools to transform your productivity workflow! This is perfect for professionals, content creators, and anyone looking to save time with AI.\\n\\nCheck out the full video here and let me know what you think in the comments! ${videoUrl}\\n\\nWhat AI productivity tools are you currently using?`,\n    scheduled_at: fourDaysLater.toISOString(),\n    media: { thumbnail_url: thumbnailUrl }\n  }\n];\n\n// Create TikTok specific content\nconst tiktokContent = {\n  video_id: videoId,\n  tiktok_script: socialMediaContent.tiktok || `Want to save 10+ hours every week? These AI productivity tools are game-changers! 🤖⚡ Full tutorial on my YouTube (AI Assistant Pro) #LearnOnTikTok #AItools #ProductivityTips`,\n  scheduled_time: fiveDaysLater.toISOString()\n};\n\n// Return all social media content for distribution\nreturn {\n  social_posts: socialPosts,\n  current_post: socialPosts[0], // For the Buffer Distribution node\n  tiktok_content: tiktokContent,\n  social_media_content: socialMediaContent,\n  video_url: videoUrl,\n  video_id: videoId,\n  channel_name: channelName,\n  timestamp: now.toISOString()\n};"
+      },
+      "id": "7d9f1h3j-5l7n-9p1r-3t5v-7x9z1b3d5f7h",
+      "name": "Prepare Social Distribution",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [3000, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.buffer.com/1/updates/create.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.bufferApiToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "profile_ids[]",
+              "value": "={{ $json.profile_id }}"
+            },
+            {
+              "name": "scheduled_at",
+              "value": "={{ $json.scheduled_at }}"
+            },
+            {
+              "name": "media[photo]",
+              "value": "={{ $json.media.thumbnail_url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9f1h3j5l-7n9p-1r3t-5v7x-9z1b3d5f7h9j",
+      "name": "Buffer Distribution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [3200, 400],
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tiktok.com/creator/v1/video/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.tiktokApi }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "video_url",
+              "value": "={{ $node[\"Runway Advanced Video Assembly\"].json.short_clip_url || $node[\"Runway Advanced Video Assembly\"].json.preview_url }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $node[\"Prepare Social Distribution\"].json.social_media_content.tiktok_script || $node[\"Prepare Social Distribution\"].json.tiktok_content.tiktok_script }}"
+            },
+            {
+              "name": "tags",
+              "value": "=AItools,productivity,AIassistant,techtutorial,AIworkflow"
+            },
+            {
+              "name": "schedule_time",
+              "value": "={{ $now.plusHours(5).unix() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1h3j5l7n-9p1r-3t5v-7x9z-1b3d5f7h9j1l",
+      "name": "TikTok Distribution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [3200, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sendgrid.com/v3/mail/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.sendgridApi }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "personalizations",
+              "value": "=[{\"to\":[{\"email\":\"onabellaabdullaziz@example.com\"}],\"subject\":\"New AI Assistant Pro Video Published: \" + $node[\"Prepare Advanced Video Assembly\"].json.metadata.title }]"
+            },
+            {
+              "name": "from",
+              "value": "{\"email\":\"notifications@aiassistantpro.com\",\"name\":\"AI Assistant Pro Automation\"}"
+            },
+            {
+              "name": "content",
+              "value": "=[{\"type\":\"text/html\",\"value\":\"<html><body><h1>New AI Assistant Pro Video Successfully Published!</h1><p>Your video <strong>\" + $node[\"Prepare Advanced Video Assembly\"].json.metadata.title + \"</strong> has been uploaded to YouTube and scheduled for release.</p><p>Video ID: \" + $node[\"Prepare Social Distribution\"].json.video_id + \"</p><p>Scheduled Publication: \" + $now.plusDays(1).format(\"YYYY-MM-DD HH:mm:ss\") + \"</p><p>View in YouTube Studio: <a href=\\\"https://studio.youtube.com\\\">Open YouTube Studio</a></p><p>Social media posts have been scheduled across multiple platforms to promote this AI productivity tutorial.</p><p>Timestamp: \" + $now.format(\"YYYY-MM-DD HH:mm:ss\") + \"</p></body></html>\"}]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5l7n9p1r-3t5v-7x9z-1b3d-5f7h9j1l3n5p",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [3200, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Track performance metrics for reporting\n\n// Get video ID and relevant data\nconst videoId = $node[\"Prepare Social Distribution\"].json.video_id || \"\";\nconst videoTitle = $node[\"Prepare Advanced Video Assembly\"].json.metadata.title || \"\";\nconst videoDescription = $node[\"Prepare Advanced Video Assembly\"].json.metadata.description || \"\";\n\n// Channel information\nconst channelName = \"AI Assistant Pro\";\nconst channelId = \"UCmV6IUNtSmJ9f-FAsGaNITw\";\nconst channelNiche = \"AI Productivity Tools\";\n\n// Current timestamp and user\nconst currentTimestamp = \"2025-05-17 13:52:34\";\nconst currentUser = \"onabellaabdullaziz\";\n\n// Create performance tracking report\nreturn {\n  video_details: {\n    id: videoId,\n    title: videoTitle,\n    published_at: $now.plusDays(1).format(\"YYYY-MM-DD\"),\n    channel: channelName,\n    channel_id: channelId,\n    niche: channelNiche\n  },\n  workflow_performance: {\n    started_at: currentTimestamp,\n    completed_at: $now.format(\"YYYY-MM-DD HH:mm:ss\"),\n    created_by: currentUser,\n    status: \"completed\"\n  },\n  metrics: {\n    script_generation_time_mins: 5,\n    voice_synthesis_time_mins: 3,\n    video_assembly_time_mins: 15,\n    total_workflow_time_mins: 30\n  },\n  distribution: {\n    platforms: [\"YouTube\", \"Twitter\", \"Instagram\", \"LinkedIn\", \"Facebook\", \"TikTok\"],\n    scheduled_posts: $node[\"Prepare Social Distribution\"].json.social_posts.length\n  },\n  monetization: {\n    sponsorship: $node[\"Initialize Monetization Integration\"].json.sponsor_info ? true : false,\n    affiliate_links: $node[\"Initialize Monetization Integration\"].json.affiliate_links.length,\n    products: $node[\"Initialize Monetization Integration\"].json.product_recommendations.length,\n    sponsor_name: $node[\"Initialize Monetization Integration\"].json.sponsor_info?.name || \"None\"\n  },\n  completion_message: `Workflow successfully completed at ${currentTimestamp}. AI Assistant Pro video \"${videoTitle}\" has been uploaded to YouTube and scheduled for publication. Social media distribution has been scheduled across multiple platforms.`\n};"
+      },
+      "id": "9p1r3t5v-7x9z-1b3d-5f7h-9j1l3n5p7r9t",
+      "name": "Workflow Completion Tracking",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [3400, 400]
+    }
+  ],
+  "connections": {
+    "Main Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get YouTube Channel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "YouTube Analytics",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Trending Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get YouTube Channel": {
+      "main": [
+        [
+          {
+            "node": "Competitor Analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Validate Input Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "YouTube Analytics": {
+      "main": [
+        [
+          {
+            "node": "Validate Input Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Trending Topics": {
+      "main": [
+        [
+          {
+            "node": "Validate Input Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Competitor Analysis": {
+      "main": [
+        [
+          {
+            "node": "Validate Input Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input Data": {
+      "main": [
+        [
+          {
+            "node": "Continue Workflow?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue Workflow?": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Content Strategy",
+            "type": "main
