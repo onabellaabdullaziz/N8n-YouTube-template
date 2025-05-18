@@ -1,0 +1,337 @@
+{
+  "name": "Morgan Mastery: AI Market Analysis - Optimized Workflow v2.1",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "weekDay": 2
+            },
+            {
+              "field": "days",
+              "weekDay": 5
+            }
+          ],
+          "time": {
+            "hours": 7,
+            "minutes": 0
+          }
+        }
+      },
+      "name": "Twice-Weekly Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "1"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "currentStock",
+              "value": "={{ [\"AAPL\", \"MSFT\", \"GOOGL\", \"AMZN\", \"TSLA\", \"META\", \"NVDA\", \"JPM\", \"V\", \"WMT\", \"XOM\", \"JNJ\", \"PG\", \"HD\", \"DIS\"][Math.floor(Math.random() * 15)] }}"
+            },
+            {
+              "name": "userName",
+              "value": "onabellaabdullaziz"
+            },
+            {
+              "name": "channelName",
+              "value": "Morgan Mastery: AI Market Analysis"
+            },
+            {
+              "name": "channelId",
+              "value": "UCaDjbvuIso-yPMlPTESZf2w"
+            },
+            {
+              "name": "channelUrl",
+              "value": "https://youtube.com/channel/UCaDjbvuIso-yPMlPTESZf2w"
+            },
+            {
+              "name": "currentDate",
+              "value": "2025-05-18 08:15:17"
+            },
+            {
+              "name": "weekday",
+              "value": "={{ $today.format(\"dddd\") }}"
+            },
+            {
+              "name": "contentType",
+              "value": "={{ $today.weekday() === 2 ? \"technical_analysis\" : $today.weekday() === 5 ? \"sector_analysis\" : \"market_outlook\" }}"
+            },
+            {
+              "name": "avatarCharacter",
+              "value": "Morgan Mastery"
+            },
+            {
+              "name": "workflowVersion",
+              "value": "2.1"
+            },
+            {
+              "name": "trackingId",
+              "value": "={{ \"MM-\" + $json.currentStock + \"-\" + Date.now() }}"
+            }
+          ]
+        }
+      },
+      "name": "Initialize Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [420, 300],
+      "id": "2"
+    },
+    {
+      "parameters": {
+        "url": "https://api.polygon.io/v2/aggs/ticker/{{$json.currentStock}}/range/1/day/{{$today.subtract(14, 'days').format('YYYY-MM-DD')}}/{{$today.format('YYYY-MM-DD')}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {
+          "response": {
+            "responseFormat": "json",
+            "outputPropertyName": "stockData"
+          }
+        }
+      },
+      "name": "Get Stock Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [600, 200],
+      "id": "3",
+      "credentials": {
+        "httpQueryAuth": {
+          "name": "Polygon.io API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.alphavantage.co/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "function",
+              "value": "OVERVIEW"
+            },
+            {
+              "name": "symbol",
+              "value": "={{$json.currentStock}}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "json",
+            "outputPropertyName": "fundamentals"
+          }
+        }
+      },
+      "name": "Get Fundamentals",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [600, 300],
+      "id": "4",
+      "credentials": {
+        "httpQueryAuth": {
+          "name": "Alpha Vantage API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.alphavantage.co/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "function",
+              "value": "NEWS_SENTIMENT"
+            },
+            {
+              "name": "tickers",
+              "value": "={{$json.currentStock}}"
+            },
+            {
+              "name": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "json",
+            "outputPropertyName": "news"
+          }
+        }
+      },
+      "name": "Get News",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [600, 400],
+      "id": "5",
+      "credentials": {
+        "httpQueryAuth": {
+          "name": "Alpha Vantage API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge data from previous nodes\nconst stockData = $node[\"Get Stock Data\"].json.stockData;\nconst fundamentals = $node[\"Get Fundamentals\"].json.fundamentals;\nconst news = $node[\"Get News\"].json.news;\n\n// Calculate technical indicators\nconst today = new Date();\nconst prices = stockData.results.map(r => r.c);\nconst lastPrice = prices[prices.length - 1];\nconst previousPrice = prices[prices.length - 2];\nconst priceChange = lastPrice - previousPrice;\nconst priceChangePercent = (priceChange / previousPrice * 100).toFixed(2);\n\n// Calculate support and resistance\nconst min = Math.min(...prices);\nconst max = Math.max(...prices);\nconst range = max - min;\nconst supportLevel = (lastPrice - (range * 0.3)).toFixed(2);\nconst resistanceLevel = (lastPrice + (range * 0.3)).toFixed(2);\n\n// Calculate RSI\nfunction calculateRSI(prices, period = 14) {\n  const changes = [];\n  for (let i = 1; i < prices.length; i++) {\n    changes.push(prices[i] - prices[i - 1]);\n  }\n  \n  const gains = changes.map(change => change > 0 ? change : 0);\n  const losses = changes.map(change => change < 0 ? Math.abs(change) : 0);\n  \n  let avgGain = gains.slice(0, period).reduce((sum, gain) => sum + gain, 0) / period;\n  let avgLoss = losses.slice(0, period).reduce((sum, loss) => sum + loss, 0) / period;\n  \n  for (let i = period; i < changes.length; i++) {\n    avgGain = (avgGain * (period - 1) + gains[i]) / period;\n    avgLoss = (avgLoss * (period - 1) + losses[i]) / period;\n  }\n  \n  const rs = avgGain / avgLoss;\n  return 100 - (100 / (1 + rs));\n}\n\nconst rsi = calculateRSI(prices).toFixed(2);\n\n// Calculate MACD (new in v2.1)\nfunction calculateMACD(prices, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) {\n  // Calculate EMAs\n  function calculateEMA(prices, period) {\n    const k = 2 / (period + 1);\n    let ema = prices[0];\n    const emaResults = [ema];\n    \n    for (let i = 1; i < prices.length; i++) {\n      ema = (prices[i] * k) + (ema * (1 - k));\n      emaResults.push(ema);\n    }\n    \n    return emaResults;\n  }\n  \n  const fastEMA = calculateEMA(prices, fastPeriod);\n  const slowEMA = calculateEMA(prices, slowPeriod);\n  \n  // Calculate MACD line\n  const macdLine = [];\n  for (let i = 0; i < prices.length; i++) {\n    if (i >= slowPeriod - 1) {\n      macdLine.push(fastEMA[i] - slowEMA[i]);\n    } else {\n      macdLine.push(0);\n    }\n  }\n  \n  // Calculate signal line\n  const signalLine = calculateEMA(macdLine.slice(slowPeriod - 1), signalPeriod);\n  \n  // Calculate histogram\n  const histogram = [];\n  for (let i = 0; i < signalLine.length; i++) {\n    histogram.push(macdLine[i + slowPeriod - 1] - signalLine[i]);\n  }\n  \n  return {\n    macdLine: macdLine[macdLine.length - 1].toFixed(2),\n    signalLine: signalLine[signalLine.length - 1].toFixed(2),\n    histogram: histogram[histogram.length - 1].toFixed(2),\n    trend: histogram[histogram.length - 1] > 0 ? \"bullish\" : \"bearish\"\n  };\n}\n\nconst macd = calculateMACD(prices);\n\n// Generate stock recommendation\nlet stockRecommendation = \"HOLD\";\nif (rsi < 30 && priceChange < 0) {\n  stockRecommendation = \"BUY\";\n} else if (rsi > 70 && priceChange > 0) {\n  stockRecommendation = \"SELL\";\n} else if (priceChange > 0 && lastPrice < parseFloat(resistanceLevel) * 0.9) {\n  stockRecommendation = \"BUY\";\n} else if (priceChange < 0 && lastPrice > parseFloat(supportLevel) * 1.1) {\n  stockRecommendation = \"SELL\";\n} else if (macd.trend === \"bullish\" && parseFloat(rsi) < 60) {\n  stockRecommendation = \"BUY\";\n} else if (macd.trend === \"bearish\" && parseFloat(rsi) > 40) {\n  stockRecommendation = \"SELL\";\n}\n\n// Format news headlines\nconst newsHeadlines = news?.feed?.slice(0, 3).map(item => ({\n  title: item.title,\n  summary: item.summary,\n  url: item.url,\n  sentiment: item.overall_sentiment_score\n})) || [];\n\n// Competitor analysis (new in v2.1)\nfunction getCompetitorData(ticker) {\n  const competitorMap = {\n    'AAPL': ['MSFT', 'GOOGL', 'SAMS'], \n    'MSFT': ['AAPL', 'GOOGL', 'AMZN'],\n    'GOOGL': ['FB', 'MSFT', 'AMZN'],\n    'AMZN': ['WMT', 'TGT', 'BABA'],\n    'TSLA': ['F', 'GM', 'NIO'],\n    'META': ['SNAP', 'GOOGL', 'TWTR'],\n    'NVDA': ['AMD', 'INTC', 'TSM'],\n    'JPM': ['BAC', 'WFC', 'C'],\n    'V': ['MA', 'PYPL', 'AXP'],\n    'WMT': ['AMZN', 'TGT', 'COST'],\n    'XOM': ['CVX', 'BP', 'SHEL'],\n    'JNJ': ['PFE', 'MRK', 'ABT'],\n    'PG': ['UL', 'CL', 'KMB'],\n    'HD': ['LOW', 'MHK', 'BBBY'],\n    'DIS': ['CMCSA', 'NFLX', 'PARA']\n  };\n  \n  return competitorMap[ticker] || [];\n}\n\n// Get appropriate digital product based on content type\nfunction getDigitalProduct(contentType) {\n  const products = {\n    'market_outlook': {\n      name: 'Weekly Market Mastery Report',\n      price: 9.99,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/weekly-market-report'\n    },\n    'technical_analysis': {\n      name: 'Market Mastery Indicator Suite',\n      price: 49,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/indicator-suite'\n    },\n    'fundamentals_deep_dive': {\n      name: 'Stock Analysis Master Spreadsheet',\n      price: 29,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/analysis-spreadsheet'\n    },\n    'options_strategy': {\n      name: 'Options Income Mastery Course',\n      price: 199,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/options-course'\n    },\n    'sector_analysis': {\n      name: 'Sector Rotation Blueprint',\n      price: 79,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/sector-blueprint'\n    },\n    'dividend_analysis': {\n      name: 'Dividend Growth Portfolio Builder',\n      price: 39,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/dividend-builder'\n    },\n    'investing_basics': {\n      name: 'Market Mastery Pro Membership',\n      price: 29,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/pro-membership'\n    }\n  };\n  \n  return products[contentType] || products['market_outlook'];\n}\n\n// Get appropriate affiliate product\nfunction getAffiliateLinks(contentType, stockPrice) {\n  // Primary affiliate links by content type\n  const contentTypeAffiliates = {\n    'market_outlook': {\n      name: 'TradingView Premium',\n      link: 'https://tradingview.go2cloud.org/aff_c?offer_id=2&aff_id=12345',\n      coupon: 'MARKET15',\n      description: 'I use TradingView Premium for all my market analysis'\n    },\n    'technical_analysis': {\n      name: 'TradingView Premium',\n      link: 'https://tradingview.go2cloud.org/aff_c?offer_id=2&aff_id=12345&aff_sub=technical',\n      coupon: 'TECHNICAL20',\n      description: 'Access professional technical indicators with TradingView Premium'\n    },\n    'fundamentals_deep_dive': {\n      name: 'Stock Advisor by Motley Fool',\n      link: 'https://www.fool.com/order/1020/auth?aid=9223&pid=9298&source=isaspittx0000550',\n      coupon: 'FUNDAMENTAL50',\n      description: 'Get top stock picks with strong fundamentals from Stock Advisor'\n    },\n    'options_strategy': {\n      name: 'Options Alpha Membership',\n      link: 'https://optionalpha.com/member/pricing?affcode=onabella123',\n      coupon: 'OPTIONS25',\n      description: 'Learn proven options strategies with Options Alpha'\n    },\n    'sector_analysis': {\n      name: 'Seeking Alpha Premium',\n      link: 'https://subscriptions.seekingalpha.com/affiliate/12345/premium',\n      coupon: 'SECTOR20',\n      description: 'Get in-depth sector analysis with Seeking Alpha Premium'\n    },\n    'dividend_analysis': {\n      name: 'Simply Safe Dividends',\n      link: 'https://www.simplysafedividends.com/intelligence/join?affiliate=onabella',\n      coupon: 'DIVIDEND10',\n      description: 'Track and analyze dividend stocks with Simply Safe Dividends'\n    },\n    'investing_basics': {\n      name: 'Udemy Investing Course',\n      link: 'https://www.udemy.com/course/stock-market-investing/?couponCode=BASICS&referralCode=onabella123',\n      coupon: 'BASICS20',\n      description: 'Learn stock investing from scratch with this comprehensive course'\n    }\n  };\n\n  return contentTypeAffiliates[contentType] || contentTypeAffiliates['market_outlook'];\n}\n\n// Add additional information\nconst companyInfo = {\n  companyName: fundamentals.Name || $json.currentStock + \" Inc\",\n  sector: fundamentals.Sector || \"Technology\",\n  industry: fundamentals.Industry || \"Software\",\n  marketCap: fundamentals.MarketCapitalization || \"Unknown\",\n  peRatio: fundamentals.PERatio || \"N/A\",\n  dividendYield: fundamentals.DividendYield || \"0.00\",\n  eps: fundamentals.EPS || \"0.00\",\n  beta: fundamentals.Beta || \"1.00\",\n  competitors: getCompetitorData($json.currentStock)\n};\n\n// Get avatar expression based on recommendation\nfunction getAvatarMood(recommendation, contentType) {\n  // Base expression mapping\n  const expressionMap = {\n    'BUY': 'confident',\n    'SELL': 'concerned',\n    'HOLD': 'contemplative'\n  };\n  \n  // Content-specific modifiers\n  const contentModifiers = {\n    'market_outlook': { intensity: 0.8, secondary: 'analytical' },\n    'technical_analysis': { intensity: 0.9, secondary: 'focused' },\n    'fundamentals_deep_dive': { intensity: 0.7, secondary: 'thoughtful' },\n    'options_strategy': { intensity: 0.9, secondary: 'strategic' },\n    'sector_analysis': { intensity: 0.8, secondary: 'observant' },\n    'dividend_analysis': { intensity: 0.6, secondary: 'pleased' },\n    'investing_basics': { intensity: 0.7, secondary: 'friendly' }\n  };\n  \n  const modifier = contentModifiers[contentType] || { intensity: 0.8, secondary: 'analytical' };\n  \n  return {\n    primary: expressionMap[recommendation] || 'neutral',\n    intensity: modifier.intensity,\n    secondary: modifier.secondary\n  };\n}\n\n// Generate avatar configuration based on content type\nfunction getAvatarConfig(contentType, recommendation) {\n  const mood = getAvatarMood(recommendation, contentType);\n  \n  // Avatar outfit mapping based on content type\n  const outfitMap = {\n    'market_outlook': 'formal_navy_suit',\n    'technical_analysis': 'business_casual_with_charts',\n    'fundamentals_deep_dive': 'formal_with_glasses',\n    'options_strategy': 'smart_casual_with_tablet',\n    'sector_analysis': 'business_attire_with_sector_hologram',\n    'dividend_analysis': 'professional_with_dividend_display',\n    'investing_basics': 'approachable_casual'\n  };\n  \n  return {\n    character: \"Morgan Mastery\",\n    expression: mood.primary,\n    expressionIntensity: mood.intensity,\n    secondaryExpression: mood.secondary, \n    outfit: outfitMap[contentType] || 'formal_navy_suit',\n    gestures: ['pointing', 'explaining', 'chart_analysis'],\n    virtualEnvironment: contentType === 'market_outlook' ? 'global_market_room' : 'advanced_trading_desk',\n    eyeTracking: true,\n    renderQuality: 'high'\n  };\n}\n\n// Generate video title\nconst videoTitle = `Is ${$json.currentStock} a ${stockRecommendation}? ${companyInfo.companyName} Stock Analysis - ${$json.contentType.replace(\"_\", \" \")} (${today.toDateString()})`;\n\n// Generate keywords array\nconst keywords = [\n  $json.currentStock,\n  \"stock analysis\",\n  \"investing\",\n  \"stock market\",\n  $json.contentType.replace(\"_\", \" \"),\n  stockRecommendation,\n  \"trading\",\n  \"financial analysis\",\n  \"stock price\",\n  companyInfo.sector,\n  companyInfo.industry,\n  \"Morgan Mastery\",\n  \"AI stock analysis\"\n];\n\n// Return the merged and processed data\nreturn {\n  ...$node[\"Initialize Variables\"].json,\n  stockPrice: lastPrice.toFixed(2),\n  priceChange: priceChange.toFixed(2),\n  priceChangePercent,\n  supportLevel,\n  resistanceLevel,\n  rsi,\n  macd,\n  stockRecommendation,\n  videoTitle,\n  newsHeadlines,\n  companyName: companyInfo.companyName,\n  sector: companyInfo.sector,\n  industry: companyInfo.industry,\n  marketCap: companyInfo.marketCap,\n  peRatio: companyInfo.peRatio,\n  dividendYield: companyInfo.dividendYield,\n  eps: companyInfo.eps,\n  beta: companyInfo.beta,\n  competitors: companyInfo.competitors,\n  digitalProduct: getDigitalProduct($json.contentType),\n  affiliateProduct: getAffiliateLinks($json.contentType, lastPrice),\n  avatarConfig: getAvatarConfig($json.contentType, stockRecommendation),\n  keywords,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "name": "Process Financial Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [780, 300],
+      "id": "6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This function would integrate sponsored segments when available\n\nfunction getSponsoredSegment(contentType, ticker) {\n  // Simulate a database of available sponsors\n  const availableSponsors = [\n    {\n      name: 'TradingView',\n      matchesContentType: ['technical_analysis', 'market_outlook'],\n      script: 'This video is brought to you by TradingView - the ultimate platform for chart analysis and stock screening. I use their professional tools daily for all my technical analysis. Get 30% off TradingView Pro with code MMASTERY30 at tradingview.com/go/marketmastery',\n      url: 'https://tradingview.go2cloud.org/aff_c?offer_id=2&aff_id=12345&aff_sub=video',\n      conversion_pixel: 'tradingview_conversion',\n      logo_url: 'https://storage.marketmasterydaily.com/sponsors/tradingview_logo.png',\n      active: true\n    },\n    {\n      name: 'Webull',\n      matchesContentType: ['investing_basics', 'market_outlook'],\n      script: 'Today\\'s video is sponsored by Webull, where you can trade stocks, options, and ETFs with zero commission. Open an account today and get up to 12 free stocks valued up to $30,600! Check the link in the description to learn more.',\n      url: 'https://act.webull.com/mo/9tzv6XtBpAts/dei/inviteUs/marketmastery',\n      conversion_pixel: 'webull_conversion',\n      logo_url: 'https://storage.marketmasterydaily.com/sponsors/webull_logo.png',\n      active: true\n    },\n    {\n      name: 'Public.com',\n      matchesContentType: ['dividend_analysis', 'investing_basics'],\n      script: 'I\\'m excited to partner with Public.com on today\\'s video. Public makes investing social with community insights and expert guidance. Join me on Public and get up to $10,000 in free stocks when you deposit funds. Link in the description.',\n      url: 'https://public.com/marketmastery',\n      conversion_pixel: 'public_conversion',\n      logo_url: 'https://storage.marketmasterydaily.com/sponsors/public_logo.png',\n      active: true\n    }\n  ];\n  \n  // Filter available and matching sponsors\n  const matchingSponsors = availableSponsors.filter(sponsor => \n    sponsor.active && sponsor.matchesContentType.includes(contentType)\n  );\n  \n  // If we have matching sponsors, select one (could rotate or select based on other criteria)\n  if (matchingSponsors.length > 0) {\n    return matchingSponsors[Math.floor(Math.random() * matchingSponsors.length)];\n  }\n  \n  // No matching sponsor available\n  return null;\n}\n\n// Check if this video should have a sponsored segment\nconst sponsoredSegment = getSponsoredSegment($json.contentType, $json.currentStock);\n\n// Membership tiers definition\nconst membershipTiers = {\n  \"free\": {\n    \"name\": \"Free Viewer\",\n    \"price\": 0,\n    \"benefits\": [\n      \"Twice-weekly stock analysis videos\",\n      \"Basic stock recommendations\",\n      \"Access to public community posts\"\n    ],\n    \"ctaText\": \"Upgrade to Pro for premium content\",\n    \"ctaUrl\": \"https://marketmasterydaily.com/membership\"\n  },\n  \"pro\": {\n    \"name\": \"Market Pro\",\n    \"price\": 9.99,\n    \"interval\": \"monthly\",\n    \"benefits\": [\n      \"Early access to videos (6 hours)\",\n      \"Weekly Market Report\",\n      \"Stock screener tool access\",\n      \"Discord channel access\",\n      \"Ad-free viewing experience\",\n      \"Monthly live Q&A session\"\n    ],\n    \"ctaText\": \"Upgrade to Pro\",\n    \"ctaUrl\": \"https://marketmasterydaily.com/membership?tier=pro\",\n    \"conversionPixel\": \"membership_pro_pixel\"\n  },\n  \"expert\": {\n    \"name\": \"Market Expert\",\n    \"price\": 29.99,\n    \"interval\": \"monthly\",\n    \"benefits\": [\n      \"All Pro benefits\",\n      \"Daily trade alerts\",\n      \"Portfolio tracking tool\",\n      \"Monthly 1-on-1 portfolio review (15 min)\",\n      \"Access to all digital products\",\n      \"Priority support\"\n    ],\n    \"ctaText\": \"Upgrade to Expert\",\n    \"ctaUrl\": \"https://marketmasterydaily.com/membership?tier=expert\",\n    \"conversionPixel\": \"membership_expert_pixel\"\n  },\n  \"master\": {\n    \"name\": \"Market Master\",\n    \"price\": 99.99,\n    \"interval\": \"monthly\",\n    \"benefits\": [\n      \"All Expert benefits\",\n      \"Daily email with personalized picks\",\n      \"Private Discord channel\",\n      \"Weekly 1-on-1 strategy session (30 min)\",\n      \"Trade simulator with ML predictions\",\n      \"Early beta access to new tools\"\n    ],\n    \"ctaText\": \"Upgrade to Master\",\n    \"ctaUrl\": \"https://marketmasterydaily.com/membership?tier=master\",\n    \"conversionPixel\": \"membership_master_pixel\"\n  }\n};\n\n// Function to select most appropriate tier to promote based on content type\nfunction getMembershipPromotion(contentType) {\n  switch(contentType) {\n    case 'market_outlook':\n      return membershipTiers.pro;\n    case 'technical_analysis':\n      return membershipTiers.expert;\n    case 'fundamentals_deep_dive':\n      return membershipTiers.expert;\n    case 'options_strategy':\n      return membershipTiers.master;\n    case 'sector_analysis':\n      return membershipTiers.pro;\n    case 'dividend_analysis':\n      return membershipTiers.expert;\n    case 'investing_basics':\n      return membershipTiers.pro;\n    default:\n      return membershipTiers.pro;\n  }\n}\n\n// Define merchandise offerings\nconst merchandise = [\n  {\n    id: 'mm_trading_journal',\n    name: 'Market Mastery Trading Journal',\n    description: 'Premium hardcover trading journal with specialized templates',\n    price: 29.99,\n    image: 'https://storage.marketmasterydaily.com/merch/trading_journal.jpg',\n    url: 'https://marketmasterydaily.com/shop/trading-journal',\n    featured: true\n  },\n  {\n    id: 'mm_chart_shirt',\n    name: 'Bullish Chart Pattern T-Shirt',\n    description: 'Premium cotton t-shirt with classic bullish chart pattern',\n    price: 24.99,\n    image: 'https://storage.marketmasterydaily.com/merch/chart_shirt.jpg',\n    url: 'https://marketmasterydaily.com/shop/chart-shirt',\n    featured: false\n  },\n  {\n    id: 'mm_trading_desk_mat',\n    name: 'Market Mastery Desk Mat',\n    description: 'XL desk mat with candlestick pattern guides and formulas',\n    price: 34.99,\n    image: 'https://storage.marketmasterydaily.com/merch/desk_mat.jpg',\n    url: 'https://marketmasterydaily.com/shop/desk-mat',\n    featured: true\n  },\n  {\n    id: 'mm_morgan_plush',\n    name: 'Morgan Mastery Plush Figure',\n    description: 'Limited edition plush of your favorite financial avatar',\n    price: 19.99,\n    image: 'https://storage.marketmasterydaily.com/merch/morgan_plush.jpg',\n    url: 'https://marketmasterydaily.com/shop/morgan-plush',\n    featured: true\n  }\n];\n\n// Select merchandise to promote based on content type\nfunction getMerchPromotion(contentType) {\n  // Featured items get priority\n  const featuredItems = merchandise.filter(item => item.featured);\n  \n  // If we have featured items, randomly select one\n  if (featuredItems.length > 0) {\n    return featuredItems[Math.floor(Math.random() * featuredItems.length)];\n  }\n  \n  // Otherwise, randomly select from all items\n  return merchandise[Math.floor(Math.random() * merchandise.length)];\n}\n\nconst merchandisePromotion = getMerchPromotion($json.contentType);\nconst recommendedMembership = getMembershipPromotion($json.contentType);\n\n// Return the data\nreturn {\n  ...$json,\n  sponsoredSegment,\n  hasSponsorship: !!sponsoredSegment,\n  merchandisePromotion,\n  recommendedMembership,\n  monetizationOptions: {\n    sponsorship: sponsoredSegment,\n    digitalProduct: $json.digitalProduct,\n    recommendedMembership,\n    merchandisePromotion\n  }\n};"
+      },
+      "name": "Integrate Monetization",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [920, 300],
+      "id": "7"
+    },
+    {
+      "parameters": {
+        "chatModel": "gpt-4",
+        "prompt": {
+          "text": "=You are an expert stock market analyst and AI assistant named Morgan Mastery. Create a professional script for a YouTube video analyzing {{$json.currentStock}} stock based on the following information:\n\n- Video type: {{$json.contentType}} (format as normal text, not code)\n- Current price: ${{$json.stockPrice}}\n- Price change: {{$json.priceChangePercent}}%\n- RSI: {{$json.rsi}}\n- MACD: {{$json.macd.macdLine}} (Trend: {{$json.macd.trend}})\n- Support level: ${{$json.supportLevel}}\n- Resistance level: ${{$json.resistanceLevel}}\n- Company name: {{$json.companyName}}\n- Sector: {{$json.sector}}\n- Our recommendation: {{$json.stockRecommendation}}\n- Key competitors: {{$json.competitors.join(', ')}}\n\nNews headlines:\n{% for headline in $json.newsHeadlines %}\n- {{headline.title}} (Sentiment: {{headline.sentiment > 0 ? \"Positive\" : headline.sentiment < 0 ? \"Negative\" : \"Neutral\"}})\n{% endfor %}\n\nMonetization elements to include:\n{% if $json.hasSponsorship %}\n- Sponsored segment for {{$json.sponsoredSegment.name}}: \"{{$json.sponsoredSegment.script}}\"\n{% endif %}\n- Digital product to promote: {{$json.digitalProduct.name}} (${{$json.digitalProduct.price}})\n- Membership tier to promote: {{$json.recommendedMembership.name}} (${{$json.recommendedMembership.price}}/{{$json.recommendedMembership.interval}})\n- Merchandise to promote: {{$json.merchandisePromotion.name}} (${{$json.merchandisePromotion.price}})\n- Affiliate product: {{$json.affiliateProduct.name}} (Coupon code: {{$json.affiliateProduct.coupon}})\n\nScript Guidelines:\n1. Create a 1500-1800 word script formatted for a 15-18 minute video (longer, more in-depth format for our twice-weekly schedule)\n2. Write as Morgan Mastery, an AI financial analyst (use first-person perspective)\n3. Start with a professional intro and greeting for \"Morgan Mastery: AI Market Analysis\"\n4. Include clear sections with time markers [00:00], [01:30], etc.\n5. Focus primarily on {{$json.contentType}} analysis (make this the main focus)\n6. Include specific price targets and actionable insights\n7. Explain the reasoning behind our {{$json.stockRecommendation}} recommendation\n8. Include the sponsor mention around the 3-minute mark (if applicable)\n9. Add brief promotions for our products near the end\n10. End with a call to subscribe to Morgan Mastery and reminder we post every Tuesday and Friday\n\nInclude moments where I'm referencing charts or visuals that would appear on screen (e.g., \"As you can see on this chart...\", \"Let me highlight this indicator for you...\").\n\nTone should be professional, confident, and data-driven. Include references to financial metrics and technical indicators appropriate to this content type. Make the explanations accessible but intelligent.\n\nDo not include any disclaimers stating this is AI-generated content, as Morgan Mastery is the established character."
+        },
+        "options": {}
+      },
+      "name": "Generate Script",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1080, 200],
+      "id": "8",
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "prompt": {
+          "text": "=Create a professional, eye-catching YouTube thumbnail for a stock analysis video for {{$json.currentStock}} stock featuring our AI financial analyst avatar, Morgan Mastery. The thumbnail should include:\n\n1. Morgan Mastery avatar (a professional-looking digital character with neat short dark hair and blue highlights, wearing smart glasses and a navy blazer with subtle digital circuit pattern)\n2. The {{$json.currentStock}} stock ticker prominently displayed\n3. The current price: ${{$json.stockPrice}}\n4. {{$json.stockRecommendation}} in bold text\n5. A professional chart or graph element appearing as a holographic display that Morgan is interacting with\n6. Use {{$json.priceChangePercent > 0 ? \"green\" : \"red\"}} as the primary color theme based on the stock's performance\n7. Include a small \"Morgan Mastery: AI Market Analysis\" logo or text\n8. A clean, professional finance-oriented design suitable for serious investors\n9. Morgan's expression should be {{$json.avatarConfig.expression}} to match the stock recommendation\n\nThe thumbnail should be high-resolution and designed for YouTube's 1280x720 format with clear, legible text even when viewed at smaller sizes."
+        },
+        "options": {
+          "model": "dall-e-3",
+          "numberOfResults": 1,
+          "responseFormat": "url",
+          "quality": "hd",
+          "style": "vivid",
+          "size": "1792x1024"
+        }
+      },
+      "name": "Generate Thumbnail",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1080, 400],
+      "id": "9",
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{$node[\"Generate Script\"].json.text}}"
+            },
+            {
+              "name": "model_id",
+              "value": "eleven_monolingual_v1"
+            },
+            {
+              "name": "voice_settings",
+              "value": "{\n  \"stability\": 0.75,\n  \"similarity_boost\": 0.75\n}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "file",
+            "outputPropertyName": "voiceover"
+          }
+        }
+      },
+      "name": "Generate Voiceover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [1240, 200],
+      "id": "10",
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "ElevenLabs API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node implements the cost-optimized Avatarify integration instead of D-ID\n// This would connect to your self-hosted Avatarify instance\n\n// Mock the avatar generation process for workflow visualization\n// In production, this would call your self-hosted avatar generation system\nconst audioFile = $node[\"Generate Voiceover\"].binary.voiceover;\nconst avatarConfig = $json.avatarConfig;\n\n// Define local avatar assets based on configuration\nconst avatarBaseImage = `/var/avatars/morgan_mastery_${avatarConfig.outfit}.png`;\n\n// In a real implementation this would call your local Avatarify service\n// For now, we'll simulate the response\nconst simulatedResponse = {\n  status: \"success\",\n  result_url: `https://storage.marketmasterydaily.com/videos/avatars/${$json.trackingId}_avatar.mp4`,\n  processing_time: \"12.4s\",\n  config_used: avatarConfig,\n  audio_file: audioFile.url, \n  avatar_base: avatarBaseImage\n};\n\nreturn {\n  ...$json,\n  avatarResult: simulatedResponse\n};"
+      },
+      "name": "Generate Avatar (Self-Hosted)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1400, 200],
+      "id": "11"
+    },
+    {
+      "parameters": {
+        "jsCode": "// End screen customizer with dynamic calls-to-action\n\nfunction getEndScreenElements(data) {\n  // Base elements that always appear\n  const baseElements = [\n    {\n      type: 'subscribe',\n      position: 'bottom_right',\n      duration: 20,\n      text: 'Subscribe for Tuesday & Friday Analysis'\n    },\n    {\n      type: 'video',\n      position: 'top_left',\n      duration: 20,\n      source: 'latest',\n      filter: data.contentType\n    }\n  ];\n  \n  // Dynamic elements based on content\n  let dynamicElements = [];\n  \n  // If we have a digital product to promote\n  if (data.digitalProduct) {\n    dynamicElements.push({\n      type: 'product',\n      position: 'top_right',\n      duration: 20,\n      text: data.digitalProduct.name,\n      url: data.digitalProduct.url,\n      conversion_pixel: 'product_view'\n    });\n  }\n  \n  // If we have merchandise to promote\n  if (data.merchandisePromotion) {\n    dynamicElements.push({\n      type: 'merchandise',\n      position: 'bottom_left',\n      duration: 20,\n      text: data.merchandisePromotion.name,\n      image: data.merchandisePromotion.image,\n      url: data.merchandisePromotion.url,\n      conversion_pixel: 'merch_view'\n    });\n  }\n  \n  // If we have no merchandise but want to promote membership\n  else if (data.contentType) {\n    const membership = data.recommendedMembership;\n    dynamicElements.push({\n      type: 'membership',\n      position: 'bottom_left',\n      duration: 20,\n      text: membership.name + ' - $' + membership.price + '/' + membership.interval,\n      url: membership.ctaUrl,\n      conversion_pixel: membership.conversionPixel\n    });\n  }\n  \n  return {\n    elements: [...baseElements, ...dynamicElements],\n    duration: 20,\n    background: 'https://storage.marketmasterydaily.com/branding/end_screen_bg.png',\n    avatar_pose: 'pointing',\n    avatar_final_message: 'Thanks for watching! I'll see you this Friday with a new analysis!'\n  };\n}\n\nconst endScreenConfig = getEndScreenElements($json);\n\nreturn {\n  ...$json,\n  endScreenConfig\n};"
+      },
+      "name": "Configure End Screen",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1400, 400],
+      "id": "12"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Node to combine avatar with charts, graphics and animations using FFmpeg\n// This represents a self-hosted, cost-optimized solution\n\n// Get inputs from previous nodes\nconst avatarVideo = $node[\"Generate Avatar (Self-Hosted)\"].json.avatarResult.result_url;\nconst script = $node[\"Generate Script\"].json.text;\nconst thumbnailUrl = $node[\"Generate Thumbnail\"].json.data[0].url;\nconst stockData = {\n  ticker: $json.currentStock,\n  price: $json.stockPrice,\n  change: $json.priceChangePercent,\n  supportLevel: $json.supportLevel,\n  resistanceLevel: $json.resistanceLevel,\n  rsi: $json.rsi,\n  macd: $json.macd\n};\nconst endScreenConfig = $json.endScreenConfig;\n\n// Extract key sections from script for motion graphics\nconst scriptSections = script.split(/\\[\\d{2}:\\d{2}\\]/).filter(Boolean).map(section => section.trim());\n\n// Define graphics templates based on content type\nconst graphicsTemplates = {\n  'market_outlook': 'market_indices_template',\n  'technical_analysis': 'chart_patterns_template',\n  'fundamentals_deep_dive': 'financial_metrics_template',\n  'options_strategy': 'options_chain_template',\n  'sector_analysis': 'sector_comparison_template',\n  'dividend_analysis': 'dividend_growth_template',\n  'investing_basics': 'educational_template'\n};\n\n// Select the right template based on content type\nconst selectedTemplate = graphicsTemplates[$json.contentType] || 'default_template';\n\n// Create timestamp markers for the editor\nconst timestampMarkers = [\n  { time: '00:00', section: 'intro', graphicType: 'title_card' },\n  { time: '01:30', section: 'price_analysis', graphicType: 'price_chart' },\n  { time: '04:00', section: 'technical_indicators', graphicType: 'indicator_overlay' },\n  { time: '07:30', section: 'fundamental_analysis', graphicType: 'financial_data' },\n  { time: '11:00', section: 'news_impact', graphicType: 'news_headlines' },\n  { time: '14:00', section: 'recommendation', graphicType: 'recommendation_card' }\n];\n\n// In a real implementation, this would call the local FFmpeg pipeline\n// For simulation, we'll create a mock video URL\nconst compositionData = {\n  avatarVideo,\n  stockData,\n  scriptSections,\n  selectedTemplate,\n  timestampMarkers,\n  contentType: $json.contentType,\n  stockRecommendation: $json.stockRecommendation,\n  endScreenConfig,\n  brandingElements: {\n    channelName: 'Morgan Mastery: AI Market Analysis',\n    channelId: 'UCaDjbvuIso-yPMlPTESZf2w',\n    avatarName: 'Morgan Mastery',\n    logoUrl: 'https://storage.marketmasterydaily.com/branding/logo.png',\n    colorScheme: { primary: '#1E3A8A', secondary: '#10B981' }\n  },\n  monetizationElements: {\n    sponsoredSegment: $json.hasSponsorship ? $json.sponsoredSegment : null,\n    digitalProduct: $json.digitalProduct,\n    recommendedMembership: $json.recommendedMembership,\n    merchandisePromotion: $json.merchandisePromotion\n  }\n};\n\n// Enhanced description generator with advanced monetization components\nfunction generateEnhancedDescription(data) {\n  const channelId = \"UCaDjbvuIso-yPMlPTESZf2w\";\n  const digitalProduct = data.digitalProduct;\n  const affiliate = data.affiliateProduct;\n  const merchandise = data.merchandisePromotion;\n  const membership = data.recommendedMembership;\n  const sponsoredSegment = data.sponsoredSegment;\n  \n  // Build sponsored segment section if available\n  const sponsorSection = sponsoredSegment ? \n    `\\n\\n🤝 SPONSORED BY ${sponsoredSegment.name.toUpperCase()}\\n${sponsoredSegment.script}\\n➡️ ${sponsoredSegment.url}` : '';\n  \n  // Create merchandise promotion\n  const merchSection = merchandise ? \n    `\\n\\n🛍️ FEATURED MERCH: ${merchandise.name} ($${merchandise.price})\\n→ ${merchandise.description}\\n→ Get yours: ${merchandise.url}` : '';\n  \n  // Create membership promotion\n  const membershipSection = \n    `\\n\\n💎 ${membership.name.toUpperCase()} MEMBERSHIP:\\n→ $${membership.price}/${membership.interval}\\n→ ${membership.benefits.join('\\n→ ')}\\n→ ${membership.ctaText}: ${membership.ctaUrl}`;\n  \n  // Create product promotion section\n  const digitalProductPromo = `\\n\\n📚 RECOMMENDED PRODUCT: ${digitalProduct.name} ($${digitalProduct.price})\\n→ Get it here: ${digitalProduct.url}\\n→ Perfect for: ${data.contentType.replace(\"_\", \" \")} enthusiasts who want to take their analysis to the next level.`;\n  \n  // Create tools section with affiliate links\n  const toolsSection = `🔎 TOOLS I USE:\\n → ${affiliate.name}: ${affiliate.link} (Use code: ${affiliate.coupon} for discount)\\n → FREE Stock Analysis Spreadsheet: https://marketmasterydaily.com/free-spreadsheet`;\n  \n  // Add avatar character attribution\n  const avatarAttribution = `\\n\\n🤖 Your host Morgan Mastery, the market's most advanced AI analyst, breaking down stocks every Tuesday and Friday!`;\n  \n  // Build complete video description\n  const enhancedDescription = `🔥 STOCK ANALYSIS: ${data.currentStock} - Is it a ${data.stockRecommendation} Right Now? 📊\\n\\nIn this in-depth ${data.contentType.replace(\"_\", \" \")} video, we cover:\\n✅ Technical Analysis (Support: $${data.supportLevel} | Resistance: $${data.resistanceLevel})\\n✅ RSI: ${data.rsi} (${data.rsi > 70 ? \"Overbought\" : data.rsi < 30 ? \"Oversold\" : \"Neutral\"})\\n✅ MACD: ${data.macd.macdLine} (Trend: ${data.macd.trend})\\n✅ Price Targets\\n✅ Recent News Impact\\n✅ Our ${data.stockRecommendation} Recommendation\\n\\nKey Data:\\n- Current Price: $${data.stockPrice}\\n- Recent Change: ${data.priceChangePercent}%\\n- P/E Ratio: ${data.peRatio}\\n- Dividend Yield: ${data.dividendYield}%\\n- Market Cap: ${data.marketCap}\\n- Competitors: ${data.competitors.join(', ')}\\n\\n⏱️ TIMESTAMPS:\\n00:00 Introduction\\n01:30 Price Analysis\\n04:00 Technical Indicators\\n07:30 Fundamental Analysis\\n11:00 News Impact\\n14:00 Final Recommendation${sponsorSection}${digitalProductPromo}${membershipSection}${merchSection}${avatarAttribution}\\n\\n${toolsSection}\\n\\n» Subscribe for market analysis every Tuesday and Friday: https://youtube.com/channel/${channelId}?sub_confirmation=1\\n» Join our Discord Community: https://discord.gg/morganmastery\\n\\n📈 Premium Membership (First Week FREE):\\nhttps://marketmasterydaily.com/membership\\n\\n#StockMarket #${data.currentStock} #Investing #${data.stockRecommendation.replace(\" \", \"\")} #${data.contentType.replace(\"_\", \"\")} #AIAnalysis\\n\\nDISCLAIMER: This content is for educational purposes only. This is not financial advice. Always do your own research before investing.`;\n  \n  return enhancedDescription;\n}\n\n// Create QR code for membership signup\nconst membershipQrCode = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent($json.recommendedMembership.ctaUrl)}`;\n\n// Simulate the composition result\nconst videoUrl = `https://storage.marketmasterydaily.com/videos/${$json.trackingId}.mp4`;\nconst enhancedDescription = generateEnhancedDescription($json);\n\nreturn {\n  ...$json,\n  compositionData,\n  videoUrl,\n  avatarVideoUrl: avatarVideo,\n  enhancedDescription,\n  membershipQrCode,\n  processingSteps: [\n    { step: \"avatar_generation\", status: \"complete\", time: \"4.2s\" },\n    { step: \"chart_generation\", status: \"complete\", time: \"2.8s\" },\n    { step: \"composition\", status: \"complete\", time: \"18.7s\" },\n    { step: \"rendering\", status: \"complete\", time: \"15.3s\" }\n  ],\n  compositionTime: \"41.0s\"\n};"
+      },
+      "name": "Self-Hosted Video Composition",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1600, 300],
+      "id": "13"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Automated compliance checks\nconst complianceIssues = [];\nconst scriptContent = $node[\"Generate Script\"].json.text;\nconst enhancedDescription = $json.enhancedDescription;\n\n// Check for prohibited terms in script\nconst prohibitedTerms = ['guaranteed returns', 'guaranteed profit', 'risk-free', 'certain profit', '100% safe', 'can\\'t lose', 'absolutely will'];\nfor (const term of prohibitedTerms) {\n  if (scriptContent.toLowerCase().includes(term.toLowerCase())) {\n    complianceIssues.push(`Prohibited term detected: ${term}`);\n  }\n}\n\n// Check if disclaimer is present\nif (!enhancedDescription.includes('DISCLAIMER')) {\n  complianceIssues.push('Missing disclaimer in video description');\n}\n\n// Check if AI disclosure is present\nif (!enhancedDescription.includes('AI analyst')) {\n  complianceIssues.push('Missing AI disclosure in video description');\n}\n\n// Flag high-risk recommendations for extra review\nconst highRiskTerms = {\n  'penny stocks': ['penny stock', 'micro-cap', 'under $1'],\n  'high leverage': ['options', '3x leveraged', 'short squeeze', 'margin'],\n  'volatile assets': ['crypto', 'cryptocurrency', 'bitcoin']\n};\n\nfor (const [category, terms] of Object.entries(highRiskTerms)) {\n  for (const term of terms) {\n    if (scriptContent.toLowerCase().includes(term.toLowerCase())) {\n      complianceIssues.push(`High-risk content detected: ${category} (${term})`);\n    }\n  }\n}\n\n// Check for excessive promises of returns\nconst excessiveReturnPatterns = [\n  /\\d{3,}\\s*%\\s*returns?/i,\n  /double your money/i,\n  /triple your investment/i,\n  /make you rich/i,\n  /get rich/i\n];\n\nfor (const pattern of excessiveReturnPatterns) {\n  if (pattern.test(scriptContent)) {\n    complianceIssues.push(`Excessive return promise detected: ${pattern}`);\n  }\n}\n\n// Check for balance in the script - does it mention both risks and rewards?\nif (!scriptContent.match(/risks?|downsides?|challenges?|concerns?/i)) {\n  complianceIssues.push('Script may lack balance - no mention of risks');\n}\n\n// Check that both BUY and SELL recommendations are properly explained\nif ($json.stockRecommendation === 'BUY' && !scriptContent.match(/recommend\\s+(this|it|the stock|[A-Z]{1,5})\\s+because/i)) {\n  complianceIssues.push('BUY recommendation lacks sufficient explanation');\n}\n\nif ($json.stockRecommendation === 'SELL' && !scriptContent.match(/recommend\\s+(selling|exiting|avoiding)\\s+(this|it|the stock|[A-Z]{1,5})\\s+because/i)) {\n  complianceIssues.push('SELL recommendation lacks sufficient explanation');\n}\n\nreturn {\n  ...$json,\n  complianceIssues,\n  complianceCheckComplete: true,\n  complianceCheckTimestamp: new Date().toISOString(),\n  complianceStatus: complianceIssues.length === 0 ? 'passed' : 'needs_review',\n  scriptContent\n};"
+      },
+      "name": "Compliance Pre-Check",
+      "type": "n8n-nodes-base.function", 
+      "typeVersion": 1,
+      "position": [1650, 300],
+      "id": "14"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This node halts the workflow and sends notification for human review\nconst reviewUrl = `https://marketmasterydaily.com/internal/review?video=${$json.trackingId}`;\n\n// Content summary for review email\nconst contentSummary = {\n  videoTitle: $json.videoTitle,\n  stockTicker: $json.currentStock,\n  recommendation: $json.stockRecommendation,\n  contentType: $json.contentType,\n  currentPrice: $json.stockPrice,\n  priceChange: $json.priceChangePercent + '%',\n  thumbnailUrl: $node[\"Generate Thumbnail\"].json.data[0].url,\n  complianceStatus: $json.complianceStatus,\n  complianceIssues: $json.complianceIssues,\n  reviewUrl: reviewUrl,\n  reviewDeadline: new Date(new Date().getTime() + 4 * 60 * 60 * 1000).toISOString() // 4 hour deadline\n};\n\n// Check if we need human review based on compliance issues or high-risk stocks\nlet requiresManualReview = false;\nif ($json.complianceStatus === 'needs_review' || $json.complianceIssues.length > 0) {\n  requiresManualReview = true;\n} else if (['TSLA', 'NVDA', 'AMZN'].includes($json.currentStock)) { // High-attention stocks always get manual review\n  requiresManualReview = true;\n} else if ($json.stockRecommendation === 'SELL') { // SELL recommendations get reviewed\n  requiresManualReview = true;\n}\n\n// For workflow testing, you can force either path\n// requiresManualReview = false; // Uncomment to bypass review during testing\n\nif (requiresManualReview) {\n  // Send review notification - in a real implementation, this would send email/Slack\n  console.log(`REVIEW REQUIRED: ${$json.videoTitle} - ${reviewUrl}`);\n  \n  return {\n    ....$json,\n    reviewUrl,\n    approvalRequired: true,\n    approvalRequester: 'system',\n    approvalTimestamp: new Date().toISOString(),\n    contentStatus: 'pending_review',\n    contentReviewer: 'review@marketmasterydaily.com',\n    contentApprover: 'unassigned',\n    contentSummary,\n    notificationSent: true\n  };\n} else {\n  // No issues detected, can proceed automatically\n  return {\n    ....$json,\n    approvalRequired: false,\n    autoApproved: true,\n    approvalTimestamp: new Date().toISOString(),\n    contentStatus: 'auto_approved',
