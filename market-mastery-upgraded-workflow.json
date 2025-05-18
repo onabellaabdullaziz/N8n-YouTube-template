@@ -1,0 +1,647 @@
+{
+  "name": "Market Mastery Daily - Complete Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hour": 8
+            }
+          ]
+        }
+      },
+      "name": "Daily Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "1"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "currentStock",
+              "value": "={{ [\"AAPL\", \"MSFT\", \"GOOGL\", \"AMZN\", \"TSLA\", \"META\", \"NVDA\", \"JPM\", \"V\", \"WMT\", \"XOM\", \"JNJ\", \"PG\", \"HD\", \"DIS\"][Math.floor(Math.random() * 15)] }}"
+            },
+            {
+              "name": "userName",
+              "value": "onabellaabdullaziz"
+            },
+            {
+              "name": "channelName",
+              "value": "Market Mastery Daily"
+            },
+            {
+              "name": "channelId",
+              "value": "UCaDjbvuIso-yPMlPTESZf2w"
+            },
+            {
+              "name": "channelUrl",
+              "value": "https://youtube.com/channel/UCaDjbvuIso-yPMlPTESZf2w"
+            },
+            {
+              "name": "currentDate",
+              "value": "2025-05-18 06:34:48"
+            },
+            {
+              "name": "weekday",
+              "value": "={{ $today.format(\"dddd\") }}"
+            },
+            {
+              "name": "contentType",
+              "value": "={{ $json.weekday === \"Monday\" ? \"market_outlook\" : $json.weekday === \"Tuesday\" ? \"technical_analysis\" : $json.weekday === \"Wednesday\" ? \"fundamentals_deep_dive\" : $json.weekday === \"Thursday\" ? \"options_strategy\" : $json.weekday === \"Friday\" ? \"sector_analysis\" : $json.weekday === \"Saturday\" ? \"dividend_analysis\" : \"investing_basics\" }}"
+            }
+          ]
+        }
+      },
+      "name": "Initialize Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [420, 300],
+      "id": "2"
+    },
+    {
+      "parameters": {
+        "url": "https://api.polygon.io/v2/aggs/ticker/{{$json.currentStock}}/range/1/day/{{$today.subtract(14, 'days').format('YYYY-MM-DD')}}/{{$today.format('YYYY-MM-DD')}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {
+          "response": {
+            "responseFormat": "json",
+            "outputPropertyName": "stockData"
+          }
+        }
+      },
+      "name": "Get Stock Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [600, 200],
+      "id": "3",
+      "credentials": {
+        "httpQueryAuth": {
+          "name": "Polygon.io API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.alphavantage.co/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "function",
+              "value": "OVERVIEW"
+            },
+            {
+              "name": "symbol",
+              "value": "={{$json.currentStock}}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "json",
+            "outputPropertyName": "fundamentals"
+          }
+        }
+      },
+      "name": "Get Fundamentals",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [600, 300],
+      "id": "4",
+      "credentials": {
+        "httpQueryAuth": {
+          "name": "Alpha Vantage API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.alphavantage.co/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "function",
+              "value": "NEWS_SENTIMENT"
+            },
+            {
+              "name": "tickers",
+              "value": "={{$json.currentStock}}"
+            },
+            {
+              "name": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "json",
+            "outputPropertyName": "news"
+          }
+        }
+      },
+      "name": "Get News",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [600, 400],
+      "id": "5",
+      "credentials": {
+        "httpQueryAuth": {
+          "name": "Alpha Vantage API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge data from previous nodes\nconst stockData = $node[\"Get Stock Data\"].json.stockData;\nconst fundamentals = $node[\"Get Fundamentals\"].json.fundamentals;\nconst news = $node[\"Get News\"].json.news;\n\n// Calculate technical indicators\nconst today = new Date();\nconst prices = stockData.results.map(r => r.c);\nconst lastPrice = prices[prices.length - 1];\nconst previousPrice = prices[prices.length - 2];\nconst priceChange = lastPrice - previousPrice;\nconst priceChangePercent = (priceChange / previousPrice * 100).toFixed(2);\n\n// Calculate support and resistance\nconst min = Math.min(...prices);\nconst max = Math.max(...prices);\nconst range = max - min;\nconst supportLevel = (lastPrice - (range * 0.3)).toFixed(2);\nconst resistanceLevel = (lastPrice + (range * 0.3)).toFixed(2);\n\n// Calculate RSI\nfunction calculateRSI(prices, period = 14) {\n  const changes = [];\n  for (let i = 1; i < prices.length; i++) {\n    changes.push(prices[i] - prices[i - 1]);\n  }\n  \n  const gains = changes.map(change => change > 0 ? change : 0);\n  const losses = changes.map(change => change < 0 ? Math.abs(change) : 0);\n  \n  let avgGain = gains.slice(0, period).reduce((sum, gain) => sum + gain, 0) / period;\n  let avgLoss = losses.slice(0, period).reduce((sum, loss) => sum + loss, 0) / period;\n  \n  for (let i = period; i < changes.length; i++) {\n    avgGain = (avgGain * (period - 1) + gains[i]) / period;\n    avgLoss = (avgLoss * (period - 1) + losses[i]) / period;\n  }\n  \n  const rs = avgGain / avgLoss;\n  return 100 - (100 / (1 + rs));\n}\n\nconst rsi = calculateRSI(prices).toFixed(2);\n\n// Generate stock recommendation\nlet stockRecommendation = \"HOLD\";\nif (rsi < 30 && priceChange < 0) {\n  stockRecommendation = \"BUY\";\n} else if (rsi > 70 && priceChange > 0) {\n  stockRecommendation = \"SELL\";\n} else if (priceChange > 0 && lastPrice < parseFloat(resistanceLevel) * 0.9) {\n  stockRecommendation = \"BUY\";\n} else if (priceChange < 0 && lastPrice > parseFloat(supportLevel) * 1.1) {\n  stockRecommendation = \"SELL\";\n}\n\n// Format news headlines\nconst newsHeadlines = news?.feed?.slice(0, 3).map(item => ({\n  title: item.title,\n  summary: item.summary,\n  url: item.url,\n  sentiment: item.overall_sentiment_score\n})) || [];\n\n// Get appropriate digital product based on content type\nfunction getDigitalProduct(contentType) {\n  const products = {\n    'market_outlook': {\n      name: 'Weekly Market Mastery Report',\n      price: 9.99,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/weekly-market-report'\n    },\n    'technical_analysis': {\n      name: 'Market Mastery Indicator Suite',\n      price: 49,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/indicator-suite'\n    },\n    'fundamentals_deep_dive': {\n      name: 'Stock Analysis Master Spreadsheet',\n      price: 29,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/analysis-spreadsheet'\n    },\n    'options_strategy': {\n      name: 'Options Income Mastery Course',\n      price: 199,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/options-course'\n    },\n    'sector_analysis': {\n      name: 'Sector Rotation Blueprint',\n      price: 79,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/sector-blueprint'\n    },\n    'dividend_analysis': {\n      name: 'Dividend Growth Portfolio Builder',\n      price: 39,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/dividend-builder'\n    },\n    'investing_basics': {\n      name: 'Market Mastery Pro Membership',\n      price: 29,\n      url: 'https://onabellaabdullaziz.gumroad.com/l/pro-membership'\n    }\n  };\n  \n  return products[contentType] || products['market_outlook'];\n}\n\n// Get appropriate affiliate product\nfunction getAffiliateLinks(contentType, stockPrice) {\n  // Primary affiliate links by content type\n  const contentTypeAffiliates = {\n    'market_outlook': {\n      name: 'TradingView Premium',\n      link: 'https://tradingview.go2cloud.org/aff_c?offer_id=2&aff_id=12345',\n      coupon: 'MARKET15',\n      description: 'I use TradingView Premium for all my market analysis'\n    },\n    'technical_analysis': {\n      name: 'TradingView Premium',\n      link: 'https://tradingview.go2cloud.org/aff_c?offer_id=2&aff_id=12345&aff_sub=technical',\n      coupon: 'TECHNICAL20',\n      description: 'Access professional technical indicators with TradingView Premium'\n    },\n    'fundamentals_deep_dive': {\n      name: 'Stock Advisor by Motley Fool',\n      link: 'https://www.fool.com/order/1020/auth?aid=9223&pid=9298&source=isaspittx0000550',\n      coupon: 'FUNDAMENTAL50',\n      description: 'Get top stock picks with strong fundamentals from Stock Advisor'\n    },\n    'options_strategy': {\n      name: 'Options Alpha Membership',\n      link: 'https://optionalpha.com/member/pricing?affcode=onabella123',\n      coupon: 'OPTIONS25',\n      description: 'Learn proven options strategies with Options Alpha'\n    },\n    'sector_analysis': {\n      name: 'Seeking Alpha Premium',\n      link: 'https://subscriptions.seekingalpha.com/affiliate/12345/premium',\n      coupon: 'SECTOR20',\n      description: 'Get in-depth sector analysis with Seeking Alpha Premium'\n    },\n    'dividend_analysis': {\n      name: 'Simply Safe Dividends',\n      link: 'https://www.simplysafedividends.com/intelligence/join?affiliate=onabella',\n      coupon: 'DIVIDEND10',\n      description: 'Track and analyze dividend stocks with Simply Safe Dividends'\n    },\n    'investing_basics': {\n      name: 'Udemy Investing Course',\n      link: 'https://www.udemy.com/course/stock-market-investing/?couponCode=BASICS&referralCode=onabella123',\n      coupon: 'BASICS20',\n      description: 'Learn stock investing from scratch with this comprehensive course'\n    }\n  };\n\n  return contentTypeAffiliates[contentType] || contentTypeAffiliates['market_outlook'];\n}\n\n// Add additional information\nconst companyInfo = {\n  companyName: fundamentals.Name || $json.currentStock + \" Inc\",\n  sector: fundamentals.Sector || \"Technology\",\n  industry: fundamentals.Industry || \"Software\",\n  marketCap: fundamentals.MarketCapitalization || \"Unknown\",\n  peRatio: fundamentals.PERatio || \"N/A\",\n  dividendYield: fundamentals.DividendYield || \"0.00\",\n  eps: fundamentals.EPS || \"0.00\",\n  beta: fundamentals.Beta || \"1.00\"\n};\n\n// Generate video title\nconst videoTitle = `Is ${$json.currentStock} a ${stockRecommendation}? ${companyInfo.companyName} Stock Analysis - ${$json.contentType.replace(\"_\", \" \")} (${today.toDateString()})`;\n\n// Create tracking ID\nconst trackingId = `MM-${$json.currentStock}-${today.getTime()}`;\n\n// Generate keywords array\nconst keywords = [\n  $json.currentStock,\n  \"stock analysis\",\n  \"investing\",\n  \"stock market\",\n  $json.contentType.replace(\"_\", \" \"),\n  stockRecommendation,\n  \"trading\",\n  \"financial analysis\",\n  \"stock price\",\n  companyInfo.sector,\n  companyInfo.industry\n];\n\n// Return the merged and processed data\nreturn {\n  ...$node[\"Initialize Variables\"].json,\n  stockPrice: lastPrice.toFixed(2),\n  priceChange: priceChange.toFixed(2),\n  priceChangePercent,\n  supportLevel,\n  resistanceLevel,\n  rsi,\n  stockRecommendation,\n  videoTitle,\n  newsHeadlines,\n  companyName: companyInfo.companyName,\n  sector: companyInfo.sector,\n  industry: companyInfo.industry,\n  marketCap: companyInfo.marketCap,\n  peRatio: companyInfo.peRatio,\n  dividendYield: companyInfo.dividendYield,\n  eps: companyInfo.eps,\n  beta: companyInfo.beta,\n  digitalProduct: getDigitalProduct($json.contentType),\n  affiliateProduct: getAffiliateLinks($json.contentType, lastPrice),\n  trackingId,\n  keywords,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "name": "Process Financial Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [780, 300],
+      "id": "6"
+    },
+    {
+      "parameters": {
+        "chatModel": "gpt-4",
+        "prompt": {
+          "text": "=You are an expert stock market analyst and financial content creator. Create a professional script for a YouTube video analyzing {{$json.currentStock}} stock based on the following information:\n\n- Video type: {{$json.contentType}} (format as normal text, not code)\n- Current price: ${{$json.stockPrice}}\n- Price change: {{$json.priceChangePercent}}%\n- RSI: {{$json.rsi}}\n- Support level: ${{$json.supportLevel}}\n- Resistance level: ${{$json.resistanceLevel}}\n- Company name: {{$json.companyName}}\n- Sector: {{$json.sector}}\n- Our recommendation: {{$json.stockRecommendation}}\n\nNews headlines:\n{% for headline in $json.newsHeadlines %}\n- {{headline.title}} (Sentiment: {{headline.sentiment > 0 ? \"Positive\" : headline.sentiment < 0 ? \"Negative\" : \"Neutral\"}})\n{% endfor %}\n\nDigital product to promote: {{$json.digitalProduct.name}} (${{$json.digitalProduct.price}})\nAffiliate product: {{$json.affiliateProduct.name}} (Coupon code: {{$json.affiliateProduct.coupon}})\n\nScript Guidelines:\n1. Create a 1000-1200 word script formatted for a 10-12 minute video\n2. Start with a professional intro and greeting for \"Market Mastery Daily\"\n3. Include clear sections with time markers [00:00], [01:30], etc.\n4. Focus primarily on {{$json.contentType}} analysis (make this the main focus)\n5. Include specific price targets and actionable insights\n6. Explain the reasoning behind our {{$json.stockRecommendation}} recommendation\n7. Add a brief promotion for our digital product near the end\n8. End with a call to subscribe to Market Mastery Daily and check links below\n\nTone should be professional, confident, and data-driven. Include references to financial metrics and technical indicators appropriate to this content type.\n\nDo not include any disclaimers stating this is AI-generated content."
+        },
+        "options": {}
+      },
+      "name": "Generate Script",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [940, 200],
+      "id": "7",
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "prompt": {
+          "text": "=Create a professional, eye-catching YouTube thumbnail for a stock analysis video for {{$json.currentStock}} stock. The thumbnail should include:\n\n1. The {{$json.currentStock}} stock ticker prominently displayed\n2. The current price: ${{$json.stockPrice}}\n3. {{$json.stockRecommendation}} in bold text\n4. A professional chart or graph element\n5. Use {{$json.priceChangePercent > 0 ? \"green\" : \"red\"}} as the primary color theme based on the stock's performance\n6. Include a small \"Market Mastery Daily\" logo or text\n7. A clean, professional finance-oriented design suitable for serious investors\n8. No clickbait elements or excessive text\n\nThe thumbnail should be high-resolution and designed for YouTube's 1280x720 format with clear, legible text even when viewed at smaller sizes."
+        },
+        "options": {
+          "model": "dall-e-3",
+          "numberOfResults": 1,
+          "responseFormat": "url",
+          "quality": "hd",
+          "style": "vivid",
+          "size": "1792x1024"
+        }
+      },
+      "name": "Generate Thumbnail",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [940, 400],
+      "id": "8",
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{$node[\"Generate Script\"].json.text}}"
+            },
+            {
+              "name": "model_id",
+              "value": "eleven_monolingual_v1"
+            },
+            {
+              "name": "voice_settings",
+              "value": "{\n  \"stability\": 0.75,\n  \"similarity_boost\": 0.75\n}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "responseFormat": "file",
+            "outputPropertyName": "voiceover"
+          }
+        }
+      },
+      "name": "Generate Voiceover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [1100, 300],
+      "id": "9",
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "ElevenLabs API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create enhanced video description with affiliate links and product promotion\nfunction generateEnhancedDescription(data) {\n  const channelId = \"UCaDjbvuIso-yPMlPTESZf2w\";\n  const digitalProduct = data.digitalProduct;\n  const affiliate = data.affiliateProduct;\n  \n  // Create product promotion section\n  const digitalProductPromo = `\\n\\n📚 RECOMMENDED PRODUCT: ${digitalProduct.name} ($${digitalProduct.price})\\n→ Get it here: ${digitalProduct.url}\\n→ Perfect for: ${data.contentType.replace(\"_\", \" \")} enthusiasts who want to take their analysis to the next level.`;\n  \n  // Create tools section with affiliate links\n  const toolsSection = `🔎 TOOLS I USE:\\n → ${affiliate.name}: ${affiliate.link} (Use code: ${affiliate.coupon} for discount)\\n → FREE Stock Analysis Spreadsheet: https://marketmasterydaily.com/free-spreadsheet`;\n  \n  // Build complete video description with all elements and channel ID for subscription\n  const enhancedDescription = `🔥 STOCK ANALYSIS: ${data.currentStock} - Is it a ${data.stockRecommendation} Right Now? 📊\\n\\nIn this ${data.contentType.replace(\"_\", \" \")} video, we cover:\\n✅ Technical Analysis (Support: $${data.supportLevel} | Resistance: $${data.resistanceLevel})\\n✅ RSI: ${data.rsi} (${data.rsi > 70 ? \"Overbought\" : data.rsi < 30 ? \"Oversold\" : \"Neutral\"})\\n✅ Price Targets\\n✅ Recent News Impact\\n✅ Our ${data.stockRecommendation} Recommendation\\n\\nKey Data:\\n- Current Price: $${data.stockPrice}\\n- Recent Change: ${data.priceChangePercent}%\\n- P/E Ratio: ${data.peRatio}\\n- Dividend Yield: ${data.dividendYield}%\\n- Market Cap: ${data.marketCap}\\n\\n⏱️ TIMESTAMPS:\\n00:00 Introduction\\n01:15 Price Analysis\\n03:20 Technical Indicators\\n05:40 Fundamental Analysis\\n07:30 News Impact\\n09:20 Final Recommendation${digitalProductPromo}\\n\\n${toolsSection}\\n\\n» Subscribe for daily stock market analysis: https://youtube.com/channel/${channelId}?sub_confirmation=1\\n» Join our Discord Community: https://discord.gg/marketmasterydaily\\n\\n📈 Premium Membership (First Week FREE):\\nhttps://marketmasterydaily.com/membership\\n\\n#StockMarket #${data.currentStock} #Investing #${data.stockRecommendation.replace(\" \", \"\")} #${data.contentType.replace(\"_\", \"\")}\\n\\nDISCLAIMER: This content is for educational purposes only. This is not financial advice. Always do your own research before investing.`;\n  \n  return enhancedDescription;\n}\n\n// Simulate the process of combining voice and visuals\nconst enhancedDescription = generateEnhancedDescription($json);\n\n// Assign URLs to media components\nconst voiceoverUrl = $node[\"Generate Voiceover\"].binary.voiceover.url;\nconst thumbnailUrl = $node[\"Generate Thumbnail\"].json.data[0].url;\n\n// In a real workflow, we would now generate the video\n// Since we can't actually do that here, we'll simulate it\nconst videoUrl = `https://video-processing-service.example.com/videos/${$json.trackingId}.mp4`;\n\n// Return the data for the next node\nreturn {\n  ...$json,\n  scriptContent: $node[\"Generate Script\"].json.text,\n  enhancedDescription,\n  voiceoverUrl,\n  thumbnailUrl,\n  videoUrl\n};"
+      },
+      "name": "Prepare Video Content",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1260, 300],
+      "id": "10"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "title": "={{$json.videoTitle}}",
+        "description": "={{$json.enhancedDescription}}",
+        "categoryId": "22",
+        "videoOptions": {
+          "tags": "={{$json.keywords.join(\",\")}}",
+          "privacyStatus": "public",
+          "madeForKids": false,
+          "notifySubscribers": true,
+          "selfDeclaredMadeForKids": false,
+          "defaultLanguage": "en",
+          "defaultAudioLanguage": "en"
+        },
+        "localVideo": "={{$json.videoUrl}}",
+        "localThumbnail": "={{$json.thumbnailUrl}}",
+        "additionalFields": {
+          "onBehalfOfContentOwnerChannel": "UCaDjbvuIso-yPMlPTESZf2w"
+        }
+      },
+      "name": "Upload to YouTube",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [1420, 300],
+      "id": "11",
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Simulate distribution to social media platforms\n// In a real workflow, this would be multiple nodes for different platforms\n\nconst youTubeResponse = $node[\"Upload to YouTube\"].json;\n\n// Create video URL\nconst youTubeVideoId = youTubeResponse.id || \"simulated_video_id\";\nconst youTubeVideoUrl = `https://www.youtube.com/watch?v=${youTubeVideoId}`;\n\n// Simulate Twitter post\nconst twitterText = `🔥 NEW VIDEO: ${$json.currentStock} ${$json.contentType.replace('_', ' ')} 📊\\n\\nCurrent Price: $${$json.stockPrice}\\nOur Verdict: ${$json.stockRecommendation} 🔍\\n\\n${$json.priceChangePercent > 0 ? '📈 UP ' : '📉 DOWN '}${Math.abs($json.priceChangePercent)}% - Check out our analysis with price targets!\\n\\n${youTubeVideoUrl}\\n\\nSubscribe: https://youtube.com/channel/UCaDjbvuIso-yPMlPTESZf2w?sub_confirmation=1\\n\\n#Investing #${$json.currentStock} #StockMarket`;\n\n// Simulate LinkedIn post\nconst linkedInText = `📊 New Analysis: ${$json.companyName} (${$json.currentStock})\\n\\nOur latest ${$json.contentType.replace('_', ' ')} video examines the current state of ${$json.currentStock} with a detailed breakdown of technical and fundamental factors.\\n\\nKey findings:\\n- Current price: $${$json.stockPrice} (${$json.priceChangePercent > 0 ? '+' : ''}${$json.priceChangePercent}%)\\n- Technical indicators suggest support at $${$json.supportLevel}\\n- Our recommendation: ${$json.stockRecommendation}\\n\\nWatch the full analysis: ${youTubeVideoUrl}\\n\\n#FinancialAnalysis #Investing #${$json.currentStock} #StockMarket`;\n\n// Simulate Reddit post\nconst redditSubreddit = $json.contentType === \"options_strategy\" ? \"options\" : $json.contentType === \"dividend_analysis\" ? \"dividends\" : \"investing\";\nconst redditTitle = `${$json.videoTitle} | Daily Stock Analysis`;\n\n// Return data with social media simulations\nreturn {\n  ...$json,\n  youTubeVideoId,\n  youTubeVideoUrl,\n  socialMediaResponses: {\n    twitter: {\n      status: \"posted\",\n      text: twitterText,\n      timestamp: new Date().toISOString()\n    },\n    linkedIn: {\n      status: \"posted\",\n      text: linkedInText,\n      timestamp: new Date().toISOString()\n    },\n    reddit: {\n      status: \"posted\",\n      subreddit: redditSubreddit,\n      title: redditTitle,\n      timestamp: new Date().toISOString()\n    }\n  },\n  distributionComplete: true\n};"
+      },
+      "name": "Distribute to Social Media",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1580, 300],
+      "id": "12"
+    },
+    {
+      "parameters": {
+        "table": "Videos",
+        "options": {}
+      },
+      "name": "Airtable Record",
+      "type": "n8n-nodes-base.airtable",
+      "position": [1740, 200],
+      "typeVersion": 1,
+      "id": "13",
+      "credentials": {
+        "airtableApi": {
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sendgrid.com/v3/mail/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "bodyContent": "{\n  \"personalizations\": [\n    {\n      \"to\": [\n        {\n          \"email\": \"{{$json.userName}}@example.com\",\n          \"name\": \"{{$json.userName}}\"\n        }\n      ],\n      \"subject\": \"New Video Published: {{$json.videoTitle}}\"\n    }\n  ],\n  \"from\": {\n    \"email\": \"notifications@marketmasterydaily.com\",\n    \"name\": \"Market Mastery Daily\"\n  },\n  \"content\": [\n    {\n      \"type\": \"text/html\",\n      \"value\": \"<div style=\\\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;\\\">\\n  <div style=\\\"text-align: center; margin-bottom: 20px;\\\">\\n    <h2 style=\\\"color: #0066cc;\\\">YouTube Video Successfully Published</h2>\\n    <img src=\\\"{{$json.thumbnailUrl}}\\\" style=\\\"max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px;\\\">\\n  </div>\\n  \\n  <div style=\\\"background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;\\\">\\n    <h3 style=\\\"margin-top: 0; color: #333;\\\">Video Details:</h3>\\n    <p><strong>Title:</strong> {{$json.videoTitle}}</p>\\n    <p><strong>Content Type:</strong> {{$json.contentType.replace(\\\"_\\\", \\\" \\\")}} ({{$json.weekday}} content)</p>\\n    <p><strong>Stock:</strong> {{$json.currentStock}} ({{$json.companyName}})</p>\\n    <p><strong>Price:</strong> <span style=\\\"font-weight: bold;\\\">${{$json.stockPrice}}</span></p>\\n    <p><strong>Performance:</strong> <span style=\\\"color: {{parseFloat($json.priceChangePercent) > 0 ? \\\"green\\\" : \\\"red\\\"}}; font-weight: bold;\\\">{{parseFloat($json.priceChangePercent) > 0 ? \\\"+\\\" : \\\"\\\"}}{{$json.priceChangePercent}}%</span></p>\\n    <p><strong>Recommendation:</strong> <span style=\\\"font-weight: bold;\\\">{{$json.stockRecommendation}}</span></p>\\n    <p><strong>YouTube URL:</strong> <a href=\\\"{{$json.youTubeVideoUrl}}\\\">{{$json.youTubeVideoUrl}}</a></p>\\n    <p><strong>Channel:</strong> <a href=\\\"https://youtube.com/channel/{{$json.channelId}}?sub_confirmation=1\\\">Market Mastery Daily (Subscribe)</a></p>\\n  </div>\\n  \\n  <div style=\\\"margin-bottom: 20px; background-color: #f5fff5; padding: 15px; border-radius: 5px;\\\">\\n    <h3 style=\\\"color: #333;\\\">Promoted Products:</h3>\\n    <p><strong>Digital Product:</strong> {{$json.digitalProduct.name}} (${{$json.digitalProduct.price}})</p>\\n    <p><strong>Affiliate Product:</strong> {{$json.affiliateProduct.name}} ({{$json.affiliateProduct.coupon}})</p>\\n  </div>\\n  \\n  <div style=\\\"text-align: center; margin-top: 20px; color: #888; font-size: 12px;\\\">\\n    <p>This email was automatically generated by your workflow on {{$json.timestamp}}</p>\\n    <p>Tracking ID: {{$json.trackingId}}</p>\\n    <p>Channel ID: {{$json.channelId}}</p>\\n  </div>\\n</div>\"\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "fullResponse": true
+          }
+        }
+      },
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [1740, 400],
+      "id": "14",
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "SendGrid API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compile all data from the workflow for tracking and analysis\nconst analyticsData = {\n  videoId: $json.youTubeVideoId,\n  channelId: $json.channelId,\n  videoUrl: $json.youTubeVideoUrl,\n  contentType: $json.contentType,\n  stock: $json.currentStock,\n  recommendation: $json.stockRecommendation,\n  stockPrice: parseFloat($json.stockPrice),\n  priceChange: parseFloat($json.priceChangePercent),\n  supportLevel: parseFloat($json.supportLevel),\n  resistanceLevel: parseFloat($json.resistanceLevel),\n  rsi: parseFloat($json.rsi),\n  thumbnailUrl: $json.thumbnailUrl,\n  videoTitle: $json.videoTitle,\n  affiliateProduct: $json.affiliateProduct.name,\n  digitalProduct: $json.digitalProduct.name,\n  publishDate: new Date().toISOString(),\n  weekday: $json.weekday,\n  distributionChannels: Object.keys($json.socialMediaResponses),\n  trackingId: $json.trackingId,\n  executionDate: \"2025-05-18 06:34:48\",\n  userName: \"onabellaabdullaziz\"\n};\n\n// Return all data with analytics\nreturn {\n  ...$json,\n  analyticsData,\n  workflowComplete: true,\n  nextScheduledRun: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString()\n};"
+      },
+      "name": "Compile Analytics",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1900, 300],
+      "id": "15"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "weekday": 0
+            }
+          ]
+        }
+      },
+      "name": "Weekly Report Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 700],
+      "id": "16"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate weekly report\nconst channelId = \"UCaDjbvuIso-yPMlPTESZf2w\";\nconst today = new Date();\nconst startOfWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);\nconst endOfWeek = new Date(today.getTime());\n\n// Format dates\nconst startDateFormatted = startOfWeek.toISOString().split('T')[0];\nconst endDateFormatted = endOfWeek.toISOString().split('T')[0];\nconst reportDate = `${startDateFormatted} to ${endDateFormatted}`;\n\n// Simulate top picks from the week\nconst topPicks = [\n  { ticker: \"AAPL\", recommendation: \"BUY\", priceTarget: \"190.50\", rationale: \"Strong technical indicators and recent product announcements\" },\n  { ticker: \"MSFT\", recommendation: \"BUY\", priceTarget: \"415.00\", rationale: \"Excellent fundamentals and AI integration momentum\" },\n  { ticker: \"GOOGL\", recommendation: \"HOLD\", priceTarget: \"175.25\", rationale: \"Fair valuation but regulatory concerns\" }\n];\n\n// Generate report product template\nconst reportProduct = {\n  productId: `mmwr_${Date.now()}`,\n  reportTitle: `Market Mastery Weekly Report - ${reportDate}`,\n  reportDate: reportDate,\n  price: 9.99,\n  productUrl: `https://marketmasterydaily.com/weekly-report-${today.toISOString().split('T')[0]}`,\n  productType: 'weekly_report',\n  thumbnailUrl: 'https://via.placeholder.com/800x400.png?text=Weekly+Market+Report',\n  topPicks: topPicks,\n  videosAnalyzed: 7,\n  userName: 'onabellaabdullaziz',\n  channelName: 'Market Mastery Daily',\n  channelId: channelId,\n  channelUrl: `https://youtube.com/channel/${channelId}`,\n  currentDate: \"2025-05-18 06:34:48\"\n};\n\n// Database entry data\nconst databaseEntry = {\n  id: reportProduct.productId,\n  title: reportProduct.reportTitle,\n  date: today.toISOString(),\n  productType: 'weekly_report',\n  price: 9.99,\n  url: reportProduct.productUrl\n};\n\n// Email notification content\nconst emailContent = {\n  to: \"onabellaabdullaziz@example.com\",\n  subject: `New Weekly Report Created: ${reportProduct.reportTitle}`,\n  body: `<h2>Weekly Report Created Successfully</h2>\n<p>Your new weekly report has been generated and is ready for sale.</p>\n<p><strong>Title:</strong> ${reportProduct.reportTitle}</p>\n<p><strong>Date Range:</strong> ${reportProduct.reportDate}</p>\n<p><strong>Price:</strong> $${reportProduct.price}</p>\n<p><strong>URL:</strong> <a href=\"${reportProduct.productUrl}\">${reportProduct.productUrl}</a></p>\n<p><strong>Top Picks:</strong> ${topPicks.map(pick => pick.ticker).join(', ')}</p>\n<p>Channel ID: ${channelId}</p>\n`\n};\n\nreturn {\n  reportProduct,\n  databaseEntry,\n  emailContent,\n  productCreationComplete: true,\n  nextScheduledRun: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),\n  channelId: channelId,\n  userName: \"onabellaabdullaziz\",\n  currentDate: \"2025-05-18 06:34:48\"\n};"
+      },
+      "name": "Generate Weekly Report",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [420, 700],
+      "id": "17"
+    },
+    {
+      "parameters": {
+        "table": "Products",
+        "options": {}
+      },
+      "name": "Store Product in Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "position": [600, 700],
+      "typeVersion": 1,
+      "id": "18",
+      "credentials": {
+        "airtableApi": {
+          "name": "Airtable account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Initialize Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize Variables": {
+      "main": [
+        [
+          {
+            "node": "Get Stock Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Fundamentals",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Stock Data": {
+      "main": [
+        [
+          {
+            "node": "Process Financial Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Fundamentals": {
+      "main": [
+        [
+          {
+            "node": "Process Financial Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get News": {
+      "main": [
+        [
+          {
+            "node": "Process Financial Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Financial Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Script",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Thumbnail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Script": {
+      "main": [
+        [
+          {
+            "node": "Generate Voiceover",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "Prepare Video Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Voiceover": {
+      "main": [
+        [
+          {
+            "node": "Prepare Video Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Video Content": {
+      "main": [
+        [
+          {
+            "node": "Upload to YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to YouTube": {
+      "main": [
+        [
+          {
+            "node": "Distribute to Social Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Distribute to Social Media": {
+      "main": [
+        [
+          {
+            "node": "Airtable Record",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Record": {
+      "main": [
+        [
+          {
+            "node": "Compile Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Notification": {
+      "main": [
+        [
+          {
+            "node": "Compile Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Report Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Weekly Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Weekly Report": {
+      "main": [
+        [
+          {
+            "node": "Store Product in Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "errorWorkflow": {
+      "id": "error-handler",
+      "name": "Error Handler"
+    },
+    "timezone": "UTC"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "MarketMasteryDaily"
+    },
+    {
+      "name": "AutomatedContent"
+    },
+    {
+      "name": "StockAnalysis"
+    }
+  ],
+  "pinData": {},
+  "versionId": "1",
+  "triggerCount": 1,
+  "updatedAt": "2025-05-18T06:34:48.000Z",
+  "lastUpdatedBy": "onabellaabdullaziz"
+}
