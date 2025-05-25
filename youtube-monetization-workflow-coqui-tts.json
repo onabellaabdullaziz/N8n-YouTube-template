@@ -1,0 +1,985 @@
+{
+  "name": "YouTube Monetization System - Professional Workflow (Coqui TTS)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getObject",
+        "bucket": "youtube-assets",
+        "key": "content-strategy.json"
+      },
+      "id": "2",
+      "name": "Get Content Strategy",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "s3": {
+          "id": "1",
+          "name": "MinIO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process content strategy\nconst now = new Date();\nconst today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;\n// Assuming the content-strategy.json contains scheduled content items\nconst contentStrategy = JSON.parse($node[\"Get Content Strategy\"].json.Body);\n\n// Find content scheduled for today\nconst todayContent = contentStrategy.filter(item => item.publishDate === today);\n\nif (todayContent.length === 0) {\n  // No content scheduled for today\n  // Find the next scheduled content\n  const futureContent = contentStrategy\n    .filter(item => item.publishDate > today)\n    .sort((a, b) => new Date(a.publishDate) - new Date(b.publishDate));\n  \n  return {\n    noContent: true,\n    nextScheduled: futureContent.length > 0 ? futureContent[0] : null\n  };\n} else {\n  // Use the first scheduled content for today\n  const content = todayContent[0];\n  \n  // Generate a unique ID for this video\n  const videoId = `vid-${Date.now()}-${Math.floor(Math.random() * 1000)}`;\n  \n  return {\n    noContent: false,\n    videoId,\n    topic: content.topic,\n    contentType: content.type,\n    keywords: content.keywords,\n    targetAudience: content.targetAudience,\n    monetizationStrategy: content.monetizationStrategy,\n    created: now.toISOString(),\n    publishDate: content.publishDate\n  };\n}"
+      },
+      "id": "3",
+      "name": "Process Content Plan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"noContent\"]}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "Content Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getObject",
+        "bucket": "youtube-assets",
+        "key": "monetization-products.json"
+      },
+      "id": "5",
+      "name": "Get Monetization Products",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        440
+      ],
+      "credentials": {
+        "s3": {
+          "id": "1",
+          "name": "MinIO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge content plan with monetization products\n\nconst contentPlan = $input.item.json;\nconst products = JSON.parse($node[\"Get Monetization Products\"].json.Body);\n\n// Find relevant products for this content\nconst relevantProducts = products.filter(product => {\n  // Check if product keywords match content keywords\n  return product.keywords.some(keyword => \n    contentPlan.keywords.includes(keyword));\n});\n\n// Sort by relevance (number of matching keywords)\nrelevantProducts.sort((a, b) => {\n  const aMatches = a.keywords.filter(k => contentPlan.keywords.includes(k)).length;\n  const bMatches = b.keywords.filter(k => contentPlan.keywords.includes(k)).length;\n  return bMatches - aMatches;\n});\n\n// Get top 3 most relevant products\nconst topProducts = relevantProducts.slice(0, 3);\n\nreturn {\n  ...contentPlan,\n  monetizationProducts: topProducts,\n  hasProductRecommendations: topProducts.length > 0\n};"
+      },
+      "id": "6",
+      "name": "Prepare Monetization",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getObject",
+        "bucket": "youtube-assets",
+        "key": "=prompts/{{$json[\"contentType\"]}}-template.json"
+      },
+      "id": "7",
+      "name": "Get Content Template",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        580
+      ],
+      "credentials": {
+        "s3": {
+          "id": "1",
+          "name": "MinIO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process prompt template\n\nlet template;\ntry {\n  template = JSON.parse($node[\"Get Content Template\"].json.Body);\n} catch (error) {\n  // Default template if specific one not found\n  template = {\n    scriptPrompt: \"Write an engaging YouTube script about [TOPIC]. The target audience is [AUDIENCE]. Include [KEYWORDS].\",\n    descriptionPrompt: \"Write a compelling YouTube description for a video about [TOPIC]. Include relevant keywords: [KEYWORDS].\",\n    titleOptionsPrompt: \"Generate 5 clickable but not clickbait YouTube title options for a video about [TOPIC]. Each title should be SEO optimized and include key terms from [KEYWORDS].\",\n    thumbnailPrompt: \"Create a thumbnail concept for a YouTube video about [TOPIC].\"\n  };\n}\n\n// Get data from previous nodes\nconst contentData = $input.item.json;\n\n// Replace placeholders in prompts\nconst scriptPrompt = template.scriptPrompt\n  .replace('[TOPIC]', contentData.topic)\n  .replace('[AUDIENCE]', contentData.targetAudience)\n  .replace('[KEYWORDS]', contentData.keywords.join(', '));\n\nconst descriptionPrompt = template.descriptionPrompt\n  .replace('[TOPIC]', contentData.topic)\n  .replace('[KEYWORDS]', contentData.keywords.join(', '));\n\nconst titleOptionsPrompt = template.titleOptionsPrompt\n  .replace('[TOPIC]', contentData.topic)\n  .replace('[KEYWORDS]', contentData.keywords.join(', '));\n\nconst thumbnailPrompt = template.thumbnailPrompt\n  .replace('[TOPIC]', contentData.topic);\n\n// If there are product recommendations, include them in the script prompt\nlet monetizationInstructions = '';\nif (contentData.hasProductRecommendations) {\n  monetizationInstructions = `\\n\\nNaturally incorporate these product recommendations in the script:\\n`;\n  contentData.monetizationProducts.forEach((product, i) => {\n    monetizationInstructions += `${i+1}. ${product.name}: ${product.description} (Link: ${product.affiliateLink})\\n`;\n  });\n}\n\nreturn {\n  ...contentData,\n  scriptPrompt: scriptPrompt + monetizationInstructions,\n  descriptionPrompt,\n  titleOptionsPrompt,\n  thumbnailPrompt\n};"
+      },
+      "id": "8",
+      "name": "Prepare Prompts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env[\"LLM_URL\"]}}/generate",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"inputs\": \"{{$json[\"scriptPrompt\"]}}\",\n  \"parameters\": {\n    \"max_new_tokens\": 2048,\n    \"temperature\": 0.7,\n    \"top_p\": 0.95,\n    \"do_sample\": true\n  }\n}"
+      },
+      "id": "9",
+      "name": "Generate Script",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env[\"LLM_URL\"]}}/generate",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"inputs\": \"{{$json[\"descriptionPrompt\"]}}\",\n  \"parameters\": {\n    \"max_new_tokens\": 1024,\n    \"temperature\": 0.7,\n    \"top_p\": 0.95,\n    \"do_sample\": true\n  }\n}"
+      },
+      "id": "10",
+      "name": "Generate Description",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env[\"LLM_URL\"]}}/generate",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"inputs\": \"{{$json[\"titleOptionsPrompt\"]}}\",\n  \"parameters\": {\n    \"max_new_tokens\": 256,\n    \"temperature\": 0.8,\n    \"top_p\": 0.95,\n    \"do_sample\": true\n  }\n}"
+      },
+      "id": "11",
+      "name": "Generate Title Options",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all LLM generations\n\nconst baseData = $input.item.json;\nconst script = $node[\"Generate Script\"].json.generated_text;\nconst description = $node[\"Generate Description\"].json.generated_text;\nconst titleOptionsText = $node[\"Generate Title Options\"].json.generated_text;\n\n// Process title options\nlet titleOptions = [];\nconst titleRegex = /\\d\\.\\s*(.*)/g;\nlet match;\nwhile ((match = titleRegex.exec(titleOptionsText)) !== null) {\n  titleOptions.push(match[1]);\n}\n\n// Select the first title as default\nconst title = titleOptions.length > 0 ? titleOptions[0] : `Video about ${baseData.topic}`;\n\n// Generate filenames\nconst sanitizedTitle = title.replace(/[^a-z0-9]/gi, '-').toLowerCase();\nconst thumbnailFilename = `${baseData.videoId}-${sanitizedTitle}.png`;\nconst audioFilename = `${baseData.videoId}-${sanitizedTitle}.wav`;\n\n// Prepare thumbnail prompt - enriched with content context\nconst thumbnailPrompt = `${baseData.thumbnailPrompt} The video discusses ${baseData.topic} and is aimed at ${baseData.targetAudience}.`;\n\nreturn {\n  ...baseData,\n  script,\n  description,\n  title,\n  alternativeTitles: titleOptions.slice(1), // All except the first one\n  thumbnailFilename,\n  audioFilename,\n  thumbnailPrompt\n};"
+      },
+      "id": "12",
+      "name": "Process Generated Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env[\"IMAGE_GEN_URL\"]}}/sdapi/v1/txt2img",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"prompt\": \"{{$json[\"thumbnailPrompt\"]}}, 4k, high quality, vibrant colors, professional, YouTube thumbnail\",\n  \"negative_prompt\": \"blurry, low quality, text, watermark, logo, signature, low resolution\",\n  \"width\": 1280,\n  \"height\": 720,\n  \"steps\": 30,\n  \"cfg_scale\": 7.5\n}"
+      },
+      "id": "13",
+      "name": "Generate Thumbnail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process thumbnail image from base64\n\n// Get base64 image data\nconst baseData = $input.item.json;\nconst base64Image = $node[\"Generate Thumbnail\"].json.images[0];\n\n// Convert to binary\nconst binaryData = Buffer.from(base64Image, 'base64');\n\nreturn {\n  ...baseData,\n  binary: {\n    ...($input.item.binary || {}),\n    thumbnail: {\n      data: binaryData.toString('base64'),\n      mimeType: 'image/png',\n      fileName: baseData.thumbnailFilename\n    }\n  }\n};"
+      },
+      "id": "14",
+      "name": "Process Thumbnail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        2220,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Voice model selection for Coqui TTS\n\nconst baseData = $input.item.json;\n\n// Default to primary recommendation: tacotron2-DDC\nlet voiceModel = \"tts_models/en/ljspeech/tacotron2-DDC\";\nlet useSpeakerId = false;\nlet speakerId = null;\n\n// Check if content type suggests using multiple voices\n// For example, interviews, dialogues, etc. would benefit from multiple voices\nif (baseData.contentType && [\n  'interview', \n  'dialogue', \n  'conversation', \n  'multi-person',\n  'qa',\n  'multiple-characters'\n].some(type => baseData.contentType.toLowerCase().includes(type))) {\n  // Use VCTK model for content that benefits from different voices\n  voiceModel = \"tts_models/en/vctk/vits\";\n  useSpeakerId = true;\n  \n  // Default to p303 speaker, but can be changed based on content needs\n  speakerId = \"p303\";\n  \n  // If script has multiple speakers marked, we'll handle this later\n  // but flag it for now\n  baseData.hasMultipleSpeakers = baseData.script.includes(\"Speaker 1:\") || \n                                 baseData.script.includes(\"Person 1:\") ||\n                                 baseData.script.includes(\"Host:\");\n}\n\n// Add voice model information to the data\nreturn {\n  ...baseData,\n  voiceModel,\n  useSpeakerId,\n  speakerId,\n  ttsProvider: \"Coqui TTS\"\n};"
+      },
+      "id": "29",
+      "name": "Configure Voice Model",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env[\"COQUI_TTS_URL\"]}}/tts",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "audio/wav"
+            }
+          ]
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{$json[\"script\"]}}"
+            },
+            {
+              "name": "speaker_id",
+              "value": "={{$json[\"useSpeakerId\"] ? $json[\"speakerId\"] : null}}"
+            },
+            {
+              "name": "model_name",
+              "value": "={{$json[\"voiceModel\"]}}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "file",
+          "responsePropertyName": "audio"
+        }
+      },
+      "id": "15",
+      "name": "Generate Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process audio file from base64\n\n// Get base64 audio data\nconst baseData = $input.item.json;\nconst audioData = $node[\"Generate Audio\"].binary.audio;\n\nreturn {\n  ...baseData,\n  binary: {\n    ...($input.item.binary || {}),\n    thumbnail: $input.item.binary.thumbnail,\n    audio: {\n      ...audioData,\n      fileName: baseData.audioFilename\n    }\n  }\n};"
+      },
+      "id": "16",
+      "name": "Process Audio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        2220,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "putObject",
+        "bucket": "youtube-assets",
+        "key": "=thumbnails/{{$json[\"thumbnailFilename\"]}}",
+        "additionalFields": {
+          "contentType": "image/png",
+          "acl": "public-read",
+          "metaKeys": {
+            "metaKeys": [
+              {
+                "key": "title",
+                "value": "={{$json[\"title\"]}}"
+              },
+              {
+                "key": "videoId",
+                "value": "={{$json[\"videoId\"]}}"
+              },
+              {
+                "key": "created",
+                "value": "={{$json[\"created\"]}}"
+              }
+            ]
+          }
+        },
+        "binaryPropertyName": "thumbnail"
+      },
+      "id": "17",
+      "name": "Save Thumbnail to MinIO",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        440
+      ],
+      "credentials": {
+        "s3": {
+          "id": "1",
+          "name": "MinIO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "putObject",
+        "bucket": "youtube-assets",
+        "key": "=audio/{{$json[\"audioFilename\"]}}",
+        "additionalFields": {
+          "contentType": "audio/wav",
+          "metaKeys": {
+            "metaKeys": [
+              {
+                "key": "title",
+                "value": "={{$json[\"title\"]}}"
+              },
+              {
+                "key": "videoId",
+                "value": "={{$json[\"videoId\"]}}"
+              },
+              {
+                "key": "created",
+                "value": "={{$json[\"created\"]}}"
+              },
+              {
+                "key": "ttsModel",
+                "value": "={{$json[\"voiceModel\"]}}"
+              }
+            ]
+          }
+        },
+        "binaryPropertyName": "audio"
+      },
+      "id": "18",
+      "name": "Save Audio to MinIO",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        580
+      ],
+      "credentials": {
+        "s3": {
+          "id": "1",
+          "name": "MinIO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "putObject",
+        "bucket": "youtube-assets",
+        "key": "=scripts/script-{{$json[\"videoId\"]}}.json",
+        "body": "={{JSON.stringify({\n  videoId: $json.videoId,\n  title: $json.title,\n  script: $json.script,\n  description: $json.description,\n  alternativeTitles: $json.alternativeTitles,\n  thumbnailFilename: $json.thumbnailFilename,\n  audioFilename: $json.audioFilename,\n  contentType: $json.contentType,\n  topic: $json.topic,\n  keywords: $json.keywords,\n  ttsModel: $json.voiceModel,\n  created: $json.created,\n  publishDate: $json.publishDate\n}, null, 2)}}",
+        "additionalFields": {
+          "contentType": "application/json",
+          "metaKeys": {
+            "metaKeys": [
+              {
+                "key": "title",
+                "value": "={{$json[\"title\"]}}"
+              },
+              {
+                "key": "videoId",
+                "value": "={{$json[\"videoId\"]}}"
+              },
+              {
+                "key": "created",
+                "value": "={{$json[\"created\"]}}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "19",
+      "name": "Save Script to MinIO",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        720
+      ],
+      "credentials": {
+        "s3": {
+          "id": "1",
+          "name": "MinIO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare CMS content\n\nconst baseData = $input.item.json;\nconst s3Endpoint = $env.S3_ENDPOINT || 'https://minio-service.railway.app';\n\n// Create HTML content\nconst createHtmlContent = () => {\n  // Convert script to HTML\n  const scriptHtml = baseData.script\n    .split('\\n\\n')\n    .map(para => `<p>${para}</p>`)\n    .join('');\n  \n  // Add audio player\n  const audioUrl = `${s3Endpoint}/youtube-assets/audio/${baseData.audioFilename}`;\n  const audioPlayer = `<audio controls style=\"width:100%;margin:20px 0\">\n  <source src=\"${audioUrl}\" type=\"audio/wav\">\n  Your browser does not support the audio element.\n</audio>`;\n  \n  // Add featured image reference\n  const thumbnailUrl = `${s3Endpoint}/youtube-assets/thumbnails/${baseData.thumbnailFilename}`;\n  \n  // If there are product recommendations, add them to the post\n  let productSection = '';\n  if (baseData.hasProductRecommendations) {\n    productSection = `<div class=\"product-recommendations\">\n      <h2>Recommended Products</h2>\n      <ul>\n        ${baseData.monetizationProducts.map(product => \n          `<li><a href=\"${product.affiliateLink}\" target=\"_blank\" rel=\"nofollow\">${product.name}</a> - ${product.description}</li>`\n        ).join('')}\n      </ul>\n    </div>`;\n  }\n  \n  // Complete HTML content\n  return `${scriptHtml}\\n${audioPlayer}\\n${productSection}`;\n};\n\n// Prepare tags from keywords\nconst prepareTags = () => {\n  // Start with content type and topic as tags\n  const tags = [\n    { name: baseData.contentType },\n    { name: baseData.topic.toLowerCase().replace(/\\s+/g, '-') }\n  ];\n  \n  // Add keywords as tags (up to 5)\n  baseData.keywords.slice(0, 5).forEach(keyword => {\n    tags.push({ name: keyword.toLowerCase().replace(/\\s+/g, '-') });\n  });\n  \n  return tags;\n};\n\nreturn {\n  ...baseData,\n  htmlContent: createHtmlContent(),\n  tags: prepareTags(),\n  featuredImage: `${s3Endpoint}/youtube-assets/thumbnails/${baseData.thumbnailFilename}`\n};"
+      },
+      "id": "20",
+      "name": "Prepare Ghost CMS Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        2660,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env[\"GHOST_URL\"]}}/ghost/api/content/posts/?source=html",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Ghost {{$env[\"GHOST_CONTENT_API_KEY\"]}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"posts\": [{\n    \"title\": \"{{$json[\"title\"]}}\",\n    \"html\": \"{{$json[\"htmlContent\"]}}\",\n    \"status\": \"published\",\n    \"tags\": {{JSON.stringify($json[\"tags\"])}},\n    \"featured\": true,\n    \"feature_image\": \"{{$json[\"featuredImage\"]}}\",\n    \"meta_title\": \"{{$json[\"title\"]}}\",\n    \"meta_description\": \"{{$json[\"description\"].substring(0, 150)}}\"\n  }]\n}"
+      },
+      "id": "21",
+      "name": "Publish to Ghost",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"hasProductRecommendations\"]}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "22",
+      "name": "Has Product Recommendations?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        3100,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env[\"MAUTIC_URL\"]}}/api/campaigns",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Basic {{$env[\"MAUTIC_API_BASIC\"]}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"campaign\": {\n    \"name\": \"Promotion: {{$json[\"title\"]}}\",\n    \"description\": \"Promotional campaign for {{$json[\"monetizationProducts\"][0].name}} related to content: {{$json[\"title\"]}}\",\n    \"isPublished\": true,\n    \"publishUp\": \"{{$json[\"created\"]}}\",\n    \"publishDown\": null\n  }\n}"
+      },
+      "id": "23",
+      "name": "Create Mautic Campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        3320,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env[\"ANALYTICS_URL\"]}}/api/event",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env[\"ANALYTICS_API_KEY\"]}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"name\": \"content_published\",\n  \"domain\": \"{{$env[\"GHOST_URL\"].replace(/^https?:\\/\\//i, '')}}\",\n  \"url\": \"{{$node[\"Publish to Ghost\"].json.posts[0].url}}\",\n  \"properties\": {\n    \"title\": \"{{$json[\"title\"]}}\",\n    \"type\": \"{{$json[\"contentType\"]}}\",\n    \"topic\": \"{{$json[\"topic\"]}}\",\n    \"has_monetization\": {{$json[\"hasProductRecommendations\"]}},\n    \"tts_model\": \"{{$json[\"voiceModel\"]}}\",\n    \"creation_date\": \"{{$json[\"created\"]}}\"\n  }\n}"
+      },
+      "id": "24",
+      "name": "Log Analytics Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        3320,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "subject": "Content Published: {{$json[\"title\"]}}",
+        "includeAttachments": false,
+        "text": "✅ New YouTube content has been successfully published!\n\nTitle: {{$json[\"title\"]}}\nTopic: {{$json[\"topic\"]}}\nURL: {{$node[\"Publish to Ghost\"].json.posts[0].url}}\n\nAssets created:\n- Script: saved to MinIO (scripts/script-{{$json[\"videoId\"]}}.json)\n- Audio: {{$json[\"audioFilename\"]}} (TTS Model: {{$json[\"voiceModel\"]}})\n- Thumbnail: {{$json[\"thumbnailFilename\"]}}\n\n{{$json[\"hasProductRecommendations\"] ? 'Product recommendations included: ' + $json[\"monetizationProducts\"].map(p => p.name).join(', ') : 'No product recommendations for this content.'}}\n\nGenerated on: {{$json[\"created\"]}}\nLast updated: 2025-05-25 14:57:23\nUpdated by: onabellaabdullaziz"
+      },
+      "id": "25",
+      "name": "Send Notification Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        3540,
+        580
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "1",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log process completion\n\nconsole.log(`[${new Date().toISOString()}] No content scheduled for today. Next content is scheduled for ${$json.nextScheduled ? $json.nextScheduled.publishDate : 'unknown date'}`);\n\nreturn $json;"
+      },
+      "id": "26",
+      "name": "Log No Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Content Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Content Strategy": {
+      "main": [
+        [
+          {
+            "node": "Process Content Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Content Plan": {
+      "main": [
+        [
+          {
+            "node": "Content Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Available?": {
+      "main": [
+        [
+          {
+            "node": "Log No Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Monetization Products",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Content Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Monetization Products": {
+      "main": [
+        [
+          {
+            "node": "Prepare Monetization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Monetization": {
+      "main": [
+        [
+          {
+            "node": "Prepare Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Content Template": {
+      "main": [
+        [
+          {
+            "node": "Prepare Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Prompts": {
+      "main": [
+        [
+          {
+            "node": "Generate Script",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Description",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Title Options",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Script": {
+      "main": [
+        [
+          {
+            "node": "Process Generated Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Description": {
+      "main": [
+        [
+          {
+            "node": "Process Generated Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Title Options": {
+      "main": [
+        [
+          {
+            "node": "Process Generated Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Generated Content": {
+      "main": [
+        [
+          {
+            "node": "Generate Thumbnail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Configure Voice Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configure Voice Model": {
+      "main": [
+        [
+          {
+            "node": "Generate Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "Process Thumbnail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Thumbnail": {
+      "main": [
+        [
+          {
+            "node": "Save Thumbnail to MinIO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Audio": {
+      "main": [
+        [
+          {
+            "node": "Process Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Audio": {
+      "main": [
+        [
+          {
+            "node": "Save Audio to MinIO",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Script to MinIO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Thumbnail to MinIO": {
+      "main": [
+        [
+          {
+            "node": "Prepare Ghost CMS Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Audio to MinIO": {
+      "main": [
+        [
+          {
+            "node": "Prepare Ghost CMS Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Script to MinIO": {
+      "main": [
+        [
+          {
+            "node": "Prepare Ghost CMS Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Ghost CMS Content": {
+      "main": [
+        [
+          {
+            "node": "Publish to Ghost",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to Ghost": {
+      "main": [
+        [
+          {
+            "node": "Has Product Recommendations?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Product Recommendations?": {
+      "main": [
+        [
+          {
+            "node": "Create Mautic Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Analytics Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Mautic Campaign": {
+      "main": [
+        [
+          {
+            "node": "Log Analytics Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Analytics Event": {
+      "main": [
+        [
+          {
+            "node": "Send Notification Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "youtube",
+      "createdAt": "2025-05-25T14:57:23.000Z",
+      "updatedAt": "2025-05-25T14:57:23.000Z"
+    },
+    {
+      "name": "content-creation",
+      "createdAt": "2025-05-25T14:57:23.000Z",
+      "updatedAt": "2025-05-25T14:57:23.000Z"
+    },
+    {
+      "name": "monetization",
+      "createdAt": "2025-05-25T14:57:23.000Z",
+      "updatedAt": "2025-05-25T14:57:23.000Z"
+    },
+    {
+      "name": "coqui-tts",
+      "createdAt": "2025-05-25T14:57:23.000Z",
+      "updatedAt": "2025-05-25T14:57:23.000Z"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-05-25T14:57:23.000Z",
+  "versionId": "cf3a1c6b-69c8-4048-3622-fe7568b3c5b0"
+}
