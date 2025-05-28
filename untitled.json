@@ -1,0 +1,336 @@
+
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Start Trigger",
+      "type": "n8n-nodes-base.N8nTrigger",
+      "typeVersion": 1,
+      "position": [100, 300],
+      "parameters": {
+        "triggerTimes": {
+          "interval": "1h"
+        }
+      }
+    },
+
+    {
+      "id": "2",
+      "name": "Define Niches & Topics",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [300, 300],
+      "parameters": {
+        "functionCode": "// Define multiple niches, topics, research targets\nreturn [\n  { niche: 'AI', topic: 'Latest in Generative AI' },\n  { niche: 'Automation', topic: 'Self-Hosting Cloud Storage' },\n  { niche: 'Finance', topic: 'Crypto Investment Strategies' },\n  { niche: 'Health', topic: 'Mental Wellness Routines' }\n];"
+      }
+    },
+
+    {
+      "id": "3",
+      "name": "Prepare Research Prompts",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "functionCode": "// Prepare prompts for LLMs\nreturn items.map(i => ({ json: { niche: i.json.niche, topic: i.json.topic, prompt: `Create a detailed course outline on: ${i.json.topic}` } }));"
+      }
+    },
+
+    {
+      "id": "4",
+      "name": "LLM Generate Outline",
+      "type": "n8n-nodes-base.HttpRequest",
+      "typeVersion": 1,
+      "position": [700, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "http://localhost:5000/api/generate-outline", // Your LLM API endpoint
+        "jsonParameters": true,
+        "bodyParameters": {
+          "prompt": "={{$json.prompt}}"
+        }
+      }
+    },
+
+    {
+      "id": "5",
+      "name": "Assign Outlines",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "parameters": {
+        "functionCode": "// Parse API response, assign outline\nreturn items.map(i => ({ json: { ...i.json, outline: i.json.data || 'Sample outline' } }));"
+      }
+    },
+
+    {
+      "id": "6",
+      "name": "Prepare Lesson Scripts Prompts",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [1100, 300],
+      "parameters": {
+        "functionCode": "// Generate prompts for lesson scripts\nreturn items.map(i => ({ json: { ...i.json, prompt: `Write a detailed lesson script for: ${i.json.topic}` } }));"
+      }
+    },
+
+    {
+      "id": "7",
+      "name": "Lesson Script Generation",
+      "type": "n8n-nodes-base.HttpRequest",
+      "typeVersion": 1,
+      "position": [1300, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "http://localhost:5000/api/generate-script",
+        "jsonParameters": true,
+        "bodyParameters": {
+          "prompt": "={{$json.prompt}}"
+        }
+      }
+    },
+
+    {
+      "id": "8",
+      "name": "Assign Scripts",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [1500, 300],
+      "parameters": {
+        "functionCode": "// Assign generated scripts\nreturn items.map(i => ({ json: { ...i.json, script: i.json.data || 'Sample script' } }));"
+      }
+    },
+
+    {
+      "id": "9",
+      "name": "Prepare TTS Requests",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [1700, 300],
+      "parameters": {
+        "functionCode": "// Prepare TTS request data\nreturn items.map(i => ({ json: { ...i.json, textForTTS: i.json.script } }));"
+      }
+    },
+
+    {
+      "id": "10",
+      "name": "Convert Text to Speech",
+      "type": "n8n-nodes-base.HttpRequest",
+      "typeVersion": 1,
+      "position": [1900, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "http://localhost:5001/api/edge-tts",
+        "jsonParameters": true,
+        "bodyParameters": {
+          "text": "={{$json.textForTTS}}"
+        }
+      }
+    },
+
+    {
+      "id": "11",
+      "name": "Save Voice Paths",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [2100, 300],
+      "parameters": {
+        "functionCode": "// Save generated voice file paths\nreturn items.map((i, index) => ({ json: { ...i.json, voiceFilePath: `/media/audio/lesson_${index}.mp3` } }));"
+      }
+    },
+
+    {
+      "id": "12",
+      "name": "Prepare Visual Prompts",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [2300, 300],
+      "parameters": {
+        "functionCode": "// Prepare visual prompts\nreturn items.map(i => ({ json: { ...i.json, visualPrompt: `Create a visual for: ${i.json.topic}` } }));"
+      }
+    },
+
+    {
+      "id": "13",
+      "name": "Generate Visuals",
+      "type": "n8n-nodes-base.HttpRequest",
+      "typeVersion": 1,
+      "position": [2500, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "http://localhost:5002/api/generate-visual",
+        "jsonParameters": true,
+        "bodyParameters": {
+          "prompt": "={{$json.visualPrompt}}"
+        }
+      }
+    },
+
+    {
+      "id": "14",
+      "name": "Save Visual Paths",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [2700, 300],
+      "parameters": {
+        "functionCode": "// Save visual image paths\nreturn items.map((i, index) => ({ json: { ...i.json, visualPath: `/media/images/lesson_${index}.png` } }));"
+      }
+    },
+
+    {
+      "id": "15",
+      "name": "Assemble Video",
+      "type": "n8n-nodes-base.ExecuteCommand",
+      "typeVersion": 1,
+      "position": [2900, 300],
+      "parameters": {
+        "executeCommand": "ffmpeg -loop 1 -i {{$json.visualPath}} -i {{$json.voiceFilePath}} -vf \"format=yuv420p\" -c:v libx264 -c:a aac /media/videos/lesson_{{ $json.topic | hash }}.mp4"
+      }
+    },
+
+    {
+      "id": "16",
+      "name": "Create Download Link",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [3100, 300],
+      "parameters": {
+        "functionCode": "// Generate signed download URL (assuming your storage supports it)\nreturn items.map(i => ({ json: { ...i.json, downloadURL: `http://your-minio-server/media/videos/${i.json.topic | hash}.mp4` } }));"
+      }
+    },
+
+    {
+      "id": "17",
+      "name": "Create Ghost Course Page",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [3300, 300],
+      "parameters": {
+        "functionCode": "// Programmatically create course page data (use Ghost API or static site builder)\nreturn items.map(i => ({ json: { title: `Course: ${i.json.topic}`, description: `Learn about ${i.json.topic}`, videoURL: i.json.downloadURL } }));"
+      }
+    },
+
+    {
+      "id": "18",
+      "name": "Publish & Access Control",
+      "type": "n8n-nodes-base.HttpRequest",
+      "typeVersion": 1,
+      "position": [3500, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "http://localhost:5003/api/create-membership",
+        "jsonParameters": true,
+        "bodyParameters": {
+          "userID": "={{$json.userID}}",
+          "productID": "={{$json.productID}}",
+          "accessLevel": "premium"
+        }
+      }
+    },
+
+    {
+      "id": "19",
+      "name": "Create Social Snippets",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [3700, 300],
+      "parameters": {
+        "functionCode": "// Generate social snippets (short clips, quotes)"
+      }
+    },
+
+    {
+      "id": "20",
+      "name": "Post Social Content",
+      "type": "n8n-nodes-base.HttpRequest",
+      "typeVersion": 1,
+      "position": [3900, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "https://api.twitter.com/2/tweets",
+        "headers": [
+          { "name": "Authorization", "value": "Bearer {{$credentials.twitterApi}}" }
+        ],
+        "jsonParameters": true,
+        "bodyParameters": {
+          "text": "={{$json.socialText}}"
+        }
+      }
+    },
+
+    {
+      "id": "21",
+      "name": "Fetch Comments",
+      "type": "n8n-nodes-base.HttpRequest",
+      "typeVersion": 1,
+      "position": [4100, 300],
+      "parameters": {
+        "httpMethod": "GET",
+        "url": "https://www.googleapis.com/youtube/v3/commentThreads",
+        "headers": [
+          { "name": "Authorization", "value": "Bearer {{$credentials.youtubeApi}}" }
+        ],
+        "queryParameters": {
+          "part": "snippet",
+          "videoId": "{{$json.videoID}}"
+        }
+      }
+    },
+
+    {
+      "id": "22",
+      "name": "Generate Comment Replies",
+      "type": "n8n-nodes-base.Function",
+      "typeVersion": 1,
+      "position": [4300, 300],
+      "parameters": {
+        "functionCode": "// Generate replies (AI or templated)\nreturn items.map(c => ({ json: { replyText: 'Thank you!', commentID: c.json.id } }));"
+      }
+    },
+
+    {
+      "id": "23",
+      "name": "Post Reply",
+      "type": "n8n-nodes-base.HttpRequest",
+      "typeVersion": 1,
+      "position": [4500, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "url": "https://www.googleapis.com/youtube/v3/commentThreads",
+        "headers": [
+          { "name": "Authorization", "value": "Bearer {{$credentials.youtubeApi}}" }
+        ],
+        "jsonParameters": true,
+        "bodyParameters": {
+          "snippet": {
+            "videoId": "{{$json.videoID}}",
+            "topLevelComment": { "snippet": { "textOriginal": "{{$json.replyText}}" } }
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "1": { "main": [ [ { "node": "2" } ] ] },
+    "2": { "main": [ [ { "node": "3" } ] ] },
+    "3": { "main": [ [ { "node": "4" } ] ] },
+    "4": { "main": [ [ { "node": "5" } ] ] },
+    "5": { "main": [ [ { "node": "6" } ] ] },
+    "6": { "main": [ [ { "node": "7" } ] ] },
+    "7": { "main": [ [ { "node": "8" } ] ] },
+    "8": { "main": [ [ { "node": "9" } ] ] },
+    "9": { "main": [ [ { "node": "10" } ] ] },
+    "10": { "main": [ [ { "node": "11" } ] ] },
+    "11": { "main": [ [ { "node": "12" } ] ] },
+    "12": { "main": [ [ { "node": "13" } ] ] },
+    "13": { "main": [ [ { "node": "14" } ] ] },
+    "14": { "main": [ [ { "node": "15" } ] ] },
+    "15": { "main": [ [ { "node": "16" } ] ] },
+    "16": { "main": [ [ { "node": "17" } ] ] },
+    "17": { "main": [ [ { "node": "18" } ] ] },
+    "18": { "main": [ [ { "node": "19" } ] ] },
+    "19": { "main": [ [ { "node": "20" } ] ] },
+    "20": { "main": [ [ { "node": "21" } ] ] },
+    "21": { "main": [ [ { "node": "22" } ] ] },
+    "22": { "main": [ [ { "node": "23" } ] ] }
+  }
+}
